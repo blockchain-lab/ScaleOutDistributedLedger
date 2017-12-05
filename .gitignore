@@ -1,0 +1,26 @@
+# Ignore binary files
+*.class
+*.pyc
+bin/
+target/
+tmp/
+logs/
+
+# Ignore system specific binaries
+*.so
+*.dll
+*.dylib
+
+# Ignore eclipse files
+.settings/
+.pmd
+
+# Ignore windows auxilary files
+Thumbs.db
+
+# Ignore IntelliJ settings files
+weblabpy.iml
+.idea/
+
+# Ignore log files
+*.log
