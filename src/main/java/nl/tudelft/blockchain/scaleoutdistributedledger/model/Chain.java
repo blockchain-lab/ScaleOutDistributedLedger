@@ -11,10 +11,10 @@ import java.util.List;
 public class Chain {
 
     @Getter
-    final Node owner;
+    private final Node owner;
 
     @Getter
-    final List<Block> blocks;
+    private final List<Block> blocks;
 
     /**
      * Constructor.

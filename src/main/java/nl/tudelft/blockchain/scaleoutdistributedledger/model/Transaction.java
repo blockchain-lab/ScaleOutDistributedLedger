@@ -10,16 +10,16 @@ import java.util.Set;
 public class Transaction {
 
     @Getter
-    final int number;
+    private final int number;
 
     @Getter
-    final Node sender, receiver;
+    private final Node sender, receiver;
 
     @Getter
-    final long amount, remainder;
+    private final long amount, remainder;
 
     @Getter
-    final Set<Transaction> source;
+    private final Set<Transaction> source;
 
     /**
      * Constructor.

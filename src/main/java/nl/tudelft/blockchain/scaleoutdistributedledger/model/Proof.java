@@ -10,10 +10,10 @@ import java.util.List;
 public class Proof {
 
     @Getter
-    final Transaction transaction;
+    private final Transaction transaction;
 
     @Getter
-    final List<Block> blocks;
+    private final List<Block> blocks;
 
     /**
      * Constructor.

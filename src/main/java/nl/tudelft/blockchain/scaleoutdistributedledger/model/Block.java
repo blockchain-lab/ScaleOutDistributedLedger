@@ -10,16 +10,16 @@ import java.util.List;
 public class Block {
 
     @Getter
-    final int number;
+    private final int number;
 
     @Getter
-    Block previousBlock;
+    private Block previousBlock;
 
     @Getter
-    final Node owner;
+    private final Node owner;
 
     @Getter
-    final List<Transaction> transactions;
+    private final List<Transaction> transactions;
 
     /**
      * Constructor.

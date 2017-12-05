@@ -10,16 +10,16 @@ import lombok.Setter;
 public class Node {
 
     @Getter
-    final int id;
+    private final int id;
 
     @Getter
-    final Chain chain;
+    private final Chain chain;
 
     @Getter @Setter
-    byte[] publicKey;
+    private byte[] publicKey;
 
     @Getter @Setter
-    String address;
+    private String address;
 
     /**
      * Constructor.

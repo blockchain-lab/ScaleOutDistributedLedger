@@ -8,13 +8,13 @@ import lombok.Getter;
 public class Abstract {
 
     @Getter
-    final Node owner;
+    private final Node owner;
 
     @Getter
-    final int blockNumber;
+    private final int blockNumber;
 
     @Getter
-    final byte[] blockHash, signature;
+    private final byte[] blockHash, signature;
 
     /**
      * Constructor.
