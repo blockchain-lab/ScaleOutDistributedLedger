@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Bart on 05/12/2017.
+ * Chain class.
  */
 public class Chain {
 
@@ -16,11 +16,20 @@ public class Chain {
     @Getter
     final List<Block> blocks;
 
+    /**
+     * Constructor.
+     * @param owner - the owner of this chain.
+     */
     public Chain(Node owner) {
         this.owner = owner;
         this.blocks = new ArrayList<>();
     }
 
+    /**
+     * Constructor.
+     * @param owner - the owner of this chain.
+     * @param blocks - list of blocks in this chain.
+     */
     public Chain(Node owner, List<Block> blocks) {
         this.owner = owner;
         this.blocks = blocks;

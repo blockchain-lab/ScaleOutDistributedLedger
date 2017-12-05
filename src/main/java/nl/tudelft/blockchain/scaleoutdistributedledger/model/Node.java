@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Created by Bart on 05/12/2017.
+ * Node class.
  */
 public class Node {
 
@@ -21,11 +21,21 @@ public class Node {
     @Getter @Setter
     String address;
 
+    /**
+     * Constructor.
+     * @param id - the id of this node.
+     */
     public Node(int id) {
         this.id = id;
         this.chain = new Chain(this);
     }
 
+    /**
+     * Constructor.
+     * @param id - the id of this node.
+     * @param publicKey - the public key of this node.
+     * @param address - the address of this node.
+     */
     public Node(int id, byte[] publicKey, String address) {
         this.id = id;
         this.publicKey = publicKey;
