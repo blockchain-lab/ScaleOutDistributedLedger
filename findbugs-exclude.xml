@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+<Match>
+	<!-- Ignore security issues with exposing arrays -->
+	<Bug code="EI2" />
+</Match>
+<Match>
+	<!-- Ignore exceptional return values (File.delete()) -->
+	<Bug code="RV" />
+</Match>
+</FindBugsFilter>
