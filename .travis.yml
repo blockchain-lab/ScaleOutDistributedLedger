@@ -1,0 +1,48 @@
+
+# NOTE: The build lifecycle on Travis.ci is something like this:
+#    before_install
+#    install
+#    before_script
+#    script
+#    after_success or after_failure
+#    after_script
+#    OPTIONAL before_deploy
+#    OPTIONAL deploy
+#    OPTIONAL after_deploy
+
+################################################################################
+
+# Use ubuntu trusty (14.04) with sudo privileges.
+dist: trusty
+sudo: false
+language: java
+jdk:
+  - oraclejdk8
+
+branches:
+  except:
+  - /^doc-.*$/
+
+# Configuration variables.
+env:
+  global:
+    - CI_SOURCE_PATH=$(pwd)
+
+################################################################################
+
+install:
+  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Dpmd.skip=true -Djacoco.skip=true -V -B
+
+script:
+  - mvn test -B
+
+after_success:
+#  - bash <(curl -s https://codecov.io/bash)
+  - echo "== CHECKSTYLE_RESULT =="; cat "target/checkstyle-result.xml"; echo "== END_CHECKSTYLE_RESULT =="
+  - echo "== PMD_RESULT =="; cat "target/pmd.xml"; echo "== END_PMD_RESULT =="
+  - echo "== FINDBUGS_RESULT =="; cat "target/findbugsXml.xml"; echo "== END_FINDBUGS_RESULT =="
+ 
+after_failure:
+  - echo "== CHECKSTYLE_RESULT =="; cat "target/checkstyle-result.xml"; echo "== END_CHECKSTYLE_RESULT =="
+  - echo "== PMD_RESULT =="; cat "target/pmd.xml"; echo "== END_PMD_RESULT =="
+  - echo "== FINDBUGS_RESULT =="; cat "target/findbugsXml.xml"; echo "== END_FINDBUGS_RESULT =="

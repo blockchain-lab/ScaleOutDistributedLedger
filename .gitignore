@@ -1,0 +1,27 @@
+# Ignore binary files
+*.class
+bin/
+target/
+tmp/
+logs/
+
+# Ignore system specific binaries
+*.so
+*.dll
+*.dylib
+
+# Ignore eclipse files
+.settings/
+.classpath
+.project
+.pmd
+
+# Ignore windows auxilary files
+Thumbs.db
+
+# Ignore IntelliJ settings files
+*.iml
+.idea/
+
+# Ignore log files
+*.log
