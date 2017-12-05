@@ -1,6 +1,5 @@
 # Ignore binary files
 *.class
-*.pyc
 bin/
 target/
 tmp/
@@ -13,13 +12,15 @@ logs/
 
 # Ignore eclipse files
 .settings/
+.classpath
+.project
 .pmd
 
 # Ignore windows auxilary files
 Thumbs.db
 
 # Ignore IntelliJ settings files
-weblabpy.iml
+*.iml
 .idea/
 
 # Ignore log files
