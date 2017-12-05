@@ -84,7 +84,6 @@
         
         <!-- Miscellaneous -->
         <module name="ArrayTypeStyle"/>
-        <module name="FileContentsHolder"/>
         <module name="FinalParameters">
             <property name="severity" value="ignore"/>
             <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
@@ -166,7 +165,5 @@
         <property name="message" value="Line has trailing spaces."/>
         <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
     </module>
-    <module name="SuppressionCommentFilter"/>
-    <module name="SuppressWithNearbyCommentFilter"/>
     <module name="SuppressWarningsFilter"/>
 </module>
