@@ -3,9 +3,9 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import lombok.Getter;
 
 /**
- * Abstract class.
+ * BlockAbstract class.
  */
-public class Abstract {
+public class BlockAbstract {
 
     @Getter
     private final Node owner;
@@ -23,7 +23,7 @@ public class Abstract {
      * @param blockHash - the hash of the block this abstract is for.
      * @param signature - the signature for the block by the owner.
      */
-    public Abstract(Node owner, int blockNumber, byte[] blockHash, byte[] signature) {
+    public BlockAbstract(Node owner, int blockNumber, byte[] blockHash, byte[] signature) {
         this.owner = owner;
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
