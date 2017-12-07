@@ -68,8 +68,8 @@ public class ChainView implements Iterable<Block> {
 	 * @return
 	 * 		true if this ChainView is valid, false otherwise
 	 */
-	public boolean checkIntegrity() {
-		//No update --> valid
+	private boolean checkIntegrity() {
+		//No updates --> valid
 		if (updates.isEmpty()) {
 			this.valid = true;
 			return true;
@@ -146,13 +146,19 @@ public class ChainView implements Iterable<Block> {
 	 * 
 	 * @throws IndexOutOfBoundsException
 	 * 		If the block with the given number does not exist (yet).
+	 * @throws IllegalStateException
+	 * 		If this ChainView is invalid and the block with the given number is in the invalid part
+	 * 		of this ChainView.
 	 */
 	public Block getBlock(int number) {
 		if (number < chain.getBlocks().size()) {
 			return chain.getBlocks().get(number);
-		} else {
+		} else if (isValid()) {
 			int index = number - chain.getBlocks().size();
 			return updates.get(index);
+		} else {
+			throw new IllegalStateException(
+					"This ChainView is invalid. The block with number " + number + " is not in the valid part of this ChainView.");
 		}
 	}
 	
@@ -187,11 +193,12 @@ public class ChainView implements Iterable<Block> {
 		private ListIterator<Block> chainIterator;
 		private ListIterator<Block> updatesIterator;
 		private boolean updatesReached;
-		private Block current;
+		private int currentIndex;
 		
 		ChainViewIterator() {
 			chainIterator = chain.getBlocks().listIterator();
 			updatesIterator = updates.listIterator();
+			currentIndex = -1;
 		}
 		
 		ChainViewIterator(int number) {
@@ -206,13 +213,13 @@ public class ChainView implements Iterable<Block> {
 				updatesReached = true;
 			}
 			
+			currentIndex = number - 1;
 		}
 		
 		@Override
 		public boolean hasNext() {
 			if (!updatesReached) {
 				if (chainIterator.hasNext()) return true;
-				
 				updatesReached = true;
 			}
 			
@@ -223,7 +230,6 @@ public class ChainView implements Iterable<Block> {
 		public boolean hasPrevious() {
 			if (updatesReached) {
 				if (updatesIterator.hasPrevious()) return true;
-				
 				updatesReached = false;
 			}
 			
@@ -232,36 +238,50 @@ public class ChainView implements Iterable<Block> {
 		
 		@Override
 		public Block next() {
+			ListIterator<Block> it;
 			if (!updatesReached) {
-				if (chainIterator.hasNext()) return chainIterator.next();
-
-				updatesReached = true;
+				if (chainIterator.hasNext()) {
+					it = chainIterator;
+				} else {
+					updatesReached = true;
+					it = updatesIterator;
+				}
+			} else {
+				it = updatesIterator;
 			}
 			
-			current = updatesIterator.next();
+			Block current = it.next();
+			currentIndex = current.getNumber();
 			return current;
 		}
 		
 		@Override
 		public Block previous() {
+			ListIterator<Block> it;
 			if (updatesReached) {
-				if (updatesIterator.hasPrevious()) return updatesIterator.previous();
-				
-				updatesReached = false;
+				if (updatesIterator.hasPrevious()) {
+					it = updatesIterator;
+				} else {
+					updatesReached = false;
+					it = chainIterator;
+				}
+			} else {
+				it = chainIterator;
 			}
 			
-			current = chainIterator.previous();
+			Block current = it.previous();
+			currentIndex = current.getNumber() - 1;
 			return current;
 		}
 
 		@Override
 		public int nextIndex() {
-			return current.getNumber() + 1;
+			return currentIndex + 1;
 		}
 
 		@Override
 		public int previousIndex() {
-			return current.getNumber() - 1;
+			return currentIndex;
 		}
 
 		@Override
