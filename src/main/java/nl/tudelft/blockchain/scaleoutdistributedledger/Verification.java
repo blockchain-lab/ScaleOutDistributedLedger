@@ -15,7 +15,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
  * Verification and validation algorithms.
  */
 public final class Verification {
-	private static HashMap<Transaction, TransactionValidation> verificationCache = new HashMap<>();
+	private static HashMap<Transaction, TransactionValidation> validationCache = new HashMap<>();
 	
 	private Verification() {
 		throw new UnsupportedOperationException();
@@ -36,7 +36,7 @@ public final class Verification {
 		TransactionValidation valid = validate(transaction, proof);
 		
 		//Store in the cache
-		TransactionValidation old = verificationCache.put(transaction, valid);
+		TransactionValidation old = validationCache.put(transaction, valid);
 		if (old != valid) {
 			throw new IllegalStateException(
 					"We validated transaction " + transaction + "to be " + old + " before, but " + valid + " now!");
@@ -88,7 +88,7 @@ public final class Verification {
 		
 		//Validate sources
 		for (Transaction txj : transaction.getSource()) {
-			TransactionValidation cached = verificationCache.get(txj);
+			TransactionValidation cached = validationCache.get(txj);
 			if (cached == null) {
 				//We didn't see this transaction before, so we need to validate it.
 				if (!isValid(txj, getProof(txj, proof))) return UNKNOWN;
