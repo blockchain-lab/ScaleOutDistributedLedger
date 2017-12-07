@@ -42,4 +42,15 @@ public class Node {
         this.address = address;
         this.chain = new Chain(this);
     }
+    
+    @Override
+    public int hashCode() {
+    	return this.id;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    	//We only have one Node object for each id, so we can compare with ==
+    	return obj == this;
+    }
 }
