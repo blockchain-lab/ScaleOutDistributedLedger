@@ -10,7 +10,7 @@ import java.util.ListIterator;
  */
 public class ChainView implements Iterable<Block> {
 
-	//TODO If the chain is updated after validation, the validation needs to be done again. (valid = null)
+	//TODO If the chain is updated after validation, the validation needs to be done again. if (valid) then valid = null;
 	private Chain chain;
 	private List<Block> updates;
 	private Boolean valid;
@@ -37,6 +37,34 @@ public class ChainView implements Iterable<Block> {
 	}
 	
 	/**
+	 * If this ChainView was previously marked as valid, then it's validation will be cleared.
+	 * <br><b>A ChainView that was previously marked as invalid will remain invalid.</b>
+	 * 
+	 * <p>This method needs to be called if the chain is updated after validation.
+	 */
+	public void resetValidation() {
+		if (this.valid != null && this.valid) {
+			this.valid = null;
+		}
+	}
+	
+	/**
+	 * @return
+	 * 		true if this ChainView is either invalid or doesn't contain any updates,
+	 * 		false otherwise
+	 */
+	public boolean isRedundant() {
+		return !isValid() || updates.isEmpty();
+	}
+	
+	/**
+	 * Checks the integrity of this chain view.
+	 * 
+	 * <p>If this method returns true, that means that the current state of the chain combined with
+	 * the set of updates is consistent and that there are no gaps in the block numbers.
+	 * 
+	 * <p>Any overlapping parts are first checked to be consistent and are then removed.
+	 * 
 	 * @return
 	 * 		true if this ChainView is valid, false otherwise
 	 */
@@ -130,7 +158,7 @@ public class ChainView implements Iterable<Block> {
 	
 	@Override
 	public ListIterator<Block> iterator() {
-		return new ChainViewIterator();
+		return listIterator();
 	}
 	
 	/**
@@ -173,8 +201,8 @@ public class ChainView implements Iterable<Block> {
 				updatesIterator = updates.listIterator();
 			} else {
 				int index = number - chainLength;
-				chainIterator = chain.getBlocks().listIterator(chainLength);
 				updatesIterator = updates.listIterator(index);
+				chainIterator = chain.getBlocks().listIterator(chainLength);
 				updatesReached = true;
 			}
 			
