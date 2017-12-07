@@ -69,7 +69,7 @@ public class ChainView implements Iterable<Block> {
 	 * 		true if this ChainView is valid, false otherwise
 	 */
 	public boolean checkIntegrity() {
-		//No update --> valid
+		//No updates --> valid
 		if (updates.isEmpty()) {
 			this.valid = true;
 			return true;
@@ -187,11 +187,12 @@ public class ChainView implements Iterable<Block> {
 		private ListIterator<Block> chainIterator;
 		private ListIterator<Block> updatesIterator;
 		private boolean updatesReached;
-		private Block current;
+		private int currentIndex;
 		
 		ChainViewIterator() {
 			chainIterator = chain.getBlocks().listIterator();
 			updatesIterator = updates.listIterator();
+			currentIndex = 0;
 		}
 		
 		ChainViewIterator(int number) {
@@ -206,13 +207,13 @@ public class ChainView implements Iterable<Block> {
 				updatesReached = true;
 			}
 			
+			currentIndex = number - 1;
 		}
 		
 		@Override
 		public boolean hasNext() {
 			if (!updatesReached) {
 				if (chainIterator.hasNext()) return true;
-				
 				updatesReached = true;
 			}
 			
@@ -223,7 +224,6 @@ public class ChainView implements Iterable<Block> {
 		public boolean hasPrevious() {
 			if (updatesReached) {
 				if (updatesIterator.hasPrevious()) return true;
-				
 				updatesReached = false;
 			}
 			
@@ -234,11 +234,11 @@ public class ChainView implements Iterable<Block> {
 		public Block next() {
 			if (!updatesReached) {
 				if (chainIterator.hasNext()) return chainIterator.next();
-
 				updatesReached = true;
 			}
 			
-			current = updatesIterator.next();
+			Block current = updatesIterator.next();
+			currentIndex = current.getNumber();
 			return current;
 		}
 		
@@ -246,22 +246,22 @@ public class ChainView implements Iterable<Block> {
 		public Block previous() {
 			if (updatesReached) {
 				if (updatesIterator.hasPrevious()) return updatesIterator.previous();
-				
 				updatesReached = false;
 			}
 			
-			current = chainIterator.previous();
+			Block current = chainIterator.previous();
+			currentIndex = current.getNumber();
 			return current;
 		}
 
 		@Override
 		public int nextIndex() {
-			return current.getNumber() + 1;
+			return currentIndex + 1;
 		}
 
 		@Override
 		public int previousIndex() {
-			return current.getNumber() - 1;
+			return currentIndex - 1;
 		}
 
 		@Override
