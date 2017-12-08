@@ -2,7 +2,9 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 
+import javax.swing.text.html.Option;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Block class.
@@ -20,6 +22,8 @@ public class Block {
 
     @Getter
     private final List<Transaction> transactions;
+
+    private Optional<BlockAbstract> blockAbstract;
 
     /**
      * Constructor.
@@ -46,5 +50,17 @@ public class Block {
         this.previousBlock = previousBlock;
         this.owner = owner;
         this.transactions = transactions;
+    }
+
+    /**
+     * Returns the abstract of this block, and generates it if it is not present.
+     * @return - the abstract of this block.
+     */
+    public BlockAbstract getBlockAbstract() {
+        if (!this.blockAbstract.isPresent()) {
+            this.blockAbstract = Optional.of(null);
+            //TODO: actually generate block abstract
+        }
+        return this.blockAbstract.get();
     }
 }
