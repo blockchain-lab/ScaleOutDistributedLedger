@@ -1,8 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Block class.
@@ -20,6 +24,9 @@ public class Block {
 
     @Getter
     private final List<Transaction> transactions;
+
+	// Custom getter
+	private Sha256Hash hash;
 
     /**
      * Constructor.
@@ -48,6 +55,14 @@ public class Block {
         this.transactions = transactions;
     }
 
+	public Sha256Hash getHash() {
+		// TODO: see if we can actually use this condition, instead of calling every time (inefficient)
+		if (this.hash == null) {
+			this.hash = this.calculateHash();
+		}
+		return this.hash;
+	}
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -70,6 +85,57 @@ public class Block {
             if (other.previousBlock != null) return false;
         } else if (!this.previousBlock.equals(other.previousBlock)) return false;
 
+		if (!this.getHash().equals(other.getHash())) return false;
+		
         return this.transactions.equals(other.transactions);
     }
+
+	/**
+	 * Calculates the block hash
+	 * @return hash SHA256
+	 */
+	private Sha256Hash calculateHash() {
+		// Convert attributes of block into an array of bytes
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try {
+			// Important to keep the order of writings
+			outputStream.write(Utils.intToByteArray(this.number));
+			byte[] prevBlockHash = (this.previousBlock != null) ? this.previousBlock.getHash().getBytes() : new byte[0];
+			outputStream.write(prevBlockHash);
+			outputStream.write(Utils.intToByteArray(this.owner.getId()));
+			for (Transaction tx : this.transactions) {
+				outputStream.write(tx.getHash().getBytes());
+			}
+		} catch (IOException ex) {
+			Logger.getLogger(Block.class.getName()).log(Level.SEVERE, null, ex);
+		}
+		byte[] blockInBytes = outputStream.toByteArray();
+		
+		return new Sha256Hash(blockInBytes);
+	}
+	
+	/**
+	 * Get the abstract of the block
+	 * @param privateKey - private RSA key
+	 * @return abstract - abstract of the block
+	 * @throws java.lang.Exception - something went wrong while signing the block
+	 */
+	public BlockAbstract getAbstract(byte[] privateKey) throws Exception {
+		// Convert attributes of abstract into an array of bytes, for the signature
+		// Important to keep the order of writings
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		outputStream.write(Utils.intToByteArray(this.owner.getId()));
+		outputStream.write(Utils.intToByteArray(this.number));
+		outputStream.write(this.getHash().getBytes());
+		byte[] attrInBytes = outputStream.toByteArray();
+		
+		// Sign the attributes
+		byte[] signature = RSAKey.sign(attrInBytes, privateKey);
+		return new BlockAbstract(this.owner, this.number, this.getHash(), signature);
+	}
+	
+	public BlockAbstract getAbstract(RSAKey rsaKey) throws Exception {
+		return this.getAbstract(rsaKey.getPrivateKey());
+	}
+
 }
