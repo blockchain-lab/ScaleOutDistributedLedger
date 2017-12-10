@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.OptionalInt;
 
@@ -14,16 +15,23 @@ public class Proof {
     private final Transaction transaction;
 
     @Getter
-    private final List<Block> blocks;
+    private final HashMap<Node, List<Block>> chainUpdates;
 
     /**
      * Constructor.
      * @param transaction - the transaction to be proven.
-     * @param blocks - the list of blocks needed to proof the transaction.
      */
-    public Proof(Transaction transaction, List<Block> blocks) {
+    public Proof(Transaction transaction) {
         this.transaction = transaction;
-        this.blocks = blocks;
+        this.chainUpdates = new HashMap<>();
+    }
+
+    /**
+     * Add a block to the proof.
+     * @param block - the block to be added
+     */
+    public void addBlock(Block block) {
+        chainUpdates.get(block.getOwner().getId()).add(block);
     }
 
     /**

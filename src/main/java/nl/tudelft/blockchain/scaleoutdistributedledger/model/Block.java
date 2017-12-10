@@ -63,4 +63,29 @@ public class Block {
         }
         return this.blockAbstract.get();
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + number;
+        result = prime * result + owner.hashCode();
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Block)) return false;
+
+        Block other = (Block) obj;
+        if (this.number != other.number) return false;
+        if (this.owner != other.owner) return false;
+
+        if (this.previousBlock == null) {
+            if (other.previousBlock != null) return false;
+        } else if (!this.previousBlock.equals(other.previousBlock)) return false;
+
+        return this.transactions.equals(other.transactions);
+    }
 }
