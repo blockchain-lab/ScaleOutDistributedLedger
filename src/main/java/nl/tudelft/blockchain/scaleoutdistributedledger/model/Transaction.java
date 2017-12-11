@@ -61,7 +61,6 @@ public class Transaction {
 			outputStream.write(Utils.intToByteArray(this.number));
 			outputStream.write(Utils.intToByteArray(this.sender.getId()));
 			outputStream.write(Utils.intToByteArray(this.receiver.getId()));
-			
 			outputStream.write(Utils.longToByteArray(this.amount));
 			outputStream.write(Utils.longToByteArray(this.remainder));
 			
