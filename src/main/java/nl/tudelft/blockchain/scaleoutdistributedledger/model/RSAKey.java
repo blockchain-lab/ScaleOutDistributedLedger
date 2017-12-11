@@ -1,6 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -11,11 +10,10 @@ import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.crypto.Cipher;
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Class to wrap a RSA key pair + Utils to handle RSA keys
@@ -30,13 +28,16 @@ public class RSAKey {
 	@Getter
 	private byte[] publicKey;
 	
+	/**
+	 * Constructor
+	 */
 	public RSAKey() {
 		try {
 			KeyPair keyPair = generateKeys();
 			this.privateKey = keyPair.getPrivate().getEncoded();
 			this.publicKey = keyPair.getPublic().getEncoded();
 		} catch (NoSuchAlgorithmException ex) {
-			Logger.getLogger(RSAKey.class.getName()).log(Level.SEVERE, null, ex);
+			Log.log(Level.SEVERE, null, ex);
 		}
 	}
 	
@@ -53,8 +54,8 @@ public class RSAKey {
 	
 	/**
 	 * Encrypt array of bytes with public key
-	 * @param message
-	 * @param publicKey
+	 * @param message - an array of bytes of the message
+	 * @param publicKey - public RSA key
 	 * @return encrypted message
 	 * @throws Exception 
 	 */
@@ -65,14 +66,20 @@ public class RSAKey {
 		return cipher.doFinal(message);
 	}
 	
+	/**
+	 * Encrypt array of bytes with RSA key pair
+	 * @param message - an array of bytes of the message
+	 * @return encrypted message
+	 * @throws Exception 
+	 */
 	public byte[] encrypt(byte[] message) throws Exception {
 		return encrypt(message, this.publicKey);
 	}
 	
 	/**
-	 * Decrypt array of byte with private key
-	 * @param encryptedMessage
-	 * @param privateKey
+	 * Decrypt a message with private key
+	 * @param encryptedMessage - array of bytes of the message
+	 * @param privateKey - private RSA key
 	 * @return decrypted message
 	 * @throws Exception 
 	 */
@@ -83,15 +90,21 @@ public class RSAKey {
 		return cipher.doFinal(encryptedMessage);
 	}
 	
+	/**
+	 * Decrypt a message with an RSA key pair
+	 * @param message - array of bytes of the message
+	 * @return decrypted message
+	 * @throws Exception 
+	 */
 	public byte[] decrypt(byte[] message) throws Exception {
 		return decrypt(message, this.privateKey);
 	}
 	
 	/**
 	 * Verify an array of bytes with signature and public key
-	 * @param message
-	 * @param signature
-	 * @param publicKey
+	 * @param message - array of bytes of the message
+	 * @param signature - signature of the message
+	 * @param publicKey - public RSA key
 	 * @return whether is correct or not
 	 * @throws Exception 
 	 */
@@ -101,16 +114,23 @@ public class RSAKey {
 		publicSignature.initVerify(publicKeyObject);
 		publicSignature.update(message);
 		return publicSignature.verify(signature);
-    }
+	}
 	
+	/**
+	 * Verify an array of bytes with signature and public key
+	 * @param message - array of bytes of the message
+	 * @param signature - signature of the message
+	 * @return whether is correct or not
+	 * @throws Exception 
+	 */
 	public boolean verify(byte[] message, byte[] signature) throws Exception {
 		return verify(message, signature, this.publicKey);
 	}
 	
 	/**
 	 * Sign an array of bytes with a private key
-	 * @param message
-	 * @param privateKey
+	 * @param message - array of bytes of the message
+	 * @param privateKey - private RSA key
 	 * @return signature of the message
 	 * @throws java.lang.Exception
 	 */
@@ -122,6 +142,12 @@ public class RSAKey {
         return privateSignature.sign();
 	}
 	
+	/**
+	 * Sign an array of bytes with a private key
+	 * @param message - array of bytes of the message
+	 * @return signature of the message
+	 * @throws java.lang.Exception
+	 */
 	public byte[] sign(byte[] message) throws Exception {
 		return sign(message, this.privateKey);
 	}
@@ -156,7 +182,7 @@ public class RSAKey {
 	
 	/**
 	 * Convert a key into a string
-	 * @param keyBytes
+	 * @param keyBytes - an array of bytes of the key
 	 * @return string - hexadecimal representation of the key
 	 */
 	public static String keyToString(byte[] keyBytes) {

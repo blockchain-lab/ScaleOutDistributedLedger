@@ -1,12 +1,13 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import lombok.Getter;
 
 import java.util.Set;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Transaction class.
@@ -53,6 +54,10 @@ public class Transaction {
 		return this.hash;
 	}
 	
+	/**
+	 * Calculate the transaction hash
+	 * @return Hash SHA256
+	 */
 	private Sha256Hash calculateHash() {
 		// Convert attributes of transaction into an array of bytes
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -69,7 +74,7 @@ public class Transaction {
 				outputStream.write(tx.getHash().getBytes());
 			}
 		} catch (IOException ex) {
-			Logger.getLogger(Transaction.class.getName()).log(Level.SEVERE, null, ex);
+			Log.log(Level.SEVERE, null, ex);
 		}
 		byte[] transactionInBytes = outputStream.toByteArray();
 		

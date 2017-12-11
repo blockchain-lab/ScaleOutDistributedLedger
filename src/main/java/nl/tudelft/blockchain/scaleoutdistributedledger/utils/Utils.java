@@ -1,4 +1,4 @@
-package nl.tudelft.blockchain.scaleoutdistributedledger.model;
+package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 
 import java.nio.ByteBuffer;
 
@@ -7,18 +7,18 @@ import java.nio.ByteBuffer;
  */
 public class Utils {
 	
-	private static final ByteBuffer bufferInteger = ByteBuffer.allocate(Integer.BYTES);   
-	
-	private static final ByteBuffer bufferLong = ByteBuffer.allocate(Long.BYTES);   
-	
 	/**
 	 * Convert a integer into a byte array
 	 * @param number
 	 * @return byte array
 	 */
 	public static byte[] intToByteArray(int number) {
-		bufferInteger.putInt(0, number);
-        return bufferInteger.array();
+		return new byte[] {
+			(byte) (number >>> 24),
+			(byte) (number >>> 16),
+			(byte) (number >>> 8),
+			(byte) number
+		};
 	}
 	
 	/**
@@ -27,8 +27,16 @@ public class Utils {
 	 * @return byte array
 	 */
 	public static byte[] longToByteArray(long number) {
-		bufferLong.putLong(0, number);
-        return bufferLong.array();
+		return new byte[] {
+			(byte) (number >> 56),
+			(byte) (number >> 48),
+			(byte) (number >> 40),
+			(byte) (number >> 32),
+			(byte) (number >> 24),
+			(byte) (number >> 16),
+			(byte) (number >> 8),
+			(byte) number
+		};
 	}
 	
 	/**

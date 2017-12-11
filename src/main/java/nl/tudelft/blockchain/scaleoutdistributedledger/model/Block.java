@@ -1,12 +1,13 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import lombok.Getter;
 
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Block class.
@@ -92,7 +93,7 @@ public class Block {
 
 	/**
 	 * Calculates the block hash
-	 * @return hash SHA256
+	 * @return Hash SHA256
 	 */
 	private Sha256Hash calculateHash() {
 		// Convert attributes of block into an array of bytes
@@ -107,7 +108,7 @@ public class Block {
 				outputStream.write(tx.getHash().getBytes());
 			}
 		} catch (IOException ex) {
-			Logger.getLogger(Block.class.getName()).log(Level.SEVERE, null, ex);
+			Log.log(Level.SEVERE, null, ex);
 		}
 		byte[] blockInBytes = outputStream.toByteArray();
 		
@@ -134,6 +135,12 @@ public class Block {
 		return new BlockAbstract(this.owner, this.number, this.getHash(), signature);
 	}
 	
+	/**
+	 * Get the abstract of the block
+	 * @param rsaKey - RSA key pair
+	 * @return abstract - abstract of the block
+	 * @throws java.lang.Exception - something went wrong while signing the block
+	 */
 	public BlockAbstract getAbstract(RSAKey rsaKey) throws Exception {
 		return this.getAbstract(rsaKey.getPrivateKey());
 	}
