@@ -50,14 +50,18 @@ public class Proof {
      */
     private boolean verify(Transaction transaction) {
         int absmark = 0;
-        final int[] count = {0};
+        boolean seen = false;
 
         ChainView chainView = new ChainView(transaction.getSender().getChain(), chainUpdates.get(transaction.getSender()));
         if (!chainView.isValid()) return false;
+
         ListIterator<Block> iterator = chainView.listIterator();
         while(iterator.hasNext()) {
             Block block = iterator.next();
-            if (block.getTransactions().contains(transaction)) count[0]++;
+            if (block.getTransactions().contains(transaction)) {
+                if (seen) return false;
+                seen = true;
+            }
             // TODO: check block hash (hash function needed) if not genesis block
             BlockAbstract blockAbstract = block.getBlockAbstract();
             if (blockAbstract.isOnMainChain()) {
@@ -68,7 +72,6 @@ public class Proof {
 
         OptionalInt blockNumber = transaction.getBlockNumber();
         if (!blockNumber.isPresent() || absmark < blockNumber.getAsInt()) return false;
-        if(count[0] != 1) return false;
 
         // Verify source transaction
         for (Transaction sourceTransaction : transaction.getSource()) {

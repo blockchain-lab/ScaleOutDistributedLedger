@@ -1,6 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import com.sun.javafx.scene.control.behavior.OptionalBoolean;
 import lombok.Getter;
 import lombok.Setter;
 

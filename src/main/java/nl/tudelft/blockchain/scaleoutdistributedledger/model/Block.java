@@ -2,7 +2,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 
-import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 

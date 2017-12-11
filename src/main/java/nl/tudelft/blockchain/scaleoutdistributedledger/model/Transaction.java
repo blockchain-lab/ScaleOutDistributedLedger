@@ -45,6 +45,7 @@ public class Transaction {
 
     /**
      * Returns the number of the block (if it is in a block).
+     * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)
      * @return - optional that is empty if the transaction is not in a block, and filled with the number of the block otherwise.
      */
     public OptionalInt getBlockNumber() {
