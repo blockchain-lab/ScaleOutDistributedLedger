@@ -1,8 +1,11 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint;
 
 import com.github.jtendermint.jabci.api.ABCIAPI;
-import com.github.jtendermint.jabci.types.Types;
+import com.github.jtendermint.jabci.types.Types.*;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
+import org.apache.http.client.fluent.Request;
+
+import java.io.IOException;
 
 /**
  *
@@ -10,8 +13,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
  */
 public class ABCIServer implements ABCIAPI {
     @Override
-    public Types.ResponseBeginBlock requestBeginBlock(Types.RequestBeginBlock requestBeginBlock) {
-        return null;
+    public ResponseBeginBlock requestBeginBlock(RequestBeginBlock requestBeginBlock) {
+        System.out.println("Begin block");
+        return ResponseBeginBlock.newBuilder().build();
         //TODO: Implement this
     }
 
@@ -22,61 +26,65 @@ public class ABCIServer implements ABCIAPI {
      * @return
      */
     @Override
-    public Types.ResponseCheckTx requestCheckTx(Types.RequestCheckTx requestCheckTx) {
+    public ResponseCheckTx requestCheckTx(RequestCheckTx requestCheckTx) {
+        System.out.println("Check Tx");
         BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
 
         //TODO: validate the abstract
         boolean valid = true;
         if(valid) {
-            return Types.ResponseCheckTx.newBuilder().setCode(Types.CodeType.OK).build();
+            return ResponseCheckTx.newBuilder().setCode(CodeType.OK).build();
         } else {
             String log = "Discription of what went wrong while validating";
-            return Types.ResponseCheckTx.newBuilder().setCode(Types.CodeType.BadNonce).setLog(log).build();
+            return ResponseCheckTx.newBuilder().setCode(CodeType.BadNonce).setLog(log).build();
         }
     }
 
     @Override
-    public Types.ResponseCommit requestCommit(Types.RequestCommit requestCommit) {
-        return null;
+    public ResponseCommit requestCommit(RequestCommit requestCommit) {
+        System.out.println("Commit");
+        return ResponseCommit.newBuilder().setCode(CodeType.OK).build();
     }
 
     @Override
-    public Types.ResponseDeliverTx receivedDeliverTx(Types.RequestDeliverTx requestDeliverTx) {
-        return null;
+    public ResponseDeliverTx receivedDeliverTx(RequestDeliverTx requestDeliverTx) {
+        return ResponseDeliverTx.newBuilder().setCode(CodeType.OK).build();
     }
 
     @Override
-    public Types.ResponseEcho requestEcho(Types.RequestEcho requestEcho) {
-        return null;
+    public ResponseEcho requestEcho(RequestEcho requestEcho) {
+        return ResponseEcho.newBuilder().setMessage(requestEcho.getMessage()).build();
     }
 
     @Override
-    public Types.ResponseEndBlock requestEndBlock(Types.RequestEndBlock requestEndBlock) {
-        return null;
+    public ResponseEndBlock requestEndBlock(RequestEndBlock requestEndBlock) {
+        System.out.println("End of Block");
+        return ResponseEndBlock.newBuilder().build();
     }
 
     @Override
-    public Types.ResponseFlush requestFlush(Types.RequestFlush requestFlush) {
-        return null;
+    public ResponseFlush requestFlush(RequestFlush requestFlush) {
+        return ResponseFlush.newBuilder().build();
     }
 
     @Override
-    public Types.ResponseInfo requestInfo(Types.RequestInfo requestInfo) {
-        return null;
+    public ResponseInfo requestInfo(RequestInfo requestInfo) {
+        return ResponseInfo.newBuilder().setData("OK").build();
     }
 
     @Override
-    public Types.ResponseInitChain requestInitChain(Types.RequestInitChain requestInitChain) {
-        return null;
+    public ResponseInitChain requestInitChain(RequestInitChain requestInitChain) {
+        return ResponseInitChain.newBuilder().build();
     }
 
     @Override
-    public Types.ResponseQuery requestQuery(Types.RequestQuery requestQuery) {
-        return null;
+    public ResponseQuery requestQuery(RequestQuery requestQuery) {
+        System.out.println("Query");
+        return ResponseQuery.newBuilder().setCode(CodeType.OK).build();
     }
 
     @Override
-    public Types.ResponseSetOption requestSetOption(Types.RequestSetOption requestSetOption) {
-        return null;
+    public ResponseSetOption requestSetOption(RequestSetOption requestSetOption) {
+        return ResponseSetOption.newBuilder().build();
     }
 }
