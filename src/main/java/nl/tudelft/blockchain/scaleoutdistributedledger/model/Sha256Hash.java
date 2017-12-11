@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -27,7 +28,7 @@ public class Sha256Hash {
 	}
 	
 	public Sha256Hash(String message) {
-		byte[] messageBytes = Base64.getDecoder().decode(message);
+		byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
 		try {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			this.bytes = digest.digest(messageBytes);
