@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import com.google.protobuf.ByteString;
 import lombok.Getter;
 
 /**
@@ -28,5 +29,15 @@ public class BlockAbstract {
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
         this.signature = signature;
+    }
+
+    public byte[] toBytes() {
+        //TODO: implement this method
+        return new byte[0];
+    }
+
+    public static BlockAbstract fromBytes(byte[] tx) {
+        //TODO: implement this method
+        return new BlockAbstract(null, 0, new byte[0], new byte[0]);
     }
 }
