@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -7,6 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
@@ -58,22 +60,12 @@ public class RSAKey {
 	 */
 	public static byte[] encrypt(byte[] message, byte[] publicKey) throws Exception {
 		PublicKey publicKeyObject = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKey));
-		Cipher cipher = Cipher.getInstance("RSA");
+		Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 		cipher.init(Cipher.ENCRYPT_MODE, publicKeyObject);
 		return cipher.doFinal(message);
 	}
-		
-	public static String encrypt(String message, byte[] publicKey) throws Exception {
-		byte[] messageBytes = Base64.getDecoder().decode(message);
-		byte[] encryptedMessage = encrypt(messageBytes, publicKey);
-		return Base64.getEncoder().encodeToString(encryptedMessage);
-	}
 	
 	public byte[] encrypt(byte[] message) throws Exception {
-		return encrypt(message, this.publicKey);
-	}
-	
-	public String encrypt(String message) throws Exception {
 		return encrypt(message, this.publicKey);
 	}
 	
@@ -85,23 +77,13 @@ public class RSAKey {
 	 * @throws Exception 
 	 */
 	public static byte[] decrypt(byte[] encryptedMessage, byte[] privateKey) throws Exception {
-		PrivateKey privateKeyObject = KeyFactory.getInstance("RSA").generatePrivate(new X509EncodedKeySpec(privateKey));
-		Cipher cipher = Cipher.getInstance("RSA");  
+		PrivateKey privateKeyObject = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKey));
+		Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");  
 		cipher.init(Cipher.DECRYPT_MODE, privateKeyObject);
 		return cipher.doFinal(encryptedMessage);
 	}
 	
-	public static String decrypt(String message, byte[] privateKey) throws Exception {
-		byte[] messageBytes = Base64.getDecoder().decode(message);
-		byte[] decryptedMessage = decrypt(messageBytes, privateKey);
-		return Base64.getEncoder().encodeToString(decryptedMessage);
-	}
-	
 	public byte[] decrypt(byte[] message) throws Exception {
-		return decrypt(message, this.privateKey);
-	}
-	
-	public String decrypt(String message) throws Exception {
 		return decrypt(message, this.privateKey);
 	}
 	
@@ -121,18 +103,8 @@ public class RSAKey {
 		return publicSignature.verify(signature);
     }
 	
-	public static boolean verify(String message, String signature, byte[] publicKey) throws Exception {
-		byte[] messageBytes = Base64.getDecoder().decode(message);
-		byte[] signatureBytes = Base64.getDecoder().decode(signature);
-		return verify(messageBytes, signatureBytes, publicKey);
-    }
-	
 	public boolean verify(byte[] message, byte[] signature) throws Exception {
-		return verify(message, signature, this.privateKey);
-	}
-		
-	public boolean verify(String message, String signature) throws Exception {
-		return verify(message, signature, this.privateKey);
+		return verify(message, signature, this.publicKey);
 	}
 	
 	/**
@@ -143,24 +115,14 @@ public class RSAKey {
 	 * @throws java.lang.Exception
 	 */
 	public static byte[] sign(byte[] message, byte[] privateKey) throws Exception {
-		PrivateKey privateKeyObject = KeyFactory.getInstance("RSA").generatePrivate(new X509EncodedKeySpec(privateKey));
+		PrivateKey privateKeyObject = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKey));
 		Signature privateSignature = Signature.getInstance("SHA256withRSA");
         privateSignature.initSign(privateKeyObject);
         privateSignature.update(message);
         return privateSignature.sign();
 	}
 	
-	public static String sign(String message, byte[] privateKey) throws Exception {
-		byte[] messageBytes = Base64.getDecoder().decode(message);
-		byte[] signature = sign(messageBytes, privateKey);
-		return Base64.getEncoder().encodeToString(signature);
-	}
-	
 	public byte[] sign(byte[] message) throws Exception {
-		return sign(message, this.privateKey);
-	}
-	
-	public String sign(String message) throws Exception {
 		return sign(message, this.privateKey);
 	}
 	
