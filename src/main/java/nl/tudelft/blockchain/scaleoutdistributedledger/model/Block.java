@@ -56,8 +56,7 @@ public class Block {
         this.transactions = transactions;
     }
 
-	public Sha256Hash getHash() {
-		// TODO: see if we can actually use this condition, instead of calling every time (inefficient)
+	public synchronized Sha256Hash getHash() {
 		if (this.hash == null) {
 			this.hash = this.calculateHash();
 		}

@@ -1,7 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 
-import java.nio.ByteBuffer;
-
 /**
  * Class for helper functions
  */
