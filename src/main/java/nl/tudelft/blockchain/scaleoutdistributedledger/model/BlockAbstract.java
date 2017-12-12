@@ -16,8 +16,11 @@ public class BlockAbstract {
     @Getter
     private final int blockNumber;
 
-    @Getter
-    private final byte[] blockHash, signature;
+	@Getter
+	private final Sha256Hash blockHash;
+
+	@Getter
+	private final byte[] signature;
 
     @Setter
     private Optional<Boolean> onMainChain; // any means unknown
@@ -29,7 +32,7 @@ public class BlockAbstract {
      * @param blockHash - the hash of the block this abstract is for.
      * @param signature - the signature for the block by the owner.
      */
-    public BlockAbstract(Node owner, int blockNumber, byte[] blockHash, byte[] signature) {
+    public BlockAbstract(Node owner, int blockNumber, Sha256Hash blockHash, byte[] signature) {
         this.owner = owner;
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
@@ -67,4 +70,5 @@ public class BlockAbstract {
         // TODO: check if the signature is valid
         return true;
     }
+
 }
