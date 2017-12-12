@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -21,6 +22,8 @@ public class Transaction {
     @Getter
     private final Set<Transaction> source;
 
+    private OptionalInt blockNumber;
+
     /**
      * Constructor.
      * @param number - the number of this transaction.
@@ -37,5 +40,20 @@ public class Transaction {
         this.remainder = remainder;
         this.source = source;
         this.number = number;
+        blockNumber = OptionalInt.empty();
+    }
+
+    /**
+     * Returns the number of the block (if it is in a block).
+     * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)
+     * @return - optional that is empty if the transaction is not in a block, and filled with the number of the block otherwise.
+     */
+    public OptionalInt getBlockNumber() {
+        if (!this.blockNumber.isPresent()) {
+            for (Block block : sender.getChain().getBlocks()) {
+                if(block.getTransactions().contains(this)) this.blockNumber = OptionalInt.of(block.getNumber());
+            }
+        }
+        return this.blockNumber;
     }
 }
