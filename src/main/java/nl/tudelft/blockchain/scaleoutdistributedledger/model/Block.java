@@ -104,7 +104,7 @@ public class Block {
 		byte[] attrInBytes = outputStream.toByteArray();
 
 		// Sign the attributes
-		byte[] signature = RSAKey.sign(attrInBytes, this.owner.getPrivateKey());
+		byte[] signature = this.owner.sign(attrInBytes);
 		return new BlockAbstract(this.owner, this.number, this.getHash(), signature);
 	}
 	

@@ -22,6 +22,9 @@ public class BlockTest {
 	@Before
 	public void setUp() {
 		this.owner = new Node(24);
+		RSAKey keyPair = new RSAKey();
+		this.owner.setPrivateKey(keyPair.getPrivateKey());
+		this.owner.setPublicKey(keyPair.getPublicKey());
 		this.block = new Block(1234, owner, new ArrayList<>());
 	}
 	
@@ -50,15 +53,14 @@ public class BlockTest {
 	 */
 	@Test
 	public void testGetAbstract_Valid() {
-		RSAKey key = new RSAKey();
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			outputStream.write(Utils.intToByteArray(this.block.getOwner().getId()));
 			outputStream.write(Utils.intToByteArray(this.block.getNumber()));
 			outputStream.write(this.block.getHash().getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
-
-			assertTrue(key.verify(attrInBytes, this.block.getAbstract(key).getSignature()));
+			
+			assertTrue(this.block.getOwner().verify(attrInBytes, this.block.createBlockAbstract().getSignature()));
 		} catch (Exception ex) {
 			fail();
 		}
@@ -69,7 +71,6 @@ public class BlockTest {
 	 */
 	@Test
 	public void testGetAbstract_Invalid() {
-		RSAKey key = new RSAKey();
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			outputStream.write(Utils.intToByteArray(this.block.getOwner().getId() + 1));
@@ -77,7 +78,7 @@ public class BlockTest {
 			outputStream.write(this.block.getHash().getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
 
-			assertFalse(key.verify(attrInBytes, this.block.getAbstract(key).getSignature()));
+			assertFalse(this.block.getOwner().verify(attrInBytes, this.block.createBlockAbstract().getSignature()));
 		} catch (Exception ex) {
 			fail();
 		}

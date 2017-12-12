@@ -42,6 +42,16 @@ public class RSAKey {
 	}
 	
 	/**
+	 * Constructor
+	 * @param privateKey - RSA private key
+	 * @param publicKey - RSA public key
+	 */
+	public RSAKey(byte[] privateKey, byte[] publicKey) {
+		this.privateKey = privateKey;
+		this.publicKey = publicKey;
+	}
+	
+	/**
 	 * Generate a random RSA key pair
 	 * @return key pair of RSA keys
 	 * @throws java.security.NoSuchAlgorithmException 
