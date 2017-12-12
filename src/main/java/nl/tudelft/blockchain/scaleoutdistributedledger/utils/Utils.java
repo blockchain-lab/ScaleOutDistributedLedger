@@ -1,13 +1,17 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 
 /**
- * Class for helper functions
+ * Class for helper functions.
  */
 public class Utils {
+
+	private Utils() {
+		throw new UnsupportedOperationException();
+	}
 	
 	/**
-	 * Convert a integer into a byte array
-	 * @param number
+	 * Convert a integer into a byte array.
+	 * @param number - the number to convert
 	 * @return byte array
 	 */
 	public static byte[] intToByteArray(int number) {
@@ -20,8 +24,8 @@ public class Utils {
 	}
 	
 	/**
-	 * Convert a long into a byte array
-	 * @param number
+	 * Convert a long into a byte array.
+	 * @param number - the number to convert
 	 * @return byte array
 	 */
 	public static byte[] longToByteArray(long number) {
@@ -38,7 +42,7 @@ public class Utils {
 	}
 	
 	/**
-	 * Converts a byte array into a hexadecimal string
+	 * Converts a byte array into a hexadecimal string.
 	 * @param bytes - array of bytes to be converted
 	 * @return hexadecimal string
 	 */

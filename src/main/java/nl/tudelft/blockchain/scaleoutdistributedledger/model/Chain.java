@@ -10,28 +10,28 @@ import java.util.List;
  */
 public class Chain {
 
-    @Getter
-    private final Node owner;
+	@Getter
+	private final Node owner;
 
-    @Getter
-    private final List<Block> blocks;
+	@Getter
+	private final List<Block> blocks;
 
-    /**
-     * Constructor.
-     * @param owner - the owner of this chain.
-     */
-    public Chain(Node owner) {
-        this.owner = owner;
-        this.blocks = new ArrayList<>();
-    }
+	/**
+	 * Constructor.
+	 * @param owner - the owner of this chain.
+	 */
+	public Chain(Node owner) {
+		this.owner = owner;
+		this.blocks = new ArrayList<>();
+	}
 
-    /**
-     * Constructor.
-     * @param owner - the owner of this chain.
-     * @param blocks - list of blocks in this chain.
-     */
-    public Chain(Node owner, List<Block> blocks) {
-        this.owner = owner;
-        this.blocks = blocks;
-    }
+	/**
+	 * Constructor.
+	 * @param owner - the owner of this chain.
+	 * @param blocks - list of blocks in this chain.
+	 */
+	public Chain(Node owner, List<Block> blocks) {
+		this.owner = owner;
+		this.blocks = blocks;
+	}
 }
