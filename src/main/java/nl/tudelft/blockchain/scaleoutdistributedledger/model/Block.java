@@ -8,6 +8,7 @@ import lombok.Getter;
 import java.util.List;
 import java.util.logging.Level;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import java.util.Optional;
 
 /**
  * Block class.
@@ -28,6 +29,9 @@ public class Block {
 
 	// Custom getter
 	private Sha256Hash hash;
+	
+	// Custom getter
+    private BlockAbstract blockAbstract;
 
     /**
      * Constructor.
@@ -66,7 +70,44 @@ public class Block {
 		}
 		return this.hash;
 	}
+	
+	public BlockAbstract getBlockAbstract() {
+		// TODO: get from Tendermint
+		// TODO: verify abstract?
+		return null;
+	}
+	
+    /**
+     * Returns the abstract of this block, and generates it if it is not present.
+     * @return - the abstract of this block.
+	 * @throws Exception - something went wrong while signing the block
+     */
+    public BlockAbstract createBlockAbstract() throws Exception {
+        if (this.blockAbstract == null) {
+			this.blockAbstract = this.calculateBlockAbstract();
+        }
+        return this.blockAbstract;
+    }
 
+	/**
+	 * Calculate the abstract of the block
+	 * @return abstract of the block
+	 * @throws Exception - something went wrong while signing the block
+	 */
+	private BlockAbstract calculateBlockAbstract() throws Exception {
+		// Convert attributes of abstract into an array of bytes, for the signature
+		// Important to keep the order of writings
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		outputStream.write(Utils.intToByteArray(this.owner.getId()));
+		outputStream.write(Utils.intToByteArray(this.number));
+		outputStream.write(this.getHash().getBytes());
+		byte[] attrInBytes = outputStream.toByteArray();
+
+		// Sign the attributes
+		byte[] signature = RSAKey.sign(attrInBytes, this.owner.getPrivateKey());
+		return new BlockAbstract(this.owner, this.number, this.getHash(), signature);
+	}
+	
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -116,25 +157,6 @@ public class Block {
 		byte[] blockInBytes = outputStream.toByteArray();
 		
 		return new Sha256Hash(blockInBytes);
-	}
-	
-	/**
-	 * Create the abstract of the block
-	 * @return abstract - abstract of the block
-	 * @throws java.lang.Exception - something went wrong while signing the block
-	 */
-	public BlockAbstract createAbstract() throws Exception {
-		// Convert attributes of abstract into an array of bytes, for the signature
-		// Important to keep the order of writings
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		outputStream.write(Utils.intToByteArray(this.owner.getId()));
-		outputStream.write(Utils.intToByteArray(this.number));
-		outputStream.write(this.getHash().getBytes());
-		byte[] attrInBytes = outputStream.toByteArray();
-		
-		// Sign the attributes
-		byte[] signature = RSAKey.sign(attrInBytes, this.owner.getPrivateKey());
-		return new BlockAbstract(this.owner, this.number, this.getHash(), signature);
 	}
 
 }

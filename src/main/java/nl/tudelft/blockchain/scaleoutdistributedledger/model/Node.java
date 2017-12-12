@@ -49,4 +49,20 @@ public class Node {
         this.address = address;
         this.chain = new Chain(this);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Node node = (Node) o;
+
+        return id == node.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+	
 }

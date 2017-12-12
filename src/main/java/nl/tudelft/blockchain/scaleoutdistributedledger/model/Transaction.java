@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import lombok.Getter;
 
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
@@ -28,6 +29,9 @@ public class Transaction {
 
 	// Custem getter
 	private Sha256Hash hash;
+	
+	// Custom getter
+    private OptionalInt blockNumber;
 
     /**
      * Constructor.
@@ -45,8 +49,27 @@ public class Transaction {
         this.remainder = remainder;
         this.source = source;
         this.number = number;
+        blockNumber = OptionalInt.empty();
     }
 
+    /**
+     * Returns the number of the block (if it is in a block).
+     * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)
+     * @return - optional that is empty if the transaction is not in a block, and filled with the number of the block otherwise.
+     */
+    public OptionalInt getBlockNumber() {
+        if (!this.blockNumber.isPresent()) {
+            for (Block block : sender.getChain().getBlocks()) {
+                if(block.getTransactions().contains(this)) this.blockNumber = OptionalInt.of(block.getNumber());
+            }
+        }
+        return this.blockNumber;
+    }
+
+	/**
+	 * Get hash of the transaction
+	 * @return Hash SHA256
+	 */
 	public Sha256Hash getHash() {
 		if (this.hash == null) {
 			this.hash = this.calculateHash();
