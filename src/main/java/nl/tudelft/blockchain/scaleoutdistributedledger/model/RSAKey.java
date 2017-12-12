@@ -137,9 +137,9 @@ public class RSAKey {
 	public static byte[] sign(byte[] message, byte[] privateKey) throws Exception {
 		PrivateKey privateKeyObject = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKey));
 		Signature privateSignature = Signature.getInstance("SHA256withRSA");
-        privateSignature.initSign(privateKeyObject);
-        privateSignature.update(message);
-        return privateSignature.sign();
+		privateSignature.initSign(privateKeyObject);
+		privateSignature.update(message);
+		return privateSignature.sign();
 	}
 	
 	/**
@@ -191,6 +191,6 @@ public class RSAKey {
 			stringBuffer.append(Integer.toHexString(0x0100 + (keyBytes[i] & 0x00FF)).substring(1));
 		}
 		return stringBuffer.toString();
-	} 
+	}
 	
 }
