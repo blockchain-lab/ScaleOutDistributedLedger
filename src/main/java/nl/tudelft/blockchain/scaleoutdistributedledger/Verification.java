@@ -48,7 +48,7 @@ public final class Verification {
 	 */
 	private static TransactionValidation validate(Transaction transaction, Proof proof) {
 		//Verify the proof
-		if (!verify(proof)) return UNKNOWN;
+		if (!proof.verify()) return UNKNOWN;
 		
 		//Equality check: Check if the counts match up
 		long expectedSum = transaction.getAmount() + transaction.getRemainder();
@@ -92,20 +92,6 @@ public final class Verification {
 		}
 		
 		return VALID;
-	}
-	
-	/**
-	 * Algorithm 2.
-	 * 
-	 * @param proof
-	 * 		the proof to verify
-	 * 
-	 * @return
-	 * 		true if the proof is valid, false otherwise
-	 */
-	public static boolean verify(Proof proof) {
-		//TODO Algorithm 2
-		return true;
 	}
 	
 	/**
