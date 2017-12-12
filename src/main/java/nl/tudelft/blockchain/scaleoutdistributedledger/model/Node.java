@@ -50,6 +50,10 @@ public class Node {
 		this.chain = new Chain(this);
 	}
 
+	public byte[] sign(byte[] message) throws Exception {
+		return RSAKey.sign(message, this.privateKey);
+	}
+
 	@Override
 	public int hashCode() {
 		return this.id;

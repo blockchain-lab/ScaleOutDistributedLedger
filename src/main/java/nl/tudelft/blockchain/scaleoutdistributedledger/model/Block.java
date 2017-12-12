@@ -78,7 +78,7 @@ public class Block {
 	public boolean checkHash() {
 		if (this.hash == null) return false;
 		try {
-			return this.getHash().equals(this.calculateBlockAbstract());
+			return this.getHash().equals(this.calculateHash());
 		} catch (Exception e) {
 			return false;
 		}
