@@ -60,7 +60,7 @@ public class Proof {
 				seen = true;
 			}
 
-			if(block.getNumber() > 0 && !block.checkHash()) return false;
+			// TODO: check if previousBlockHash is correct, might want to do this in chainview or when receiving messages
 			BlockAbstract blockAbstract = block.getBlockAbstract();
 			if (blockAbstract != null && blockAbstract.isOnMainChain()) {
 				absmark = blockAbstract.getBlockNumber();

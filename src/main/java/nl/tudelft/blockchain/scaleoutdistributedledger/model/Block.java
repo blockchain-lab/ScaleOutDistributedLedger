@@ -72,19 +72,6 @@ public class Block {
 	}
 
 	/**
-	 * Checks if a hash is included in the block and if it is correct.
-	 * @return - whether the hash is present and correct.
-	 */
-	public boolean checkHash() {
-		if (this.hash == null) return false;
-		try {
-			return this.getHash().equals(this.calculateHash());
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	/**
 	 * Gets the blockAbstract if available.
 	 * If the owner of this block is not ourselves, this method will try to retrieve the abstract from the main chain.
 	 * Otherwise, this method will create an abstract and return it.
