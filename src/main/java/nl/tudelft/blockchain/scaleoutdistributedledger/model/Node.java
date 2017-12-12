@@ -18,6 +18,13 @@ public class Node {
     @Getter @Setter
     private byte[] publicKey;
 
+	/**
+	 * Only used by the node himself
+	 * @return private key
+	 */
+	@Getter @Setter
+	private transient byte[] privateKey;
+	
     @Getter @Setter
     private String address;
 
