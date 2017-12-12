@@ -42,7 +42,7 @@ public class Node {
         this.address = address;
         this.chain = new Chain(this);
     }
-    
+
     @Override
     public int hashCode() {
     	return this.id;
