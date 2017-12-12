@@ -4,7 +4,6 @@ import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.OptionalInt;
 
 /**
@@ -55,9 +54,7 @@ public class Proof {
         ChainView chainView = new ChainView(transaction.getSender().getChain(), chainUpdates.get(transaction.getSender()));
         if (!chainView.isValid()) return false;
 
-        ListIterator<Block> iterator = chainView.listIterator();
-        while(iterator.hasNext()) {
-            Block block = iterator.next();
+        for (Block block : chainView) {
             if (block.getTransactions().contains(transaction)) {
                 if (seen) return false;
                 seen = true;
