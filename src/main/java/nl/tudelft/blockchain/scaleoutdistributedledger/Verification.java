@@ -91,7 +91,7 @@ public final class Verification {
 			TransactionValidation cached = validationCache.get(txj);
 			if (cached == null) {
 				//We didn't see this transaction before, so we need to validate it.
-				if (!isValid(txj, getProof(txj, proof))) return UNKNOWN;
+				if (!isValid(txj, proof)) return UNKNOWN;
 			} else if (cached == UNKNOWN) {
 				//We already invalidated this transaction
 				return UNKNOWN;
@@ -116,20 +116,6 @@ public final class Verification {
 	public static boolean verify(Proof proof) {
 		//TODO Algorithm 2
 		return true;
-	}
-	
-	/**
-	 * @param transaction
-	 * 		the transaction to get the proof for
-	 * @param proof
-	 * 		the proof of a parent transaction
-	 * 
-	 * @return
-	 * 		the proof of the given transaction
-	 */
-	public static Proof getProof(Transaction transaction, Proof proof) {
-		//TODO IMPORTANT
-		throw new UnsupportedOperationException("This feature is not yet implemented");
 	}
 	
 	/**
