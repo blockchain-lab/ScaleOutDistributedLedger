@@ -85,7 +85,10 @@ public class Block {
 	}
 
 	/**
-	 * Gets the blockAbstract if available (if necessary from mainchain)
+	 * Gets the blockAbstract if available.
+	 * If the owner of this block is not ourselves, this method will try to retrieve the abstract from the main chain.
+	 * Otherwise, this method will create an abstract and return it.
+	 * Caching is used to prevent unnecessary retrievals and duplicate creations.
 	 * @return - the blockabstract, or null if it is not available
 	 */
 	public BlockAbstract getBlockAbstract() {
