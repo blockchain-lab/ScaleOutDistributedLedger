@@ -85,12 +85,20 @@ public class Block {
 	}
 
 	/**
-	 * Gets the blockAbstract if available.
+	 * Gets the blockAbstract if available (if necessary from mainchain)
 	 * @return - the blockabstract, or null if it is not available
 	 */
 	public BlockAbstract getBlockAbstract() {
 		if (this.hasAbstract == null) {
-			// TODO: create abstract if we are the owner
+			// TODO: change to more legit check if we own this block
+			if (this.owner.getPrivateKey() != null) {
+				try {
+					this.blockAbstract = this.calculateBlockAbstract();
+					return this.blockAbstract;
+				} catch (Exception e) {
+					return null;
+				}
+			}
 			// TODO: get from Tendermint (and verify)
 		} else if (!this.hasAbstract) return null;
 		return this.blockAbstract;

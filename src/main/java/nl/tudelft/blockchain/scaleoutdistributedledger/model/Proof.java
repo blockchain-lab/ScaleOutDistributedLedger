@@ -62,7 +62,7 @@ public class Proof {
 
 			if(block.getNumber() > 0 && !block.checkHash()) return false;
 			BlockAbstract blockAbstract = block.getBlockAbstract();
-			if (blockAbstract.isOnMainChain()) {
+			if (blockAbstract != null && blockAbstract.isOnMainChain()) {
 				absmark = blockAbstract.getBlockNumber();
 				if (!blockAbstract.checkBlockHash(block) || !blockAbstract.checkSignature()) return false;
 			}
