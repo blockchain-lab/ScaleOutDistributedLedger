@@ -24,13 +24,9 @@ public final class Verification {
 	/**
 	 * Implementation of algorithm 1 in the paper.
 	 * 
-	 * @param transaction
-	 * 		the transaction to validate
-	 * @param proof
-	 * 		the proof to validate with
-	 * 
-	 * @return
-	 * 		true if the transaction is valid, false otherwise
+	 * @param transaction - the transaction to validate
+	 * @param proof       - the proof to validate with
+	 * @return              true if the transaction is valid, false otherwise
 	 */
 	public static boolean isValid(Transaction transaction, Proof proof) {
 		TransactionValidation valid = validate(transaction, proof);
@@ -46,13 +42,9 @@ public final class Verification {
 	}
 	
 	/**
-	 * @param transaction
-	 * 		the transaction to validate
-	 * @param proof
-	 * 		the proof to validate with
-	 * 
-	 * @return
-	 * 		VALID if the transaction is valid, UNKNOWN otherwise
+	 * @param transaction - the transaction to validate
+	 * @param proof       - the proof to validate with
+	 * @return              VALID if the transaction is valid, UNKNOWN otherwise
 	 */
 	private static TransactionValidation validate(Transaction transaction, Proof proof) {
 		//Verify the proof
@@ -73,7 +65,6 @@ public final class Verification {
 		for (Block block : chain.getBlocks()) {
 			boolean found = false;
 			for (Transaction txj : block.getTransactions()) {
-				//TODO Possible optimization point, use faster equality check
 				if (transaction.equals(txj)) {
 					found = true;
 					continue;
@@ -82,7 +73,6 @@ public final class Verification {
 				if (!intersectEmpty(transaction.getSource(), txj.getSource())) return UNKNOWN;
 			}
 			
-			//TODO IMPORTANT We might have to remove the found check. I'm not sure if we should stop at k.
 			if (found) break;
 		}
 		
@@ -124,13 +114,9 @@ public final class Verification {
 	 * This method has O(m*c) performance, where {@code m = max(|A|, |B|)} and
 	 * {@code c} is the performance of the contains operation ({@code O(1)} for a HashSet).
 	 * 
-	 * @param setA
-	 * 		the first set
-	 * @param setB
-	 * 		the second set
-	 * 
-	 * @return
-	 * 		true if the intersection is empty, false otherwise
+	 * @param setA - the first set
+	 * @param setB - the second set
+	 * @return       true if the intersection is empty, false otherwise
 	 */
 	private static <T> boolean intersectEmpty(Set<T> setA, Set<T> setB) {
 		//Loop over the smallest set. Contains in hash sets is O(1).
