@@ -51,28 +51,14 @@ public class Node {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-
-		Node node = (Node) o;
-
-		return id == node.id;
+	public int hashCode() {
+		return this.id;
 	}
 
 	@Override
-	public int hashCode() {
-		return id;
-	}
-	
-	/**
-	 * Sign the signature of a message.
-	 * @param message - message to be signed
-	 * @return - the signature
-	 * @throws java.lang.Exception - exception while signing
-	 */
-	public byte[] sign(byte[] message) throws Exception {
-		return RSAKey.sign(message, this.privateKey);
+	public boolean equals(Object obj) {
+		//We only have one Node object for each id, so we can compare with ==
+		return obj == this;
 	}
 	
 	/**
