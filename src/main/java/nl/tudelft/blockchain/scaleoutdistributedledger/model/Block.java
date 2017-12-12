@@ -56,6 +56,10 @@ public class Block {
         this.transactions = transactions;
     }
 
+	/**
+	 * Get hash of the block
+	 * @return Hash SHA256
+	 */
 	public synchronized Sha256Hash getHash() {
 		if (this.hash == null) {
 			this.hash = this.calculateHash();
@@ -115,12 +119,11 @@ public class Block {
 	}
 	
 	/**
-	 * Get the abstract of the block
-	 * @param privateKey - private RSA key
+	 * Create the abstract of the block
 	 * @return abstract - abstract of the block
 	 * @throws java.lang.Exception - something went wrong while signing the block
 	 */
-	public BlockAbstract getAbstract(byte[] privateKey) throws Exception {
+	public BlockAbstract createAbstract() throws Exception {
 		// Convert attributes of abstract into an array of bytes, for the signature
 		// Important to keep the order of writings
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -130,18 +133,8 @@ public class Block {
 		byte[] attrInBytes = outputStream.toByteArray();
 		
 		// Sign the attributes
-		byte[] signature = RSAKey.sign(attrInBytes, privateKey);
+		byte[] signature = RSAKey.sign(attrInBytes, this.owner.getPrivateKey());
 		return new BlockAbstract(this.owner, this.number, this.getHash(), signature);
-	}
-	
-	/**
-	 * Get the abstract of the block
-	 * @param rsaKey - RSA key pair
-	 * @return abstract - abstract of the block
-	 * @throws java.lang.Exception - something went wrong while signing the block
-	 */
-	public BlockAbstract getAbstract(RSAKey rsaKey) throws Exception {
-		return this.getAbstract(rsaKey.getPrivateKey());
 	}
 
 }
