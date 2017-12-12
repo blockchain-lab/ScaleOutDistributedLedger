@@ -18,6 +18,13 @@ public class Node {
     @Getter @Setter
     private byte[] publicKey;
 
+	/**
+	 * Only used by the node himself
+	 * @return private key
+	 */
+	@Getter @Setter
+	private transient byte[] privateKey;
+	
     @Getter @Setter
     private String address;
 
@@ -57,4 +64,26 @@ public class Node {
     public int hashCode() {
         return id;
     }
+	
+	/**
+	 * Sign the signature of a message
+	 * @param message - message to be signed
+	 * @return check it the signature is correct
+	 * @throws java.lang.Exception
+	 */
+	public byte[] sign(byte[] message) throws Exception {
+		return RSAKey.sign(message, this.privateKey);
+	}
+	
+	/**
+	 * Verify the signature of a message made by this node
+	 * @param message - message to be verified
+	 * @param signature - signature of the message
+	 * @return check it the signature is correct
+	 * @throws java.lang.Exception
+	 */
+	public boolean verify(byte[] message, byte[] signature) throws Exception {
+		return RSAKey.verify(message, signature, this.publicKey);
+	}
+	
 }
