@@ -3,8 +3,11 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 /**
  * Class for helper functions.
  */
-public class Utils {
-
+public final class Utils {
+	private static final char[] HEX = {
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+	};
+	
 	private Utils() {
 		throw new UnsupportedOperationException();
 	}
@@ -49,13 +52,9 @@ public class Utils {
 	public static String bytesToHexString(byte[] bytes) {
 		StringBuilder buffer = new StringBuilder(bytes.length * 2);
 		for (byte b : bytes) {
-			String s = Integer.toHexString(0xFF & b);
-			if (s.length() == 1) {
-				buffer.append('0');
-			}
-			buffer.append(s);
+			buffer.append(HEX[(b >> 4) & 0xF]);
+			buffer.append(HEX[b & 0xF]);
 		}
 		return buffer.toString();
 	}
-	
 }
