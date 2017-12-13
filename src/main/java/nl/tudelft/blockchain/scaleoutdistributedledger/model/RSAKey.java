@@ -165,9 +165,8 @@ public class RSAKey {
 	
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof RSAKey)) {
-			return false;
-		}
+		if (other == this) return true;
+		if (!(other instanceof RSAKey)) return false;
 		return Arrays.equals(this.publicKey, ((RSAKey) other).publicKey)
 				&& Arrays.equals(this.privateKey, ((RSAKey) other).privateKey);
 	}
@@ -182,11 +181,10 @@ public class RSAKey {
 	
 	@Override
 	public String toString() {
-		StringBuilder stringBuffer = new StringBuilder();
+		StringBuilder stringBuffer = new StringBuilder(32 + this.publicKey.length * 2 + this.privateKey.length * 2);
 		stringBuffer.append("Public Key: \n")
 			.append(keyToString(this.publicKey))
-			.append("\n")
-			.append("Private Key: \n")
+			.append("\nPrivate Key: \n")
 			.append(keyToString(this.privateKey));
 		return stringBuffer.toString();
 	}
