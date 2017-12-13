@@ -34,4 +34,24 @@ public class Chain {
 		this.owner = owner;
 		this.blocks = blocks;
 	}
+	
+	/**
+	 * Updates this chain with the given updates.
+	 * @param updates - the new blocks to append
+	 */
+	public void update(List<Block> updates) {
+		if (updates.isEmpty()) return;
+		
+		if (blocks.isEmpty()) {
+			blocks.addAll(updates);
+		} else {
+			Block lastBlock = blocks.get(blocks.size() - 1);
+			int nextNr = lastBlock.getNumber() + 1;
+			for (Block block : updates) {
+				if (block.getNumber() != nextNr) continue;
+				blocks.add(block);
+				nextNr++;
+			}
+		}
+	}
 }
