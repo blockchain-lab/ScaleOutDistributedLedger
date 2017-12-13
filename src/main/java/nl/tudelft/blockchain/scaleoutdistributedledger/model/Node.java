@@ -1,6 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -50,6 +49,11 @@ public class Node {
 		this.chain = new Chain(this);
 	}
 
+	/**
+	 * @param message - the message to sign
+	 * @return - the signed message
+	 * @throws Exception - See {@link RSAKey#sign(byte[], byte[])}
+	 */
 	public byte[] sign(byte[] message) throws Exception {
 		return RSAKey.sign(message, this.privateKey);
 	}
@@ -70,7 +74,7 @@ public class Node {
 	 * @param message - message to be verified
 	 * @param signature - signature of the message
 	 * @return - the signature
-	 * @throws java.lang.Exception - exception while signing
+	 * @throws Exception - See {@link RSAKey#verify(byte[], byte[], byte[])}
 	 */
 	public boolean verify(byte[] message, byte[] signature) throws Exception {
 		return RSAKey.verify(message, signature, this.publicKey);

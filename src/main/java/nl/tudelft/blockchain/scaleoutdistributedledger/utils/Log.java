@@ -6,7 +6,10 @@ import java.util.logging.Logger;
 /**
  * Class for logging functions.
  */
-public class Log {
+public final class Log {
+	private Log() {
+		throw new UnsupportedOperationException();
+	}
 	
 	/**
 	 * Handle logging of an exception.
