@@ -31,7 +31,7 @@ public class Proof {
 	 * @param block - the block to be added
 	 */
 	public void addBlock(Block block) {
-		chainUpdates.get(block.getOwner().getId()).add(block);
+		chainUpdates.get(block.getOwner()).add(block);
 	}
 
 	/**

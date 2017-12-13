@@ -14,13 +14,14 @@ import java.util.logging.Level;
 import javax.crypto.Cipher;
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 /**
- * Class to wrap a RSA key pair + Utils to handle RSA keys
+ * Class to wrap a RSA key pair + Utils to handle RSA keys.
  */
 public class RSAKey {
 	
-	public static int KEY_LENGTH = 1024;
+	public static final int KEY_LENGTH = 1024;
 	
 	@Getter
 	private byte[] privateKey;
@@ -164,9 +165,8 @@ public class RSAKey {
 	
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof RSAKey)) {
-			return false;
-		}
+		if (other == this) return true;
+		if (!(other instanceof RSAKey)) return false;
 		return Arrays.equals(this.publicKey, ((RSAKey) other).publicKey)
 				&& Arrays.equals(this.privateKey, ((RSAKey) other).privateKey);
 	}
@@ -181,11 +181,10 @@ public class RSAKey {
 	
 	@Override
 	public String toString() {
-		StringBuilder stringBuffer = new StringBuilder();
+		StringBuilder stringBuffer = new StringBuilder(32 + this.publicKey.length * 2 + this.privateKey.length * 2);
 		stringBuffer.append("Public Key: \n")
 			.append(keyToString(this.publicKey))
-			.append("\n")
-			.append("Private Key: \n")
+			.append("\nPrivate Key: \n")
 			.append(keyToString(this.privateKey));
 		return stringBuffer.toString();
 	}
@@ -196,11 +195,7 @@ public class RSAKey {
 	 * @return string - hexadecimal representation of the key
 	 */
 	public static String keyToString(byte[] keyBytes) {
-		StringBuilder stringBuffer = new StringBuilder();
-		for (byte keyByte : keyBytes) {
-			stringBuffer.append(Integer.toHexString(0x0100 + (keyByte & 0x00FF)).substring(1));
-		}
-		return stringBuffer.toString();
+		return Utils.bytesToHexString(keyBytes);
 	}
 	
 }

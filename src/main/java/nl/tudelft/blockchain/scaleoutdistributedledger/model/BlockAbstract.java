@@ -5,7 +5,6 @@ import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Optional;
 
 /**
