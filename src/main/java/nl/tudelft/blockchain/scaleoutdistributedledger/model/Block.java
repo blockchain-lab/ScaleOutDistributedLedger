@@ -30,8 +30,8 @@ public class Block {
 	private Sha256Hash hash;
 
 	// Custom getter
-	private BlockAbstract blockAbstract;
-	private Boolean hasAbstract;
+	private transient BlockAbstract blockAbstract;
+	private transient Boolean hasAbstract;
 
 	/**
 	 * Constructor.
