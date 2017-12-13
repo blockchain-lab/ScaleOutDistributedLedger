@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 
@@ -16,7 +17,7 @@ public class Proof {
 	private final Transaction transaction;
 
 	@Getter
-	private final HashMap<Node, List<Block>> chainUpdates;
+	private final Map<Node, List<Block>> chainUpdates;
 
 	/**
 	 * Constructor.
@@ -25,6 +26,16 @@ public class Proof {
 	public Proof(Transaction transaction) {
 		this.transaction = transaction;
 		this.chainUpdates = new HashMap<>();
+	}
+	
+	/**
+	 * Constructor.
+	 * @param transaction  - the transaction to be proven.
+	 * @param chainUpdates - a map of chain updates
+	 */
+	public Proof(Transaction transaction, Map<Node, List<Block>> chainUpdates) {
+		this.transaction = transaction;
+		this.chainUpdates = chainUpdates;
 	}
 
 	/**

@@ -4,6 +4,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.OptionalInt;
 import java.util.Set;
@@ -32,6 +33,9 @@ public class Transaction {
 	
 	// Custom getter
 	private OptionalInt blockNumber;
+	
+	@Getter @Setter
+	private boolean unspent;
 
 	/**
 	 * Constructor.
