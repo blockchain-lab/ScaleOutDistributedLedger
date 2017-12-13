@@ -14,12 +14,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 /**
  * Verification and validation algorithms.
  */
-public final class Verification {
-	private static HashMap<Transaction, TransactionValidation> validationCache = new HashMap<>();
-	
-	private Verification() {
-		throw new UnsupportedOperationException();
-	}
+public class Verification {
+	private HashMap<Transaction, TransactionValidation> validationCache = new HashMap<>();
 
 	/**
 	 * Implementation of algorithm 1 in the paper.
@@ -28,7 +24,7 @@ public final class Verification {
 	 * @param proof       - the proof to validate with
 	 * @return              true if the transaction is valid, false otherwise
 	 */
-	public static boolean isValid(Transaction transaction, Proof proof) {
+	public boolean isValid(Transaction transaction, Proof proof) {
 		TransactionValidation valid = validate(transaction, proof);
 		
 		//Store in the cache
@@ -42,11 +38,19 @@ public final class Verification {
 	}
 	
 	/**
+	 * @param transaction - the transaction
+	 * @return              if the transaction is cached
+	 */
+	public boolean isCached(Transaction transaction) {
+		return validationCache.containsKey(transaction);
+	}
+	
+	/**
 	 * @param transaction - the transaction to validate
 	 * @param proof       - the proof to validate with
 	 * @return              VALID if the transaction is valid, UNKNOWN otherwise
 	 */
-	private static TransactionValidation validate(Transaction transaction, Proof proof) {
+	private TransactionValidation validate(Transaction transaction, Proof proof) {
 		//Verify the proof
 		if (!proof.verify()) return UNKNOWN;
 		
