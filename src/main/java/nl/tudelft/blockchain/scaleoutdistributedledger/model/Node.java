@@ -9,74 +9,68 @@ import lombok.Setter;
  */
 public class Node {
 
-    @Getter
-    private final int id;
+	@Getter
+	private final int id;
 
-    @Getter
-    private final Chain chain;
+	@Getter
+	private final Chain chain;
 
-    @Getter @Setter
-    private byte[] publicKey;
+	@Getter @Setter
+	private byte[] publicKey;
 
 	/**
-	 * Only used by the node himself
+	 * Only used by the node himself.
 	 * @return private key
 	 */
 	@Getter @Setter
 	private transient byte[] privateKey;
 	
-    @Getter @Setter
-    private String address;
+	@Getter @Setter
+	private String address;
 
-    /**
-     * Constructor.
-     * @param id - the id of this node.
-     */
-    public Node(int id) {
-        this.id = id;
-        this.chain = new Chain(this);
-    }
-
-    /**
-     * Constructor.
-     * @param id - the id of this node.
-     * @param publicKey - the public key of this node.
-     * @param address - the address of this node.
-     */
-    public Node(int id, byte[] publicKey, String address) {
-        this.id = id;
-        this.publicKey = publicKey;
-        this.address = address;
-        this.chain = new Chain(this);
-    }
-
-    @Override
-    public int hashCode() {
-    	return this.id;
-    }
-    
-    @Override
-    public boolean equals(Object obj) {
-    	//We only have one Node object for each id, so we can compare with ==
-    	return obj == this;
-    }
-	
 	/**
-	 * Sign the signature of a message
-	 * @param message - message to be signed
-	 * @return check it the signature is correct
-	 * @throws java.lang.Exception
+	 * Constructor.
+	 * @param id - the id of this node.
 	 */
+	public Node(int id) {
+		this.id = id;
+		this.chain = new Chain(this);
+	}
+
+	/**
+	 * Constructor.
+	 * @param id - the id of this node.
+	 * @param publicKey - the public key of this node.
+	 * @param address - the address of this node.
+	 */
+	public Node(int id, byte[] publicKey, String address) {
+		this.id = id;
+		this.publicKey = publicKey;
+		this.address = address;
+		this.chain = new Chain(this);
+	}
+
 	public byte[] sign(byte[] message) throws Exception {
 		return RSAKey.sign(message, this.privateKey);
 	}
+
+	@Override
+	public int hashCode() {
+		return this.id;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		//We only have one Node object for each id, so we can compare with ==
+		return obj == this;
+	}
 	
 	/**
-	 * Verify the signature of a message made by this node
+	 * Verify the signature of a message made by this node.
 	 * @param message - message to be verified
 	 * @param signature - signature of the message
-	 * @return check it the signature is correct
-	 * @throws java.lang.Exception
+	 * @return - the signature
+	 * @throws java.lang.Exception - exception while signing
 	 */
 	public boolean verify(byte[] message, byte[] signature) throws Exception {
 		return RSAKey.verify(message, signature, this.publicKey);
