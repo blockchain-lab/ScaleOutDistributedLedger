@@ -23,6 +23,15 @@ public final class Log {
 	}
 	
 	/**
+	 * Logs the given message.
+	 * @param level - level to log at
+	 * @param str   - message to log
+	 */
+	public static void log(Level level, String str) {
+		Logger.getLogger(getCallerClassName()).log(level, str);
+	}
+	
+	/**
 	 * Get the name of the last class that added to the stack.
 	 * @return class name
 	 */
