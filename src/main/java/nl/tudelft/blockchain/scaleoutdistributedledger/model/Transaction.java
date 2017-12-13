@@ -60,7 +60,10 @@ public class Transaction {
 	public OptionalInt getBlockNumber() {
 		if (!this.blockNumber.isPresent()) {
 			for (Block block : sender.getChain().getBlocks()) {
-				if (block.getTransactions().contains(this)) this.blockNumber = OptionalInt.of(block.getNumber());
+				if (block.getTransactions().contains(this)) {
+					this.blockNumber = OptionalInt.of(block.getNumber());
+					return this.blockNumber;
+				}
 			}
 		}
 		return this.blockNumber;
