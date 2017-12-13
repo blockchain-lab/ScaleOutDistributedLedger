@@ -57,4 +57,13 @@ public final class Utils {
 		}
 		return buffer.toString();
 	}
+	
+	/**
+	 * Converts a hexadecimal String to a byte array.
+	 * @param hex - the hexadecimal string
+	 * @return      the byte array
+	 */
+	public static byte[] hexStringToBytes(String hex) {
+		return javax.xml.bind.DatatypeConverter.parseHexBinary(hex);
+	}
 }
