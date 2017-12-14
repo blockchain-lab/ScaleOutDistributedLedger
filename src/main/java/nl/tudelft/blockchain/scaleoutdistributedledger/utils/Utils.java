@@ -57,4 +57,40 @@ public final class Utils {
 		}
 		return buffer.toString();
 	}
+	
+	/**
+	 * Converts a hexadecimal String to a byte array.
+	 * @param hex - the hexadecimal string
+	 * @return      the byte array
+	 */
+	public static byte[] hexStringToBytes(String hex) {
+		int strLen = hex.length();
+		if (strLen % 2 != 0) throw new IllegalArgumentException("Length must be even!");
+
+		byte[] bytes = new byte[strLen / 2];
+		for (int i = 0; i < strLen; i += 2) {
+			int high = hexToBin(hex.charAt(i));
+			int low  = hexToBin(hex.charAt(i + 1));
+			bytes[i / 2] = (byte) ((high << 4) + low);
+		}
+
+		return bytes;
+	}
+
+	/**
+	 * @param ch - the hex character to convert
+	 * @return     the binary value of the given hex character
+	 */
+	private static int hexToBin(char ch) {
+		if ('0' <= ch && ch <= '9') {
+			return ch - '0';
+		}
+		if ('A' <= ch && ch <= 'F') {
+			return ch - 'A' + 10;
+		}
+		if ('a' <= ch && ch <= 'f') {
+			return ch - 'a' + 10;
+		}
+		throw new IllegalArgumentException("'" + ch + "' is not a hexadecimal character!");
+	}
 }

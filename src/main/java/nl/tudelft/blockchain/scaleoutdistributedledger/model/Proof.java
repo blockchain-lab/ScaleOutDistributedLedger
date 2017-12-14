@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.OptionalInt;
 
 /**
@@ -76,5 +77,16 @@ public class Proof {
 			if (!verify(sourceTransaction)) return false;
 		}
 		return true;
+	}
+	
+	/**
+	 * Applies the updates in this proof.
+	 */
+	public void applyUpdates() {
+		for (Entry<Node, List<Block>> entry : chainUpdates.entrySet()) {
+			Node node = entry.getKey();
+			List<Block> updates = entry.getValue();
+			node.getChain().update(updates);
+		}
 	}
 }
