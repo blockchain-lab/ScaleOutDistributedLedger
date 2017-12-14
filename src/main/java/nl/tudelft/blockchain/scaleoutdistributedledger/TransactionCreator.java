@@ -199,6 +199,7 @@ public class TransactionCreator {
 	 * @return the chains that are required for the given transaction
 	 */
 	public BitSet chainsRequired(Transaction transaction) {
+		//TODO Verify that this collection of chains is correct.
 		Set<Chain> chains = new HashSet<>();
 		Proof.appendChains(transaction, to, chains);
 		BitSet bitset = chains.stream()
