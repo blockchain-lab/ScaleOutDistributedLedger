@@ -3,15 +3,15 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+
+import lombok.Getter;
 
 /**
  * Class for creating transactions.
@@ -20,9 +20,11 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
  * sources for a transaction.
  */
 public class TransactionCreator {
+	private final Application application;
 	private final int nodes;
-	private final Node from;
-	private final Node to;
+	@Getter
+	private final Node sender;
+	private final Node receiver;
 	private final long amount;
 	private final BitSet known;
 
@@ -31,14 +33,14 @@ public class TransactionCreator {
 
 	/**
 	 * @param application - the application
-	 * @param from        - the sender of the transaction
-	 * @param to          - the receiver of the transaction
+	 * @param receiver    - the receiver of the transaction
 	 * @param amount      - the amount to send
 	 */
-	public TransactionCreator(Application application, Node from, Node to, long amount) {
+	public TransactionCreator(Application application, Node receiver, long amount) {
+		this.application = application;
 		this.nodes = application.getNodes().size();
-		this.from = from;
-		this.to = to;
+		this.sender = application.getOwnNode();
+		this.receiver = receiver;
 		this.amount = amount;
 		this.known = calculateKnowledge();
 	}
@@ -49,7 +51,7 @@ public class TransactionCreator {
 	 * @return a bitset with the chains the receiver already knows about
 	 */
 	private BitSet calculateKnowledge() {
-		BitSet collected = to.getMetaKnowledge()
+		BitSet collected = receiver.getMetaKnowledge()
 				.keySet()
 				.stream()
 				.map(Node::getId)
@@ -62,18 +64,30 @@ public class TransactionCreator {
 	}
 
 	/**
+	 * Creates a transaction.
+	 * 
+	 * The sources used for the transaction are marked as spent.
+	 * If the transaction has a remainder, it is marked as unspent.
 	 * @param number - the number to assign to the transaction
 	 * @return         a new transaction
+	 * @throws NotEnoughMoneyException If the sender doesn't have enough money.
 	 */
 	public Transaction createTransaction(int number) {
 		TransactionTuple sources = bestSources();
+		if (sources == null) throw new NotEnoughMoneyException();
+		
+		Set<Transaction> sourceSet = sources.getTransactions();
+		long remainder = sources.getAmount() - amount;
 
 		//Mark sources as spent.
-		for (Transaction transaction : sources.getTransactions()) {
-			transaction.setUnspent(false);
+		application.getUnspent().removeAll(sourceSet);
+		
+		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, sourceSet);
+		if (remainder > 0) {
+			application.getUnspent().add(transaction);
 		}
-
-		return new Transaction(number, from, to, amount, sources.getRemainder(), sources.getTransactions());
+		
+		return transaction;
 	}
 
 	/**
@@ -83,31 +97,30 @@ public class TransactionCreator {
 		//TODO Cache unspent transactions?
 
 		//Step 1: Collect all unspent transactions
-		//Chain -> Blocks -> Transactions -> Unspent Transactions -> TransactionTuples
-		Set<TransactionTuple> unspentTransactions = from.getChain()
-				.getBlocks()
+		Set<TransactionTuple> candidates = application
+				.getUnspent()
 				.stream()
-				.map(Block::getTransactions)
-				.flatMap(List::stream)
-				.filter(Transaction::isUnspent)
 				.map(t -> new TransactionTuple(this, t))
 				.collect(Collectors.toCollection(HashSet::new));
 
 		//Step 2: Check if we can cover the transaction amount with a single transaction.
-		firstRound(unspentTransactions);
-		cleanup(unspentTransactions, Integer.MAX_VALUE);
+		firstRound(candidates);
+		cleanup(candidates, Integer.MAX_VALUE);
 
 		//If the single transaction we found is the best, then we return it.
-		if (unspentTransactions.isEmpty()) return currentBestTuple;
+		if (candidates.size() <= 1) return currentBestTuple;
 
 		//Step 3: keep trying to improve for multiple rounds to get the best set of transactions
+		int roundCount = candidates.size() - 1;
 		int previousBest = currentBest;
 		Set<TransactionTuple> temp;
-		Set<TransactionTuple> singleElements = unspentTransactions;
-		Set<TransactionTuple> currentRound = new HashSet<>(unspentTransactions);
+		Set<TransactionTuple> currentRound = new HashSet<>(candidates);
 		Set<TransactionTuple> nextRound = new HashSet<>();
-		while (true) {
-			doOneRound(singleElements, currentRound, nextRound);
+		
+		//Repeat for at most the number of total unspent transactions.
+		//At that point we will have created the only possible set: the set of all unspent transactions.
+		for (int i = 0; i < roundCount; i++) {
+			doOneRound(candidates, currentRound, nextRound);
 
 			//If no better tuples were found, then we can return the best-so-far.
 			if (nextRound.isEmpty()) return currentBestTuple;
@@ -122,6 +135,9 @@ public class TransactionCreator {
 			nextRound.clear();
 			previousBest = currentBest;
 		}
+		
+		//We didn't find an absolute best.
+		return currentBestTuple;
 	}
 
 	/**
@@ -131,15 +147,15 @@ public class TransactionCreator {
 		Iterator<TransactionTuple> it = unspentTransactions.iterator();
 		while (it.hasNext()) {
 			TransactionTuple tuple = it.next();
-			int amountRequired = tuple.getChainsRequired().cardinality();
-			if (amountRequired >= currentBest) {
+			int chainsRequired = tuple.getChainsRequired().cardinality();
+			if (chainsRequired >= currentBest) {
 				it.remove();
 				continue;
 			}
 
-			if (tuple.getRemainder() >= amount) {
+			if (tuple.getAmount() >= amount) {
 				//Single transaction able to cover the whole transaction
-				currentBest = amountRequired;
+				currentBest = chainsRequired;
 				currentBestTuple = tuple;
 				it.remove();
 			}
@@ -158,14 +174,14 @@ public class TransactionCreator {
 
 				BitSet r3 = combineBitSets(t1.getChainsRequired(), t2.getChainsRequired());
 
-				int amountRequired = r3.cardinality();
 				//If this combination is worse than the current best, we don't consider it.
-				if (amountRequired >= currentBest) continue;
+				int chainsRequired = r3.cardinality();
+				if (chainsRequired >= currentBest) continue;
 
 				TransactionTuple t3 = new TransactionTuple(t1, t2);
-				if (t3.getRemainder() >= amount) {
+				if (t3.getAmount() >= amount) {
 					//This combination is a good candidate
-					currentBest = amountRequired;
+					currentBest = chainsRequired;
 					currentBestTuple = t3;
 				} else {
 					//Consider this tuple for the next round
@@ -186,8 +202,8 @@ public class TransactionCreator {
 			Iterator<TransactionTuple> it = tuples.iterator();
 			while (it.hasNext()) {
 				TransactionTuple tuple = it.next();
-				int amountRequired = tuple.getChainsRequired().cardinality();
-				if (amountRequired >= currentBest) it.remove();
+				int chainsRequired = tuple.getChainsRequired().cardinality();
+				if (chainsRequired >= currentBest) it.remove();
 			}
 		}
 	}
@@ -199,7 +215,7 @@ public class TransactionCreator {
 	public BitSet chainsRequired(Transaction transaction) {
 		//TODO Verify that this collection of chains is correct.
 		Set<Chain> chains = new HashSet<>();
-		Proof.appendChains(transaction, to, chains);
+		Proof.appendChains(transaction, receiver, chains);
 		BitSet bitset = chains.stream()
 				.map(Chain::getOwner)
 				.map(Node::getId)
@@ -221,7 +237,7 @@ public class TransactionCreator {
 	 */
 	public static BitSet combineBitSets(BitSet a, BitSet b) {
 		BitSet c = (BitSet) a.clone();
-		if (b != null) c.or(b);
+		c.or(b);
 		return c;
 	}
 }

@@ -12,11 +12,11 @@ import lombok.Setter;
 /**
  * Class which represents a multiple of transactions.
  */
-public class TransactionTuple implements Cloneable {
+public class TransactionTuple {
 	private final TransactionCreator creator;
 	
 	@Getter
-	private int remainder;
+	private int amount;
 	
 	@Getter
 	private Set<Transaction> transactions = new HashSet<>();
@@ -81,7 +81,15 @@ public class TransactionTuple implements Cloneable {
 	 */
 	public void addTransaction(Transaction transaction) {
 		this.transactions.add(transaction);
-		this.remainder += transaction.getRemainder();
+		if (creator.getSender() == transaction.getSender()) {
+			//A transaction we sent, so use the remainder
+			this.amount += transaction.getRemainder();
+		} else if (creator.getSender() == transaction.getReceiver()) {
+			//A transaction we received, so use the amount
+			this.amount += transaction.getAmount();
+		} else {
+			throw new IllegalArgumentException("The given transaction does not involve us, so we cannot use it as a source!");
+		}
 		
 		BitSet newChainsRequired = creator.chainsRequired(transaction);
 		if (this.chainsRequired == null) {
@@ -97,7 +105,7 @@ public class TransactionTuple implements Cloneable {
 	 */
 	public void addTuple(TransactionTuple tuple) {
 		this.transactions.addAll(tuple.transactions);
-		this.remainder += tuple.remainder;
+		this.amount += tuple.amount;
 		if (this.chainsRequired == null) {
 			this.chainsRequired = (BitSet) tuple.chainsRequired.clone();
 		} else {
@@ -113,15 +121,32 @@ public class TransactionTuple implements Cloneable {
 		return transactions.containsAll(tuple.transactions);
 	}
 	
+	/**
+	 * @return the amount of transactions in this tuple
+	 */
+	public int size() {
+		return transactions.size();
+	}
+
 	@Override
-	public Object clone() {
-		try {
-			TransactionTuple tt = (TransactionTuple) super.clone();
-            tt.transactions = new HashSet<>(transactions);
-            return tt;
-        } catch (CloneNotSupportedException e) {
-            // this shouldn't happen, since we are Cloneable
-            throw new InternalError(e);
-        }
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + chainsRequired.hashCode();
+		result = prime * result + amount;
+		result = prime * result + transactions.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!(obj instanceof TransactionTuple)) return false;
+		
+		TransactionTuple other = (TransactionTuple) obj;
+		if (amount != other.amount) return false;
+		if (!chainsRequired.equals(other.chainsRequired)) return false;
+		if (!transactions.equals(other.transactions)) return false;
+		return true;
 	}
 }

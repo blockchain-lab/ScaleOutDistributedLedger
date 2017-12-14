@@ -10,7 +10,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Transaction class.
@@ -34,9 +33,6 @@ public class Transaction {
 	
 	// Custom getter
 	private OptionalInt blockNumber;
-	
-	@Getter @Setter
-	private boolean unspent;
 
 	/**
 	 * Constructor.
@@ -110,6 +106,29 @@ public class Transaction {
 		byte[] transactionInBytes = outputStream.toByteArray();
 		
 		return new Sha256Hash(transactionInBytes);
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + number;
+		result = prime * result + ((receiver == null) ? 0 : receiver.hashCode());
+		result = prime * result + ((sender == null) ? 0 : sender.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!(obj instanceof Transaction)) return false;
+		
+		//TODO Are transaction numbers unique per block or per chain?
+		Transaction other = (Transaction) obj;
+		if (number != other.number) return false;
+		if (receiver != other.receiver) return false;
+		if (sender != other.sender) return false;
+		return true;
 	}
 
 }
