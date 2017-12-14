@@ -91,6 +91,6 @@ public final class Utils {
 		if ('a' <= ch && ch <= 'f') {
 			return ch - 'a' + 10;
 		}
-		return -1;
+		throw new IllegalArgumentException("'" + ch + "' is not a hexadecimal character!");
 	}
 }
