@@ -1,7 +1,9 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
@@ -21,6 +23,9 @@ public class Application {
 	
 	@Getter
 	private Map<Integer, Node> nodes = new HashMap<>();
+	
+	@Getter
+	private Set<Transaction> unspent = new HashSet<>();
 	
 	/**
 	 * Creates a new application.
@@ -48,7 +53,9 @@ public class Application {
 	 * @param proof       - the proof
 	 */
 	public synchronized void receiveTransaction(Transaction transaction, Proof proof) {
-		CommunicationHelper.receiveTransaction(verification, transaction, proof);
+		if (CommunicationHelper.receiveTransaction(verification, transaction, proof)) {
+			unspent.add(transaction);
+		}
 	}
 	
 	/**

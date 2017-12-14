@@ -31,16 +31,20 @@ public final class CommunicationHelper {
 	 * @param verification - the verification object to verify transactions with
 	 * @param transaction  - the transaction that was received
 	 * @param proof        - the proof provided with the transaction
+	 * @return               true if the transaction was accepted, false otherwise
 	 */
-	public static void receiveTransaction(Verification verification, Transaction transaction, Proof proof) {
+	public static boolean receiveTransaction(Verification verification, Transaction transaction, Proof proof) {
 		//If we have seen this transaction before, reject it
 		if (verification.isCached(transaction)) {
 			Log.log(Level.WARNING, "Received a transaction we already received before!");
-			return;
+			return false;
 		}
 		
-		if (!verification.isValid(transaction, proof)) return;
+		if (!verification.isValid(transaction, proof)) return false;
 		
 		proof.applyUpdates();
+
+		//TODO: Update metaKnowledge based on what we received?
+		return true;
 	}
 }
