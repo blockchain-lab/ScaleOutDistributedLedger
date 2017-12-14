@@ -159,7 +159,7 @@ public class Proof {
 	 * @param receiver    - the node receiving the transaction
 	 * @param chains      - the list of chains to append to
 	 */
-	private static void appendChains(Transaction transaction, Node receiver, Set<Chain> chains) {
+	public static void appendChains(Transaction transaction, Node receiver, Set<Chain> chains) {
 		for (Transaction source : transaction.getSource()) {
 			Node owner = source.getSender();
 			if (owner == receiver) continue;
