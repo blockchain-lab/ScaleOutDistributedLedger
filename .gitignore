@@ -4,6 +4,7 @@ bin/
 target/
 tmp/
 logs/
+build/
 
 # Ignore system specific binaries
 *.so
@@ -22,6 +23,9 @@ Thumbs.db
 # Ignore IntelliJ settings files
 *.iml
 .idea/
+
+# Ignore Netbeans settings files
+nb-configuration.xml
 
 # Ignore log files
 *.log

@@ -5,16 +5,16 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
  */
 public final class Main {
 
-    private Main() {
-        // prevents instantiation
-        throw new UnsupportedOperationException();
-    }
+	private Main() {
+		// prevents instantiation
+		throw new UnsupportedOperationException();
+	}
 
-    /**
-     * Main method, starting point of the application.
-     * @param args - command line arguments.
-     */
-    public static void main(String[] args) {
-        //TODO
-    }
+	/**
+	 * Main method, starting point of the application.
+	 * @param args - command line arguments.
+	 */
+	public static void main(String[] args) {
+		//TODO
+	}
 }
