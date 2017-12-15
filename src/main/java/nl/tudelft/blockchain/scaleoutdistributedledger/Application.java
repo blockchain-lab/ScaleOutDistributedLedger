@@ -1,16 +1,16 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.RSAKey;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
-import lombok.Getter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Class to represent an application.
@@ -42,7 +42,7 @@ public class Application {
 	 * @param id - the id
 	 * @return the node with the given id, or null
 	 */
-	public Node getNode(int id) {
+	public Node getNode(int id) throws IOException {
 		Node node = nodes.get(id);
 		if (node == null) {
 			TrackerHelper.updateNodes(nodes);
@@ -78,7 +78,8 @@ public class Application {
 	private void init() {
 		RSAKey key = new RSAKey();
 		int id = TrackerHelper.registerNode(key.getPublicKey());
-		this.ownNode = new Node(id, key.getPublicKey(), "localhost");
+		// TODO: set actual IP address and port
+		this.ownNode = new Node(id, key.getPublicKey(), "localhost", 80);
 		this.ownNode.setPrivateKey(key.getPrivateKey());
 		
 		nodes.put(id, this.ownNode);

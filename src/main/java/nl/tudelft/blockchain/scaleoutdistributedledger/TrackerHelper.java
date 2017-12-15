@@ -1,10 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import org.apache.http.HttpResponse;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,10 +38,8 @@ public final class TrackerHelper {
 	public static void updateNodes(Map<Integer, Node> nodes) throws IOException {
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpGet request = new HttpGet(String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-		HttpResponse response = client.execute(request);
-		System.out.println(response.getEntity().getContent().toString());
-//		String json = IOUtil.toString(response.getEntity().getContent());
-
+		JSONArray nodesArray = (JSONArray) new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).get("nodes");
+		System.out.println(nodesArray.toString());
 
 //		List<String> lines = downloadNodesList();
 //		for (String line : lines) {
