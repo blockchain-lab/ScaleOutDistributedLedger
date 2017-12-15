@@ -4,6 +4,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,7 +29,19 @@ public final class TrackerHelper {
 	 * @param publicKey - the public key to register with
 	 * @return            the assigned id
 	 */
-	public static int registerNode(byte[] publicKey) {
+	public static int registerNode(byte[] publicKey) throws IOException {
+		JSONObject json = new JSONObject();
+		json.put("address", Application.TRACKER_SERVER_ADDRESS);
+		json.put("port", Application.TRACKER_SERVER_PORT);
+		json.put("publicKey", publicKey);
+		System.out.println(json.toString());
+		HttpClient client = HttpClientBuilder.create().build();
+		StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+		request.setEntity(requestEntity);
+		JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+		System.out.println(response.toString());
+
 		//TODO Register with server, return node id
 		return 0;
 	}

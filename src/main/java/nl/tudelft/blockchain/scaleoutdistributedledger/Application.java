@@ -34,7 +34,7 @@ public class Application {
 	/**
 	 * Creates a new application.
 	 */
-	public Application() {
+	public Application() throws IOException {]
 		init();
 	}
 	
@@ -75,7 +75,7 @@ public class Application {
 	/**
 	 * Initializes this application.
 	 */
-	private void init() {
+	private void init() throws IOException {]
 		RSAKey key = new RSAKey();
 		int id = TrackerHelper.registerNode(key.getPublicKey());
 		// TODO: set actual IP address and port

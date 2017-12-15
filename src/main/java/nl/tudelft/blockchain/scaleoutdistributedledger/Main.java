@@ -18,6 +18,7 @@ public final class Main {
 	 */
 	public static void main(String[] args) throws IOException {
 		//TODO
-		TrackerHelper.updateNodes(null);
+//		TrackerHelper.updateNodes(null);
+		TrackerHelper.registerNode(null);
 	}
 }
