@@ -7,10 +7,6 @@ import http from 'http';
 import index from './routes/index';
 import NodeList from './model/NodeList';
 
-////////////////////////// MAXIMUM NUMBER OF NODES ///////////////////////
-const numberOfNodes = 10;
-//////////////////////////////////////////////////////////////////////////
-
 const app = express();
 const debug = Debug('test:app');
 
@@ -26,7 +22,7 @@ const server = http.createServer(app);
 
 app.use(cookieParser());
 
-app.nodeList = new NodeList(numberOfNodes);
+app.nodeList = new NodeList();
 app.use('/', index);
 
 server.listen(port);

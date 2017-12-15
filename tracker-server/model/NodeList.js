@@ -5,25 +5,37 @@ class NodeList {
 
 	/**
 	 * Constructor.
-	 * @param numberOfNodes - maximum allowed number of nodes.
 	 */
-	constructor(numberOfNodes) {
+	constructor() {
 		this.nodes = [];
-		this.numberOfNodes = numberOfNodes;
 	}
 
-	/**
-	 * Adds or updates a node to/in the nodelist.
-	 * @param node - the node to add.
-	 * @returns {boolean} - whether the node was valid.
-	 */
-	updateNode(node) {
-		if(node.id < this.numberOfNodes) {
-			this.nodes[node.id] = node;
+    /**
+     *
+     * Adds or updates a node to/in the nodelist.
+     * @param id - id of the node to update
+     * @param address - new address
+     * @param port - new port
+     * @returns {boolean} - whether the id was valid.
+     */
+	updateNode(id, address, port) {
+		if(id < this.nodes.length) {
+			this.nodes[id].address = address;
+			this.nodes[id].port = port;
 			return true;
 		}
 		return false;
 	}
+
+    /**
+     * Register a new node.
+     * @param address - the address of the new node
+     * @param port - the port of the new node
+     * @returns {number} - the id of the new node
+     */
+	registerNode(address, port) {
+        return this.nodes.push(new Node(address, port)) - 1;
+    }
 
 	/**
 	 * Gets the node at the specified id, if present.
@@ -31,7 +43,7 @@ class NodeList {
 	 * @returns {Node} - the node at the specified id.
 	 */
 	getNode(id) {
-		if(id < this.numberOfNodes) {
+		if(id < this.nodes.length) {
 			return this.nodes[id];
 		}
 		return null;

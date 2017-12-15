@@ -1,6 +1,5 @@
 import express from 'express';
 const router = express.Router();
-import Node from '../model/Node';
 import app from '../app';
 
 /**
@@ -20,14 +19,26 @@ router.post('/update-node', (req, res) => {
 		res.status(403);
 		res.json({success: false, err: 'Specify id, address and port'});
 	} else {
-		const node = new Node(req.body.id, req.body.address, req.body.port);
-		if (app.nodeList.updateNode(node)) {
+		if (app.nodeList.updateNode(req.body.id, req.body.address, req.body.port)) {
 			res.json({success: true});
 		} else {
 			res.status(403);
 			res.json({success: false, err: 'invalid node'});
 		}
 	}
+});
+
+/**
+ * Register a new node, body should contain address and port.
+ */
+router.post('/register-node', (req, res) => {
+    if(!isPresent(req.body.address) || !isPresent(req.body.port)) {
+        res.status(403);
+        res.json({success: false, err: 'Specify address and port'});
+    } else {
+        const id = app.nodeList.registerNode(req.body.address, req.body.port);
+        res.json({success: true, id: id});
+    }
 });
 
 /**
