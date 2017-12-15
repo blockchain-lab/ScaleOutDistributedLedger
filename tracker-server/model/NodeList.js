@@ -1,3 +1,5 @@
+import Node from './Node';
+
 /**
  * Class to store a list of nodes.
  */
