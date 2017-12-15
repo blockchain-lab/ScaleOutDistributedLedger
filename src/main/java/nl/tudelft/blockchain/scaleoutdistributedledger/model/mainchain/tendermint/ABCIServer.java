@@ -19,12 +19,6 @@ public class ABCIServer implements ABCIAPI {
 		return ResponseBeginBlock.newBuilder().build();
 	}
 
-	/**
-	 * Validate a transaction.
-	 *
-	 * @param requestCheckTx
-	 * @return
-	 */
 	@Override
 	public ResponseCheckTx requestCheckTx(RequestCheckTx requestCheckTx) {
 		Log.log(Level.FINE, "[TENDERMINT] New transaction proposed");

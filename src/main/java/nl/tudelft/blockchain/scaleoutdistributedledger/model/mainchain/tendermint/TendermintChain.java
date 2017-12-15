@@ -8,6 +8,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
+import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -25,7 +26,7 @@ public final class TendermintChain implements MainChain {
 	 * @param addr - the address to connect to
 	 */
 	public TendermintChain(String addr) {
-		System.out.println("Starting Tendermint cahin on " + addr);
+		System.out.println("Starting Tendermint chain on " + addr);
 		socket = new TSocket();
 		handler = new ABCIServer();
 		client = new ABCIClient(addr);
@@ -48,7 +49,6 @@ public final class TendermintChain implements MainChain {
 	@SneakyThrows //TODO: remove this method
 	public static void main(String[] args) {
 		TendermintChain tmchain = new TendermintChain("http://localhost:46657");
-		tmchain.isPresent(null);
 		while (true) {
 			Thread.sleep(1000);
 		}
@@ -61,6 +61,10 @@ public final class TendermintChain implements MainChain {
 			Log.log(Level.WARNING, "Tendermint [COMMIT] failed");
 			return null;
 		} else {
+			//TODO: Check if the following line is needed (so if abs.hash != hash)
+			//abs.setHash(Sha256Hash.withHash(hash))
+
+			abs.setOnMainChain(Optional.of(true));
 			return Sha256Hash.withHash(hash);
 		}
 	}
