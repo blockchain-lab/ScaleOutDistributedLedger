@@ -43,6 +43,18 @@ public class Sha256Hash {
 			Log.log(Level.SEVERE, null, ex);
 		}
 	}
+
+	/**
+	 * Get a {@link Sha256Hash} with the given hash.
+	 *
+	 * @param hash - the hash of the resulting object
+	 * @return - an object with the given hash
+	 */
+	public static Sha256Hash withHash(byte[] hash) {
+		Sha256Hash res = new Sha256Hash(new byte[0]);
+		res.bytes = hash;
+		return res;
+	}
 	
 	@Override
 	public int hashCode() {

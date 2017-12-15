@@ -43,14 +43,27 @@ public class BlockAbstract {
         this.onMainChain = Optional.empty();
     }
 
-    public byte[] toBytes() {
+	/**
+	 * Convert this abstract to a byte array.
+	 * Performs the inverse of {@link BlockAbstract#fromBytes(byte[])}.
+	 *
+	 * @return - the byte array conversion
+	 */
+	public byte[] toBytes() {
         //TODO: implement this method
         return new byte[0];
     }
 
-    public static BlockAbstract fromBytes(byte[] tx) {
+	/**
+	 * Construct a {@link BlockAbstract} from a byte array.
+	 * Performs the inverse of {@link BlockAbstract#toBytes()}.
+	 *
+	 * @param bytes - the data to construct from
+	 * @return - the abstract represented by the bytes
+	 */
+	public static BlockAbstract fromBytes(byte[] bytes) {
         //TODO: implement this method
-        BlockAbstract block = new BlockAbstract(null, 0, null, new byte[0]);
+        BlockAbstract block = new BlockAbstract(null, 0, Sha256Hash.withHash(new byte[0]), new byte[0]);
         block.setOnMainChain(Optional.of(true));
 		return block;
     }
@@ -62,7 +75,7 @@ public class BlockAbstract {
 	public boolean isOnMainChain() {
 		if (!this.onMainChain.isPresent()) {
 			// TODO: check with tendermint if this is on the main chain.
-			// this.onMainChain = Optional.of(TendermintChain.query(this));
+			// this.onMainChain = Optional.of(mainchain.isPresent(this));
 			this.onMainChain = Optional.of(false);
 		}
 		return this.onMainChain.get();

@@ -3,16 +3,20 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermi
 import com.github.jtendermint.jabci.api.ABCIAPI;
 import com.github.jtendermint.jabci.types.Types.*;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
+import java.util.logging.Level;
 
 /**
+ * An implementation of a Tendermint ABCI server.
+ * The server implements a number of callbacks for events received from Tendermint.
  * @see <a href="https://github.com/tendermint/abci#message-types">Tendermint ABCI message type documentation</a>
  */
 public class ABCIServer implements ABCIAPI {
 	@Override
 	public ResponseBeginBlock requestBeginBlock(RequestBeginBlock requestBeginBlock) {
-		System.out.println("Begin block");
+		Log.log(Level.FINE, "[TENDERMINT] New block started");
 		return ResponseBeginBlock.newBuilder().build();
-		//TODO: Implement this
 	}
 
 	/**
@@ -23,7 +27,7 @@ public class ABCIServer implements ABCIAPI {
 	 */
 	@Override
 	public ResponseCheckTx requestCheckTx(RequestCheckTx requestCheckTx) {
-		System.out.println("Check Tx");
+		Log.log(Level.FINE, "[TENDERMINT] New transaction proposed");
 		BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
 
 		//TODO: validate the abstract
@@ -32,13 +36,14 @@ public class ABCIServer implements ABCIAPI {
 			return ResponseCheckTx.newBuilder().setCode(CodeType.OK).build();
 		} else {
 			String log = "Discription of what went wrong while validating";
+			Log.log(Level.INFO, "[TENDERMINT] Proposed block rejected because: " + log);
 			return ResponseCheckTx.newBuilder().setCode(CodeType.BadNonce).setLog(log).build();
 		}
 	}
 
 	@Override
 	public ResponseCommit requestCommit(RequestCommit requestCommit) {
-		System.out.println("Commit");
+		Log.log(Level.FINE, "[TENDERMINT] Commit requested");
 		return ResponseCommit.newBuilder().setCode(CodeType.OK).build();
 	}
 
@@ -49,12 +54,13 @@ public class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseEcho requestEcho(RequestEcho requestEcho) {
+		Log.log(Level.FINE, "[TENDERMINT] Echo " + requestEcho.getMessage());
 		return ResponseEcho.newBuilder().setMessage(requestEcho.getMessage()).build();
 	}
 
 	@Override
 	public ResponseEndBlock requestEndBlock(RequestEndBlock requestEndBlock) {
-		System.out.println("End of Block");
+		Log.log(Level.FINE, "[TENDERMINT] Block ended");
 		return ResponseEndBlock.newBuilder().build();
 	}
 
@@ -75,7 +81,7 @@ public class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseQuery requestQuery(RequestQuery requestQuery) {
-		System.out.println("Query");
+		Log.log(Level.FINE, "[TENDERMINT] Chain queried");
 		return ResponseQuery.newBuilder().setCode(CodeType.OK).build();
 	}
 
