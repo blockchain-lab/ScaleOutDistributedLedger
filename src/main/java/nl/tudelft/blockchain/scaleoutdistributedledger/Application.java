@@ -16,6 +16,10 @@ import lombok.Getter;
  * Class to represent an application.
  */
 public class Application {
+
+	public static final String TRACKER_SERVER_ADDRESS = "localhost";
+	public static final int TRACKER_SERVER_PORT = 3000;
+
 	private final Verification verification = new Verification();
 	
 	@Getter

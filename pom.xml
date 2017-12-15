@@ -59,6 +59,11 @@
 			<artifactId>json</artifactId>
 			<version>20171018</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.4</version>
+		</dependency>
     </dependencies>
 
 	<build>
@@ -379,7 +384,6 @@
 				<version>${findbugs.version}</version>
 				<configuration>
 					<excludeFilterFile>findbugs-exclude.xml</excludeFilterFile>
-					<failOnViolation>false</failOnViolation>
 					<xmlOutput>true</xmlOutput>
 					<includeTests>true</includeTests>
 				</configuration>
