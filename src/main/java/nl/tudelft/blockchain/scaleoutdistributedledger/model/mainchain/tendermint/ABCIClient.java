@@ -90,8 +90,9 @@ public class ABCIClient {
 	 * @return - the JSON response
 	 */
 	private JSONObject sendQuery(byte[] hash) {
+		String data = byteArrayToHexString(hash);
 		try {
-			return new JSONObject(Request.Get(addr + "tx?hash=" + hash.toString()).execute().returnContent());
+			return new JSONObject(Request.Get(addr + "tx?hash=" + data).execute().returnContent());
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -133,4 +134,23 @@ public class ABCIClient {
 		}
 		return b;
 	}
+
+	/**
+	 * Convert a byte array to a hex string prefixed by 0x.
+	 *
+	 * @param bytes - the array to convert
+	 * @return - the converted string
+	 */
+	public String byteArrayToHexString(byte[] bytes) {
+		//TODO: @Karol Do you know a better way to do this?
+		final char[] hexArray = "0123456789ABCDEF".toCharArray();
+		char[] hexChars = new char[bytes.length * 2];
+		for ( int j = 0; j < bytes.length; j++ ) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = hexArray[v >>> 4];
+			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+		}
+		return "0x" + new String(hexChars);
+	}
+
 }

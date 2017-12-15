@@ -39,4 +39,13 @@ public class ABCIClientTest {
 		assertTrue(Arrays.equals(new byte[] {0x00, 0x11, (byte) 0xFF}, instance.hexStringToByteArray(test)));
 	}
 
+	/**
+	 * Test the byte array conversion to a String.
+	 */
+	@Test
+	public void testByteArrayToHexString() {
+		byte[] array = new byte[]{0x00, 0x12, (byte) 0xFF};
+		assertEquals("0x0012FF", instance.byteArrayToHexString(array));
+	}
+
 }
