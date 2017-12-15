@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 
 /**
- * An ABCI client for sending to the Tendermint chain
+ * An ABCI client for sending to the Tendermint chain.
  */
 public class ABCIClient {
 	private final String addr;
@@ -117,13 +117,13 @@ public class ABCIClient {
 	}
 
 	/**
-	 * Convert a hex string ('0x123EFF' or '123EFF') to a byte array
+	 * Convert a hex string ('0x123EFF' or '123EFF') to a byte array.
 	 *
 	 * @param string - the string to parse
 	 * @return - the same value, but as a byte array
 	 */
 	public byte[] hexStringToByteArray(String string) {
-		// @Karol Do you know a better way to do this?
+		//TODO: @Karol Do you know a better way to do this?
 		String s = string.replaceFirst("0x", "");	// Remove 0x prefix
 		byte[] b = new byte[s.length() / 2];
 		for (int i = 0; i < b.length; i++) {

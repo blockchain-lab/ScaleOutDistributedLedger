@@ -34,7 +34,7 @@ public interface MainChain {
 	public void connectTo(Node node);
 
 	/**
-	 * Connect to multiple nodes
+	 * Connect to multiple nodes.
 	 *
 	 * @param nodes - a list of node to connect to
 	 */

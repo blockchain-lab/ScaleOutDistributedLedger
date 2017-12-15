@@ -1,6 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import com.google.protobuf.ByteString;
 import lombok.Getter;
 import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;

@@ -10,6 +10,10 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.util.logging.Level;
 
+/**
+ * Class implementinf {@link MainChain} for a Tendermint chain.
+ * @see <a href="https://tendermint.com/">Tendermint.com</a>
+ */
 public final class TendermintChain implements MainChain {
 	private ABCIServer handler;
 	private ABCIClient client;
@@ -53,7 +57,7 @@ public final class TendermintChain implements MainChain {
 	@Override
 	public Sha256Hash commitAbstract(BlockAbstract abs) {
 		byte[] hash = client.commit(abs);
-		if(hash == null) {
+		if (hash == null) {
 			Log.log(Level.WARNING, "Tendermint [COMMIT] failed");
 			return null;
 		} else {
