@@ -12,14 +12,14 @@ router.get('/', (req, res) => {
 });
 
 /**
- * Updates a certain node. Body should contain id, address and port.
+ * Updates a certain node. Body should contain id, address, port and publicKey.
  */
 router.post('/update-node', (req, res) => {
-	if(!isPresent(req.body.id) || !isPresent(req.body.address) || !isPresent(req.body.port)) {
+	if(!isPresent(req.body.id) || !isPresent(req.body.address) || !isPresent(req.body.port) || !isPresent(req.body.publicKey)) {
 		res.status(403);
-		res.json({success: false, err: 'Specify id, address and port'});
+		res.json({success: false, err: 'Specify id, address, port and publicKey'});
 	} else {
-		if (app.nodeList.updateNode(req.body.id, req.body.address, req.body.port)) {
+		if (app.nodeList.updateNode(req.body.id, req.body.address, req.body.port, req.body.publicKey)) {
 			res.json({success: true});
 		} else {
 			res.status(403);
@@ -29,14 +29,14 @@ router.post('/update-node', (req, res) => {
 });
 
 /**
- * Register a new node, body should contain address and port.
+ * Register a new node, body should contain address, port and publicKey.
  */
 router.post('/register-node', (req, res) => {
     if(!isPresent(req.body.address) || !isPresent(req.body.port)) {
         res.status(403);
-        res.json({success: false, err: 'Specify address and port'});
+        res.json({success: false, err: 'Specify address, port and publicKey'});
     } else {
-        const id = app.nodeList.registerNode(req.body.address, req.body.port);
+        const id = app.nodeList.registerNode(req.body.address, req.body.port, req.body.publicKey);
         res.json({success: true, id: id});
     }
 });

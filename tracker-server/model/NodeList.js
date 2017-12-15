@@ -16,12 +16,14 @@ class NodeList {
      * @param id - id of the node to update
      * @param address - new address
      * @param port - new port
+     * @param publicKey - new public key
      * @returns {boolean} - whether the id was valid.
      */
-	updateNode(id, address, port) {
+	updateNode(id, address, port, publicKey) {
 		if(id < this.nodes.length) {
 			this.nodes[id].address = address;
 			this.nodes[id].port = port;
+			this.nodes[id].publicKey = publicKey;
 			return true;
 		}
 		return false;
@@ -31,10 +33,11 @@ class NodeList {
      * Register a new node.
      * @param address - the address of the new node
      * @param port - the port of the new node
+     * @param publicKey - the public key of the new node
      * @returns {number} - the id of the new node
      */
-	registerNode(address, port) {
-        return this.nodes.push(new Node(address, port)) - 1;
+	registerNode(address, port, publicKey) {
+        return this.nodes.push(new Node(address, port, publicKey)) - 1;
     }
 
 	/**
