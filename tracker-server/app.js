@@ -17,7 +17,7 @@ const debug = Debug('test:app');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-    extended: false
+	extended: false
 }));
 
 const port = normalizePort(process.env.PORT || '3000');
@@ -34,27 +34,27 @@ server.on('listening', onListening);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
-    const err = new Error('Not Found');
-    err.status = 404;
-    next(err);
+	const err = new Error('Not Found');
+	err.status = 404;
+	next(err);
 });
 
 // error handler
 /* eslint no-unused-vars: 0 */
 app.use((err, req, res, next) => {
-    console.log(err);
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
-    // render the error page
-    res.status(err.status || 500);
-    res.json(err);
+	console.log(err);
+	// set locals, only providing error in development
+	res.locals.message = err.message;
+	res.locals.error = req.app.get('env') === 'development' ? err : {};
+	// render the error page
+	res.status(err.status || 500);
+	res.json(err);
 });
 
 // Handle uncaughtException
 process.on('uncaughtException', (err) => {
-    debug('Caught exception: %j', err);
-    process.exit(1);
+	debug('Caught exception: %j', err);
+	process.exit(1);
 });
 
 /**
@@ -62,21 +62,21 @@ process.on('uncaughtException', (err) => {
  */
 
 function normalizePort(val) {
-    let port = parseInt(val, 10);
+	let port = parseInt(val, 10);
 
-    // if (true) {
+	// if (true) {
 
-    if (isNaN(port)) {
-        // named pipe
-        return val;
-    }
+	if (isNaN(port)) {
+		// named pipe
+		return val;
+	}
 
-    if (port >= 0) {
-        // port number
-        return port;
-    }
+	if (port >= 0) {
+		// port number
+		return port;
+	}
 
-    return false;
+	return false;
 }
 
 /**
@@ -84,11 +84,11 @@ function normalizePort(val) {
  */
 
 function onListening() {
-    const addr = server.address();
-    const bind = typeof addr === 'string'
-        ? 'pipe ' + addr
-        : 'port ' + addr.port;
-    console.log('Listening on ' + bind);
+	const addr = server.address();
+	const bind = typeof addr === 'string'
+		? 'pipe ' + addr
+		: 'port ' + addr.port;
+	console.log('Listening on ' + bind);
 }
 
 export default app;
