@@ -75,7 +75,7 @@ public class ABCIClient {
 	 */
 	private JSONObject sendTx(byte[] data) {
 		try {
-			return new JSONObject(Request.Get(addr + "/broadcast_tx_sync?tx=%22" + data + "%22").execute().returnContent());
+			return new JSONObject(Request.Get(addr + "/broadcast_tx_sync?tx=" + byteArrayToHexString(data)).execute().returnContent());
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -90,9 +90,8 @@ public class ABCIClient {
 	 * @return - the JSON response
 	 */
 	private JSONObject sendQuery(byte[] hash) {
-		String data = byteArrayToHexString(hash);
 		try {
-			return new JSONObject(Request.Get(addr + "tx?hash=" + data).execute().returnContent());
+			return new JSONObject(Request.Get(addr + "tx?hash=" + byteArrayToHexString(hash)).execute().returnContent());
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -145,12 +144,11 @@ public class ABCIClient {
 		//TODO: @Karol Do you know a better way to do this?
 		final char[] hexArray = "0123456789ABCDEF".toCharArray();
 		char[] hexChars = new char[bytes.length * 2];
-		for ( int j = 0; j < bytes.length; j++ ) {
+		for (int j = 0; j < bytes.length; j++) {
 			int v = bytes[j] & 0xFF;
 			hexChars[j * 2] = hexArray[v >>> 4];
 			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
 		}
 		return "0x" + new String(hexChars);
 	}
-
 }
