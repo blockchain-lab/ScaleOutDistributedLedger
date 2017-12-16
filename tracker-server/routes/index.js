@@ -32,7 +32,7 @@ router.post('/update-node', (req, res) => {
  * Register a new node, body should contain address, port and publicKey.
  */
 router.post('/register-node', (req, res) => {
-    if(!isPresent(req.body.address) || !isPresent(req.body.port)) {
+    if(!isPresent(req.body.address) || !isPresent(req.body.port) || !isPresent(req.body.publicKey)) {
         res.status(403);
         res.json({success: false, err: 'Specify address, port and publicKey'});
     } else {
