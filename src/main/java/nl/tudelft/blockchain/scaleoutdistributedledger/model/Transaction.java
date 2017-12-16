@@ -1,14 +1,15 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import lombok.Getter;
-
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
+import lombok.Getter;
 
 /**
  * Transaction class.
@@ -49,7 +50,7 @@ public class Transaction {
 		this.remainder = remainder;
 		this.source = source;
 		this.number = number;
-		blockNumber = OptionalInt.empty();
+		this.blockNumber = OptionalInt.empty();
 	}
 
 	/**
@@ -105,6 +106,28 @@ public class Transaction {
 		byte[] transactionInBytes = outputStream.toByteArray();
 		
 		return new Sha256Hash(transactionInBytes);
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + number;
+		result = prime * result + ((receiver == null) ? 0 : receiver.hashCode());
+		result = prime * result + ((sender == null) ? 0 : sender.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!(obj instanceof Transaction)) return false;
+		
+		Transaction other = (Transaction) obj;
+		if (number != other.number) return false;
+		if (receiver != other.receiver) return false;
+		if (sender != other.sender) return false;
+		return true;
 	}
 
 }
