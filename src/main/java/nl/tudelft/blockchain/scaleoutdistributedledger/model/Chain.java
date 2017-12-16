@@ -18,6 +18,7 @@ public class Chain {
 	private final List<Block> blocks;
 	
 	/**
+	 * TODO The last committed Block has to be set somewhere.
 	 * @return the last block that was committed to the main chain
 	 */
 	@Getter @Setter

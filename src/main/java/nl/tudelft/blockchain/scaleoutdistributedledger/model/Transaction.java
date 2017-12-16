@@ -123,7 +123,6 @@ public class Transaction {
 		if (this == obj) return true;
 		if (!(obj instanceof Transaction)) return false;
 		
-		//TODO Are transaction numbers unique per block or per chain?
 		Transaction other = (Transaction) obj;
 		if (number != other.number) return false;
 		if (receiver != other.receiver) return false;

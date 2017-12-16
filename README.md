@@ -56,7 +56,7 @@ For at most `candidates.size() - 1` rounds, we do the following:
     - Otherwise:
         - If it is able to cover the costs, we set it as best-so-far.
         - Otherwise, we add this combination to `nextRound`.
-- If there are no combinations selected for the next round, then the algorithm returns the best-so-far.
+- If there are less than two combinations selected for the next round, then the algorithm returns the best-so-far.
 - Otherwise, `currentRound := nextRound` and `nextRound := []` (empty).
 
 ### Result ###

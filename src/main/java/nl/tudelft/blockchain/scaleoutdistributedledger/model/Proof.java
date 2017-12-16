@@ -160,11 +160,11 @@ public class Proof {
 	 * @param chains      - the list of chains to append to
 	 */
 	public static void appendChains(Transaction transaction, Node receiver, Set<Chain> chains) {
+		Node owner = transaction.getSender();
+		if (owner == null || owner == receiver) return;
+		
+		chains.add(owner.getChain());
 		for (Transaction source : transaction.getSource()) {
-			Node owner = source.getSender();
-			if (owner == receiver) continue;
-			
-			chains.add(owner.getChain());
 			appendChains(source, receiver, chains);
 		}
 	}
