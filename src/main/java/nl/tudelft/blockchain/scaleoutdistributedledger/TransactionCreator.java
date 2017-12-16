@@ -123,7 +123,8 @@ public class TransactionCreator {
 			doOneRound(candidates, currentRound, nextRound);
 
 			//If no better tuples were found, then we can return the best-so-far.
-			if (nextRound.isEmpty()) return currentBestTuple;
+			//If one tuple remains, it will never become better as all other combinations have been ruled out.
+			if (nextRound.size() <= 1) return currentBestTuple;
 
 			//Delete all sets that are worse than the current best.
 			cleanup(nextRound, previousBest);
