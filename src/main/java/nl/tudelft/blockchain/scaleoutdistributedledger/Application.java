@@ -54,7 +54,9 @@ public class Application {
 	 */
 	public synchronized void receiveTransaction(Transaction transaction, Proof proof) {
 		if (CommunicationHelper.receiveTransaction(verification, transaction, proof)) {
-			unspent.add(transaction);
+			if (transaction.getAmount() > 0) {
+				unspent.add(transaction);
+			}
 		}
 	}
 	
