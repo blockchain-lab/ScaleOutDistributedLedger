@@ -4,6 +4,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import lombok.Getter;
@@ -80,15 +81,21 @@ public class TransactionTuple {
 	 * @param transaction - the transaction
 	 */
 	public void addTransaction(Transaction transaction) {
+		Node ownNode = creator.getSender();
+		if (ownNode != transaction.getSender() && ownNode != transaction.getReceiver()) {
+			throw new IllegalArgumentException("The given transaction does not involve us, so we cannot use it as a source!");
+		}
+		
 		this.transactions.add(transaction);
-		if (creator.getSender() == transaction.getSender()) {
+		
+		if (ownNode == transaction.getSender()) {
 			//A transaction we sent, so use the remainder
 			this.amount += transaction.getRemainder();
-		} else if (creator.getSender() == transaction.getReceiver()) {
+		}
+		
+		if (ownNode == transaction.getReceiver()) {
 			//A transaction we received, so use the amount
 			this.amount += transaction.getAmount();
-		} else {
-			throw new IllegalArgumentException("The given transaction does not involve us, so we cannot use it as a source!");
 		}
 		
 		BitSet newChainsRequired = creator.chainsRequired(transaction);
