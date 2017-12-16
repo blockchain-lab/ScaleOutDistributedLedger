@@ -10,7 +10,7 @@ import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
- * Class to wrap a SHA256 hash
+ * Class to wrap a SHA256 hash.
  */
 public class Sha256Hash {
 
@@ -18,7 +18,7 @@ public class Sha256Hash {
 	private byte[] bytes;
 	
 	/**
-	 * Constructor
+	 * Constructor.
 	 * @param bytesAux - the array of bytes to be hashed
 	 */
 	public Sha256Hash(byte[] bytesAux) {
@@ -31,7 +31,7 @@ public class Sha256Hash {
 	}
 	
 	/**
-	 * Constructor
+	 * Constructor.
 	 * @param message - the string to be hashed
 	 */
 	public Sha256Hash(String message) {

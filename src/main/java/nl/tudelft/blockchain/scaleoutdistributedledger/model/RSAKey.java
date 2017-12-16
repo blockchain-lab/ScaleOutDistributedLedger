@@ -14,13 +14,14 @@ import java.util.logging.Level;
 import javax.crypto.Cipher;
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 /**
- * Class to wrap a RSA key pair + Utils to handle RSA keys
+ * Class to wrap a RSA key pair + Utils to handle RSA keys.
  */
 public class RSAKey {
 	
-	public static int KEY_LENGTH = 1024;
+	public static final int KEY_LENGTH = 1024;
 	
 	@Getter
 	private byte[] privateKey;
@@ -29,20 +30,20 @@ public class RSAKey {
 	private byte[] publicKey;
 	
 	/**
-	 * Constructor
+	 * Constructor.
 	 */
 	public RSAKey() {
 		try {
 			KeyPair keyPair = generateKeys();
 			this.privateKey = keyPair.getPrivate().getEncoded();
 			this.publicKey = keyPair.getPublic().getEncoded();
-		} catch (NoSuchAlgorithmException ex) {
-			Log.log(Level.SEVERE, null, ex);
+		} catch (NoSuchAlgorithmException e) {
+			Log.log(Level.SEVERE, null, e);
 		}
 	}
 	
 	/**
-	 * Constructor
+	 * Constructor.
 	 * @param privateKey - RSA private key
 	 * @param publicKey - RSA public key
 	 */
@@ -52,9 +53,9 @@ public class RSAKey {
 	}
 	
 	/**
-	 * Generate a random RSA key pair
+	 * Generate a random RSA key pair.
 	 * @return key pair of RSA keys
-	 * @throws java.security.NoSuchAlgorithmException 
+	 * @throws NoSuchAlgorithmException - unsupported algorithm
 	 */
 	public static KeyPair generateKeys() throws NoSuchAlgorithmException {
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
@@ -63,11 +64,11 @@ public class RSAKey {
 	}
 	
 	/**
-	 * Encrypt array of bytes with public key
+	 * Encrypt array of bytes with public key.
 	 * @param message - an array of bytes of the message
 	 * @param publicKey - public RSA key
 	 * @return encrypted message
-	 * @throws Exception 
+	 * @throws Exception - exception while encrypting
 	 */
 	public static byte[] encrypt(byte[] message, byte[] publicKey) throws Exception {
 		PublicKey publicKeyObject = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKey));
@@ -77,21 +78,21 @@ public class RSAKey {
 	}
 	
 	/**
-	 * Encrypt array of bytes with RSA key pair
+	 * Encrypt array of bytes with RSA key pair.
 	 * @param message - an array of bytes of the message
 	 * @return encrypted message
-	 * @throws Exception 
+	 * @throws Exception - exception while encrypting
 	 */
 	public byte[] encrypt(byte[] message) throws Exception {
 		return encrypt(message, this.publicKey);
 	}
 	
 	/**
-	 * Decrypt a message with private key
+	 * Decrypt a message with private key.
 	 * @param encryptedMessage - array of bytes of the message
 	 * @param privateKey - private RSA key
 	 * @return decrypted message
-	 * @throws Exception 
+	 * @throws Exception - exception while decrypting
 	 */
 	public static byte[] decrypt(byte[] encryptedMessage, byte[] privateKey) throws Exception {
 		PrivateKey privateKeyObject = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKey));
@@ -101,22 +102,22 @@ public class RSAKey {
 	}
 	
 	/**
-	 * Decrypt a message with an RSA key pair
+	 * Decrypt a message with an RSA key pair.
 	 * @param message - array of bytes of the message
 	 * @return decrypted message
-	 * @throws Exception 
+	 * @throws Exception - exception while decrypting
 	 */
 	public byte[] decrypt(byte[] message) throws Exception {
 		return decrypt(message, this.privateKey);
 	}
 	
 	/**
-	 * Verify an array of bytes with signature and public key
+	 * Verify an array of bytes with signature and public key.
 	 * @param message - array of bytes of the message
 	 * @param signature - signature of the message
 	 * @param publicKey - public RSA key
 	 * @return whether is correct or not
-	 * @throws Exception 
+	 * @throws Exception - exception while verifying
 	 */
 	public static boolean verify(byte[] message, byte[] signature, byte[] publicKey) throws Exception {
 		PublicKey publicKeyObject = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKey));
@@ -127,22 +128,22 @@ public class RSAKey {
 	}
 	
 	/**
-	 * Verify an array of bytes with signature and public key
+	 * Verify an array of bytes with signature and public key.
 	 * @param message - array of bytes of the message
 	 * @param signature - signature of the message
 	 * @return whether is correct or not
-	 * @throws Exception 
+	 * @throws Exception - exception while verifying
 	 */
 	public boolean verify(byte[] message, byte[] signature) throws Exception {
 		return verify(message, signature, this.publicKey);
 	}
 	
 	/**
-	 * Sign an array of bytes with a private key
+	 * Sign an array of bytes with a private key.
 	 * @param message - array of bytes of the message
 	 * @param privateKey - private RSA key
 	 * @return signature of the message
-	 * @throws java.lang.Exception
+	 * @throws java.lang.Exception - exception while signing
 	 */
 	public static byte[] sign(byte[] message, byte[] privateKey) throws Exception {
 		PrivateKey privateKeyObject = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKey));
@@ -153,10 +154,10 @@ public class RSAKey {
 	}
 	
 	/**
-	 * Sign an array of bytes with a private key
+	 * Sign an array of bytes with a private key.
 	 * @param message - array of bytes of the message
 	 * @return signature of the message
-	 * @throws java.lang.Exception
+	 * @throws java.lang.Exception - exception while signing
 	 */
 	public byte[] sign(byte[] message) throws Exception {
 		return sign(message, this.privateKey);
@@ -164,9 +165,8 @@ public class RSAKey {
 	
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof RSAKey)) {
-			return false;
-		}
+		if (other == this) return true;
+		if (!(other instanceof RSAKey)) return false;
 		return Arrays.equals(this.publicKey, ((RSAKey) other).publicKey)
 				&& Arrays.equals(this.privateKey, ((RSAKey) other).privateKey);
 	}
@@ -181,26 +181,21 @@ public class RSAKey {
 	
 	@Override
 	public String toString() {
-		StringBuilder stringBuffer = new StringBuilder();
+		StringBuilder stringBuffer = new StringBuilder(32 + this.publicKey.length * 2 + this.privateKey.length * 2);
 		stringBuffer.append("Public Key: \n")
 			.append(keyToString(this.publicKey))
-			.append("\n")
-			.append("Private Key: \n")
+			.append("\nPrivate Key: \n")
 			.append(keyToString(this.privateKey));
 		return stringBuffer.toString();
 	}
 	
 	/**
-	 * Convert a key into a string
+	 * Convert a key into a string.
 	 * @param keyBytes - an array of bytes of the key
 	 * @return string - hexadecimal representation of the key
 	 */
 	public static String keyToString(byte[] keyBytes) {
-		StringBuilder stringBuffer = new StringBuilder();
-		for (int i = 0; i < keyBytes.length; i++) {
-			stringBuffer.append(Integer.toHexString(0x0100 + (keyBytes[i] & 0x00FF)).substring(1));
-		}
-		return stringBuffer.toString();
+		return Utils.bytesToHexString(keyBytes);
 	}
 	
 }

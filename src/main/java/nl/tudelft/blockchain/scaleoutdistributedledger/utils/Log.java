@@ -4,12 +4,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class for logging functions
+ * Class for logging functions.
  */
-public class Log {
+public final class Log {
+	private Log() {
+		throw new UnsupportedOperationException();
+	}
 	
 	/**
-	 * Handle logging of an exception
+	 * Handle logging of an exception.
 	 * @param level - level of the exception
 	 * @param str - message for the logs
 	 * @param throwable - the object of the exception
@@ -20,7 +23,16 @@ public class Log {
 	}
 	
 	/**
-	 * Get the name of the last class that added to the stack 
+	 * Logs the given message.
+	 * @param level - level to log at
+	 * @param str   - message to log
+	 */
+	public static void log(Level level, String str) {
+		Logger.getLogger(getCallerClassName()).log(level, str);
+	}
+	
+	/**
+	 * Get the name of the last class that added to the stack.
 	 * @return class name
 	 */
 	public static String getCallerClassName() {
@@ -33,5 +45,4 @@ public class Log {
 		}
 		return null;
 	}
-	
 }

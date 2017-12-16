@@ -49,7 +49,7 @@ public class BlockTest {
 	}
 
 	/**
-	 * Test for {@link Block#getAbstract()}.
+	 * Test for {@link Block#getBlockAbstract()}.
 	 */
 	@Test
 	public void testGetAbstract_Valid() {
@@ -60,14 +60,14 @@ public class BlockTest {
 			outputStream.write(this.block.getHash().getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
 			
-			assertTrue(this.block.getOwner().verify(attrInBytes, this.block.createBlockAbstract().getSignature()));
+			assertTrue(this.block.getOwner().verify(attrInBytes, this.block.getBlockAbstract().getSignature()));
 		} catch (Exception ex) {
 			fail();
 		}
 	}
 	
 	/**
-	 * Test for {@link Block#getAbstract()}.
+	 * Test for {@link Block#getBlockAbstract()}.
 	 */
 	@Test
 	public void testGetAbstract_Invalid() {
@@ -78,7 +78,7 @@ public class BlockTest {
 			outputStream.write(this.block.getHash().getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
 
-			assertFalse(this.block.getOwner().verify(attrInBytes, this.block.createBlockAbstract().getSignature()));
+			assertFalse(this.block.getOwner().verify(attrInBytes, this.block.getBlockAbstract().getSignature()));
 		} catch (Exception ex) {
 			fail();
 		}
