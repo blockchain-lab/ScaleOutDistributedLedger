@@ -27,7 +27,7 @@ public class Node {
 	 * @return private key
 	 */
 	@Getter @Setter
-	private byte[] privateKey;
+	private transient byte[] privateKey;
 	
 	@Getter @Setter
 	private String address;
