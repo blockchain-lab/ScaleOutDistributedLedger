@@ -93,9 +93,7 @@ public class TransactionCreator {
 	/**
 	 * @return the best TransactionTuple or null if the sender doesn't have enough money
 	 */
-	public TransactionTuple bestSources() {
-		//TODO Cache unspent transactions?
-
+	protected TransactionTuple bestSources() {
 		//Step 1: Collect all unspent transactions
 		Set<TransactionTuple> candidates = application
 				.getUnspent()
