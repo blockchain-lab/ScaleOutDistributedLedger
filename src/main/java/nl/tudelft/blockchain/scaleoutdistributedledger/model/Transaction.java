@@ -130,4 +130,13 @@ public class Transaction {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		if (sender == null) {
+			return "Transaction(" + number + ": GENESIS -> " + receiver.getId() + " $" + amount + ")";
+		} else {
+			return "Transaction(" + number + ": " + sender.getId() + " -> " + receiver.getId() + " $" + amount + " / $" + remainder + ")";
+		}
+	}
+
 }

@@ -3,6 +3,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -155,5 +156,14 @@ public class TransactionTuple {
 		if (!chainsRequired.equals(other.chainsRequired)) return false;
 		if (!transactions.equals(other.transactions)) return false;
 		return true;
+	}
+	
+	@Override
+	public String toString() {
+		String sources = transactions.stream()
+				.map(Transaction::getNumber)
+				.map(String::valueOf)
+				.collect(Collectors.joining(", ", "<", ">"));
+		return "Tuple(" + sources + ", $" + amount + ", required=" + chainsRequired + ")"; 
 	}
 }
