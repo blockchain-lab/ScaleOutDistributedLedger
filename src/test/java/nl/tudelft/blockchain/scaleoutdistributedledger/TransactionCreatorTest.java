@@ -52,14 +52,14 @@ public class TransactionCreatorTest {
 	}
 	
 	/**
-	 * Creates <tt>amount</tt> nodes, where the first node will have id <tt>startId</tt>.
-	 * @param startId - the id of the first node created
-	 * @param amount  - the amount of nodes to create
+	 * Creates the nodes <tt>from</tt> up to (inclusive) <tt>to</tt>.
+	 * @param from - the id of the first node to created
+	 * @param to   - the id of the last node to create
 	 */
-	public void createNodes(int startId, int amount) {
-		for (int i = 0; i < amount; i++) {
-			Node nodeMock = createNodeMock(startId + i);
-			nodes.put(startId + i, nodeMock);
+	public void createNodes(int from, int to) {
+		for (int i = from; i <= to; i++) {
+			Node nodeMock = createNodeMock(i);
+			nodes.put(i, nodeMock);
 		}
 	}
 	
@@ -147,6 +147,31 @@ public class TransactionCreatorTest {
 		expectedSet.addAll(Arrays.asList(expectedSources));
 		
 		assertEquals(expectedSet, actualSet);
+	}
+	
+	/**
+	 * Test for creating a transaction when we don't have any money.
+	 */
+	@Test(expected = NotEnoughMoneyException.class)
+	public void testNotEnoughMoney1() {
+		createNodes(1, 1);
+		
+		TransactionCreator tc = new TransactionCreator(applicationMock, getNode(1), 10);
+		tc.createTransaction(2);
+	}
+	
+	/**
+	 * Test for creating a transaction when we don't have enough money.
+	 */
+	@Test(expected = NotEnoughMoneyException.class)
+	public void testNotEnoughMoney2() {
+		createNodes(1, 2);
+		
+		//We have 5 money, received from node 2.
+		addReceivedMoney(getNode(2), 5);
+		
+		TransactionCreator tc = new TransactionCreator(applicationMock, getNode(1), 10);
+		tc.createTransaction(2);
 	}
 	
 	/**
