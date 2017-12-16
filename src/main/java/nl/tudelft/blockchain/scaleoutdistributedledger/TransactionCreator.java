@@ -21,7 +21,7 @@ import lombok.Getter;
  */
 public class TransactionCreator {
 	private final Application application;
-	private final int nodes;
+	private final int nodesCount;
 	@Getter
 	private final Node sender;
 	private final Node receiver;
@@ -38,7 +38,7 @@ public class TransactionCreator {
 	 */
 	public TransactionCreator(Application application, Node receiver, long amount) {
 		this.application = application;
-		this.nodes = application.getNodes().size();
+		this.nodesCount = application.getNodes().size();
 		this.sender = application.getOwnNode();
 		this.receiver = receiver;
 		this.amount = amount;
@@ -55,7 +55,7 @@ public class TransactionCreator {
 				.keySet()
 				.stream()
 				.map(Node::getId)
-				.collect(() -> new BitSet(nodes),
+				.collect(() -> new BitSet(nodesCount),
 						(bs, i) -> bs.set(i),
 						(bs1, bs2) -> bs1.or(bs2)
 				);
@@ -93,9 +93,7 @@ public class TransactionCreator {
 	/**
 	 * @return the best TransactionTuple or null if the sender doesn't have enough money
 	 */
-	public TransactionTuple bestSources() {
-		//TODO Cache unspent transactions?
-
+	protected TransactionTuple bestSources() {
 		//Step 1: Collect all unspent transactions
 		Set<TransactionTuple> candidates = application
 				.getUnspent()
@@ -220,7 +218,7 @@ public class TransactionCreator {
 		BitSet bitset = chains.stream()
 				.map(Chain::getOwner)
 				.map(Node::getId)
-				.collect(() -> new BitSet(nodes),
+				.collect(() -> new BitSet(nodesCount),
 						(bs, i) -> bs.set(i),
 						(bs1, bs2) -> bs1.or(bs2)
 				);

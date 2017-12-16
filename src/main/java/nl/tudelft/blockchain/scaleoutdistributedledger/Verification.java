@@ -1,11 +1,8 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import static nl.tudelft.blockchain.scaleoutdistributedledger.enums.TransactionValidation.*;
-
 import java.util.HashMap;
 import java.util.Set;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.enums.TransactionValidation;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
@@ -15,7 +12,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
  * Verification and validation algorithms.
  */
 public class Verification {
-	private HashMap<Transaction, TransactionValidation> validationCache = new HashMap<>();
+	private HashMap<Transaction, Boolean> validationCache = new HashMap<>();
 
 	/**
 	 * Implementation of algorithm 1 in the paper.
@@ -25,16 +22,16 @@ public class Verification {
 	 * @return              true if the transaction is valid, false otherwise
 	 */
 	public boolean isValid(Transaction transaction, Proof proof) {
-		TransactionValidation valid = validate(transaction, proof);
+		boolean valid = validate(transaction, proof);
 		
 		//Store in the cache
-		TransactionValidation old = validationCache.put(transaction, valid);
-		if (old != valid) {
+		Boolean old = validationCache.put(transaction, valid);
+		if (old != null && old.booleanValue() != valid) {
 			throw new IllegalStateException(
 					"We validated transaction " + transaction + "to be " + old + " before, but " + valid + " now!");
 		}
 		
-		return valid == VALID;
+		return valid;
 	}
 	
 	/**
@@ -48,21 +45,21 @@ public class Verification {
 	/**
 	 * @param transaction - the transaction to validate
 	 * @param proof       - the proof to validate with
-	 * @return              VALID if the transaction is valid, UNKNOWN otherwise
+	 * @return              true if the transaction is valid, false otherwise
 	 */
-	private TransactionValidation validate(Transaction transaction, Proof proof) {
+	private boolean validate(Transaction transaction, Proof proof) {
 		//Verify the proof
-		if (!proof.verify()) return UNKNOWN;
+		if (!proof.verify()) return false;
 		
 		//Equality check: Check if the counts match up
 		long expectedSum = transaction.getAmount() + transaction.getRemainder();
 		long sum = 0L;
 		for (Transaction txj : transaction.getSource()) {
 			sum += txj.getRemainder();
-			if (sum > expectedSum) return UNKNOWN;
+			if (sum > expectedSum) return false;
 		}
 		
-		if (sum != expectedSum) return UNKNOWN;
+		if (sum != expectedSum) return false;
 
 		//Double spending check
 		Chain chain = transaction.getSender().getChain();
@@ -74,7 +71,7 @@ public class Verification {
 					continue;
 				}
 				
-				if (!intersectEmpty(transaction.getSource(), txj.getSource())) return UNKNOWN;
+				if (!intersectEmpty(transaction.getSource(), txj.getSource())) return false;
 			}
 			
 			if (found) break;
@@ -82,20 +79,20 @@ public class Verification {
 		
 		//Validate sources
 		for (Transaction txj : transaction.getSource()) {
-			TransactionValidation cached = validationCache.get(txj);
+			Boolean cached = validationCache.get(txj);
 			if (cached == null) {
 				//We didn't see this transaction before, so we need to validate it.
-				if (!isValid(txj, proof)) return UNKNOWN;
-			} else if (cached == UNKNOWN) {
+				if (!isValid(txj, proof)) return false;
+			} else if (!cached) {
 				//We already invalidated this transaction
-				return UNKNOWN;
+				return false;
 			} else {
 				//The transaction was validated before, so we don't have to do anything.
 				continue;
 			}
 		}
 		
-		return VALID;
+		return true;
 	}
 	
 	/**
