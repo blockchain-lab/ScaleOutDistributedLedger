@@ -1,7 +1,8 @@
 # ScaleOutDistributedLedger
-TU Delft Blockchain Engineering course project on scale-out distributed ledger.
+TU Delft Blockchain Engineering course project on scale-out distributed ledger
 
-Technical report
+## Tracker Server
+The tracker server can be installed by installing NodeJS and running `npm install` in the tracker-server folder. After this it can be run by running `npm start` in that same folder.
 
 # Data Model #
 ## Node ##
@@ -77,3 +78,4 @@ BitSets are used as a convenient and efficient way to represent the chains that 
 * Combining the chains required of 2 tuples is done with a bitwise or.
 * The number of chains required is the cardinality of a bitset.
 * Removing the chains that the receiver already knows is done with a bitwise andNot.
+
