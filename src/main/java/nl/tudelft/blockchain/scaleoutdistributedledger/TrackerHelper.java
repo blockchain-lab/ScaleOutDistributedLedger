@@ -29,7 +29,7 @@ public final class TrackerHelper {
 	 * @return            the assigned id
 	 * @throws IOException - exception while registering node
 	 */
-	public static int registerNode(byte[] publicKey) throws IOException {
+	public static int registerNode(byte[] publicKey) throws IOException, NodeRegisterFailedException {
 		JSONObject json = new JSONObject();
 		json.put("address", Application.TRACKER_SERVER_ADDRESS);
 		json.put("port", Application.TRACKER_SERVER_PORT);
@@ -39,8 +39,8 @@ public final class TrackerHelper {
 		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
 		request.setEntity(requestEntity);
 		JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-		if(response.getBoolean("success")) return response.getInt("id");
-		return -1;
+		if (response.getBoolean("success")) return response.getInt("id");
+		throw new NodeRegisterFailedException();
 	}
 
 	/**
@@ -55,15 +55,14 @@ public final class TrackerHelper {
 		JSONArray nodesArray = (JSONArray) new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).get("nodes");
 
 		for (int i = 0; i < nodesArray.length(); i++) {
-			JSONObject object = (JSONObject)nodesArray.get(i);
-			byte[] publicKey = jsonArrayToByteArray((JSONArray)object.get("publicKey"));
+			JSONObject object = (JSONObject) nodesArray.get(i);
+			byte[] publicKey = jsonArrayToByteArray((JSONArray) object.get("publicKey"));
 			String address = object.getString("address");
 			int port = object.getInt("port");
-			if (nodes != null && nodes.containsKey(i)) {
+			if (nodes.containsKey(i)) {
 				Node node = nodes.get(i);
 				node.setAddress(address);
 				node.setPort(object.getInt("port"));
-				node.setPublicKey(publicKey);
 			} else {
 				Node node = new Node(i, publicKey, address, port);
 				nodes.put(i, node);
@@ -79,7 +78,7 @@ public final class TrackerHelper {
 	private static byte[] jsonArrayToByteArray(JSONArray json) {
 		byte[] res = new byte[json.length()];
 		for (int i = 0; i < json.length(); i++) {
-			res[i] = (byte)json.getInt(i);
+			res[i] = (byte) json.getInt(i);
 		}
 		return res;
 	}
