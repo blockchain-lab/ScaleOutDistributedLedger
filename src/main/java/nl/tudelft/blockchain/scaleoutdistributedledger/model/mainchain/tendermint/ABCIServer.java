@@ -12,7 +12,7 @@ import java.util.logging.Level;
  * The server implements a number of callbacks for events received from Tendermint.
  * @see <a href="https://github.com/tendermint/abci#message-types">Tendermint ABCI message type documentation</a>
  */
-public class ABCIServer implements ABCIAPI {
+class ABCIServer implements ABCIAPI {
 	@Override
 	public ResponseBeginBlock requestBeginBlock(RequestBeginBlock requestBeginBlock) {
 		Log.log(Level.FINE, "[TENDERMINT] New block started");
