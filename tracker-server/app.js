@@ -60,8 +60,6 @@ process.on('uncaughtException', (err) => {
 function normalizePort(val) {
 	let port = parseInt(val, 10);
 
-	// if (true) {
-
 	if (isNaN(port)) {
 		// named pipe
 		return val;
@@ -78,7 +76,6 @@ function normalizePort(val) {
 /**
  * Event listener for HTTP server "listening" event.
  */
-
 function onListening() {
 	const addr = server.address();
 	const bind = typeof addr === 'string'
