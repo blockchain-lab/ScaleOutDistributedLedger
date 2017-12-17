@@ -35,13 +35,14 @@ When sending a proof for a transaction, we use our metaKnowledge of the receiver
 ## Algorithm 3: Non-interactive Smart Transacting Algorithm ##
 The algorithm in the paper basically requires the use of a powerset of all unspent transactions. Since this requires O(2^n) sets, this is only feasible for small numbers of n.
 
-The algorithm implemented is smarter and eliminates bad combinations by keeping track of a best-so-far. It has the same worst case performance, O(2^n), e.g. if all unspent transactions are required for the transaction. If this is not the case however (you send a part of your money), then the performance of the implemented algorithm is much better. The less transactions are required as sources, the better this algorithm performs.
+The algorithm implemented is smarter and eliminates bad combinations by keeping track of a best-so-far. It has the same worst case performance, O(2^n), e.g. if all unspent transactions are required for the transaction. If this is not the case however (you send a part of your money), then the performance of the implemented algorithm is much better. The less transactions are required as sources, the better this algorithm performs. The algorithm also benefits from sharding, as transactions with the same requirements (e.g. received from the same source) will be considered as a group instead of individually.
 
 #### Step 1 ####
 First we collect all unspent transactions (these are tracked in application). We then create a TransactionTuple for each transaction, which will calculate which chains would need to be sent based on what the receiver already knows.
+We then merge the tuples that have the same chain requirements in O(|transactions|) by hashing them to buckets.
 
 #### Step 2 ####
-Check if there are single transactions that have a large enough amount to be used as the only source. If we find at least one of these, then all transactions that require more chains than the best single source are directly eliminated. (Combining those transactions with other transactions would only make the required set of chains bigger, so they will never be in the best choice)
+Check if there are single transactions / single groups that have a large enough amount to be used as the only source. If we find at least one of these, then all transactions that require more chains than the best single source are directly eliminated. (Combining those transactions with other transactions would only make the required set of chains bigger, so they will never be in the best choice)
 
 We call the resulting set `candidates`.
 
@@ -52,7 +53,7 @@ We have a set of TransactionTuples `currentRound`, which is initially set to `ca
 We have a set of TransactionTuples `nextRound`, which is initially empty.
 
 For at most `candidates.size() - 1` rounds, we do the following:
-- We iterate over the candidates. We try to combine each candidate with each element of `currentRound`.
+- We iterate over the candidates. We try to combine each candidate tuple with each element of `currentRound`.
     - If the combination requires more than or the same number of chains than the best-so-far, then it is eliminated.
     - Otherwise:
         - If it is able to cover the costs, we set it as best-so-far.
@@ -61,14 +62,13 @@ For at most `candidates.size() - 1` rounds, we do the following:
 - Otherwise, `currentRound := nextRound` and `nextRound := []` (empty).
 
 ### Result ###
-The final combination of transactions returned is the **smallest** set of sources with minimum amount of chains required.
+The final combination of transactions returned is the set of sources with minimum amount of chains required. The set found is the largest possible set for its chain requirements, but not necessarily the largest possible set.
 
 ### Performance ###
-The performance of the algorithm is still O(2^n) in the worst case. The worst case would be if all transactions are needed to get the amount of money required. Then the algorithm will consider all possible combinations.
+The performance of the algorithm is still O(2^n) in the worst case. The worst case would be if all transactions are needed to get the amount of money required and none of them can be grouped. Then the algorithm will consider all possible combinations.
 
 ### Future optimizations ###
 * It would probably be useful to keep track of how much money we have, to prevent the costly case where we don't have enough money.
-* It could be beneficial to group transactions together that have the same chain requirements in the first step, and use these as the input for the current implementation instead of the individual transactions. Grouping transactions together can be done in O(|transactions|) by hashing them into buckets.
 * There could be 2 algorithms, one for when we expect many transactions will be required, one for when we expect only a few transactions will be required. The current algorithm works bottom up, the other algorithm could work top down. (How many transactions do we need at minimum to cover the transaction?)
 
 ### Implementation Details ###
