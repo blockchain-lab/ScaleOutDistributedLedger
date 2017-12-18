@@ -59,7 +59,13 @@
 			<artifactId>json</artifactId>
 			<version>20171018</version>
 		</dependency>
-    </dependencies>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>4.1.19.Final</version>
+		</dependency>
+
+	</dependencies>
 
 	<build>
 		<defaultGoal>clean verify</defaultGoal>
