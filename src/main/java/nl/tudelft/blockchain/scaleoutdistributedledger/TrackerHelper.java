@@ -31,12 +31,12 @@ public final class TrackerHelper {
 	 */
 	public static int registerNode(byte[] publicKey) throws IOException, NodeRegisterFailedException {
 		JSONObject json = new JSONObject();
-		json.put("address", Application.TRACKER_SERVER_ADDRESS);
-		json.put("port", Application.TRACKER_SERVER_PORT);
+		json.put("address", Application.NODE_ADDRESS);
+		json.put("port", Application.NODE_PORT);
 		json.put("publicKey", publicKey);
 		HttpClient client = HttpClientBuilder.create().build();
 		StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.NODE_ADDRESS, Application.NODE_PORT));
 		request.setEntity(requestEntity);
 		JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 		if (response.getBoolean("success")) return response.getInt("id");
@@ -51,7 +51,7 @@ public final class TrackerHelper {
 	 */
 	public static void updateNodes(Map<Integer, Node> nodes) throws IOException {
 		HttpClient client = HttpClientBuilder.create().build();
-		HttpGet request = new HttpGet(String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+		HttpGet request = new HttpGet(String.format("http://%s:%d", Application.NODE_ADDRESS, Application.NODE_PORT));
 		JSONArray nodesArray = (JSONArray) new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).get("nodes");
 
 		for (int i = 0; i < nodesArray.length(); i++) {
@@ -62,7 +62,7 @@ public final class TrackerHelper {
 			if (nodes.containsKey(i)) {
 				Node node = nodes.get(i);
 				node.setAddress(address);
-				node.setPort(object.getInt("port"));
+				node.setPort(port);
 			} else {
 				Node node = new Node(i, publicKey, address, port);
 				nodes.put(i, node);

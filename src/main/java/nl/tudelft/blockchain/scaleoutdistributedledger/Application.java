@@ -17,8 +17,8 @@ import java.util.Set;
  */
 public class Application {
 
-	public static final String TRACKER_SERVER_ADDRESS = "localhost";
-	public static final int TRACKER_SERVER_PORT = 3000;
+	public static final String NODE_ADDRESS = "localhost";
+	public static final int NODE_PORT = 8007;
 
 	private final Verification verification = new Verification();
 	
