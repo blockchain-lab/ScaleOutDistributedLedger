@@ -35,6 +35,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.7</version>
+		</dependency>
+		<dependency>
 			<groupId>com.github.jtendermint</groupId>
 			<artifactId>jabci</artifactId>
 			<version>0.12.0.2</version>
@@ -390,7 +395,6 @@
 				<version>${findbugs.version}</version>
 				<configuration>
 					<excludeFilterFile>findbugs-exclude.xml</excludeFilterFile>
-					<failOnViolation>false</failOnViolation>
 					<xmlOutput>true</xmlOutput>
 					<includeTests>true</includeTests>
 				</configuration>

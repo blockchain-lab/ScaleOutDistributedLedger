@@ -2,15 +2,23 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 import lombok.Setter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import org.apache.commons.lang3.SerializationException;
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * BlockAbstract class.
  */
-public class BlockAbstract {
+public class BlockAbstract implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@Getter
 	private final Node owner;
@@ -46,11 +54,17 @@ public class BlockAbstract {
 	 * Convert this abstract to a byte array.
 	 * Performs the inverse of {@link BlockAbstract#fromBytes(byte[])}.
 	 *
-	 * @return - the byte array conversion
+	 * @return - the byte array conversion; or null if serialization fails.
 	 */
 	public byte[] toBytes() {
-        //TODO: implement this method
-        return new byte[0];
+		byte[] ret;
+		try {
+			ret = SerializationUtils.serialize(this);
+		} catch (SerializationException e) {
+			Log.log(Level.WARNING, "Could not serialize the BlockAbstract to bytes", e);
+			ret = null;
+		}
+		return ret;
     }
 
 	/**
@@ -58,12 +72,16 @@ public class BlockAbstract {
 	 * Performs the inverse of {@link BlockAbstract#toBytes()}.
 	 *
 	 * @param bytes - the data to construct from
-	 * @return - the abstract represented by the bytes
+	 * @return - the abstract represented by the bytes; null if the deserialization fails.
 	 */
 	public static BlockAbstract fromBytes(byte[] bytes) {
-        //TODO: implement this method
-        BlockAbstract block = new BlockAbstract(null, 0, Sha256Hash.withHash(new byte[0]), new byte[0]);
-        block.setOnMainChain(Optional.of(true));
+		BlockAbstract block;
+		try {
+			block = SerializationUtils.deserialize(bytes);
+		} catch (SerializationException e) {
+			Log.log(Level.WARNING, "Could not deserialize BlockAbstract from bytes", e);
+			block = null;
+		}
 		return block;
     }
 
@@ -73,9 +91,7 @@ public class BlockAbstract {
 	 */
 	public boolean isOnMainChain() {
 		if (!this.onMainChain.isPresent()) {
-			// TODO: check with tendermint if this is on the main chain.
-			// this.onMainChain = Optional.of(mainchain.isPresent(this));
-			this.onMainChain = Optional.of(false);
+			this.onMainChain = Optional.of(Application.getMainChain().isPresent(this));
 		}
 		return this.onMainChain.get();
 	}
@@ -103,6 +119,7 @@ public class BlockAbstract {
 
             return RSAKey.verify(attrInBytes, this.signature, this.owner.getPublicKey());
         } catch (Exception e) {
+	    	//TODO: we are potentially swallowing a huge stack of exceptions here; this should really only be catching relevant exceptions (e.g. signature exception)
 	        return false;
         }
 	}

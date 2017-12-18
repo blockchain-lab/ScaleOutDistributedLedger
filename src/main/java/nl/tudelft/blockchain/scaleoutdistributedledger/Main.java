@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+
 /**
  * Main starting point of the application.
  */
@@ -16,5 +17,6 @@ public final class Main {
 	 */
 	public static void main(String[] args) {
 		//TODO
+		Application app = new Application(46658);
 	}
 }

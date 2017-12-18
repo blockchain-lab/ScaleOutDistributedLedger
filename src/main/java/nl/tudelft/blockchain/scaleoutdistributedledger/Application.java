@@ -9,6 +9,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.RSAKey;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 
 /**
  * Class to represent an application.
@@ -21,12 +23,14 @@ public class Application {
 	
 	@Getter
 	private Map<Integer, Node> nodes = new HashMap<>();
-	
+	private static MainChain mainChain;
+
 	/**
 	 * Creates a new application.
+	 * @param tendermintPort - the port on which the tendermint server will run.
 	 */
-	public Application() {
-		init();
+	public Application(int tendermintPort) {
+		init(tendermintPort);
 	}
 	
 	/**
@@ -63,13 +67,24 @@ public class Application {
 	
 	/**
 	 * Initializes this application.
+	 * @param tmPort - the port on which to run the Tendermint server
 	 */
-	private void init() {
+	private void init(int tmPort) {
 		RSAKey key = new RSAKey();
 		int id = TrackerHelper.registerNode(key.getPublicKey());
 		this.ownNode = new Node(id, key.getPublicKey(), "localhost");
 		this.ownNode.setPrivateKey(key.getPrivateKey());
-		
+
+		mainChain = new TendermintChain(tmPort);
+
 		nodes.put(id, this.ownNode);
+	}
+
+	/**
+	 * Returns the singleton main chain.
+	 * @return -
+	 */
+	public static MainChain getMainChain() {
+		return mainChain;
 	}
 }

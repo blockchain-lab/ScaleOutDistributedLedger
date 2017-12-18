@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermi
 
 import com.github.jtendermint.jabci.socket.TSocket;
 import lombok.SneakyThrows;
+import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
@@ -12,28 +13,30 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 /**
- * Class implementinf {@link MainChain} for a Tendermint chain.
+ * Class implementing {@link MainChain} for a Tendermint chain.
  * @see <a href="https://tendermint.com/">Tendermint.com</a>
  */
 public final class TendermintChain implements MainChain {
 	private ABCIServer handler;
 	private ABCIClient client;
 	private TSocket socket;
+	public static final String DEFAULT_ADDRESS = "localhost";
+	public static final int DEFAULT_PORT = 46657;
 
 	/**
 	 * Create and start the connection with Tendermint on the given address.
-	 *
-	 * @param addr - the address to connect to
+	 * This is a singleton, should be one per {@link Application}.
+	 * @param port - the port on which we run the server
 	 */
-	public TendermintChain(String addr) {
-		System.out.println("Starting Tendermint chain on " + addr);
+	public TendermintChain(final int port) {
+		System.out.println("Starting Tendermint chain on " + DEFAULT_ADDRESS +":"+port);
 		socket = new TSocket();
 		handler = new ABCIServer();
-		client = new ABCIClient(addr);
+		client = new ABCIClient(DEFAULT_ADDRESS + ":" + port);
 
 		socket.registerListener(handler);
 
-		Thread t = new Thread(socket::start);
+		Thread t = new Thread(() -> socket.start(port));
 		t.setName("Main Chain Socket");
 		t.start();
 	}
@@ -44,14 +47,6 @@ public final class TendermintChain implements MainChain {
 	 */
 	protected void stop() {
 		socket.stop();
-	}
-
-	@SneakyThrows //TODO: remove this method
-	public static void main(String[] args) {
-		TendermintChain tmchain = new TendermintChain("http://localhost:46657");
-		while (true) {
-			Thread.sleep(1000);
-		}
 	}
 
 	@Override
