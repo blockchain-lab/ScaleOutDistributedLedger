@@ -2,36 +2,39 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.sockets;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-
-import java.util.ArrayList;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 
 /**
- * Created by bartd on 17-12-2017.
+ * Handler for socket server.
  */
 public class SocketServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        System.out.println("SERVER1");
-        System.out.println(msg.getClass());
-        if(msg instanceof ArrayList) {
-            ((ArrayList) msg).forEach(e -> {
-                System.out.println(e);
-            });
-        }
-        ctx.write(msg);
+        System.out.println("Server received msg");
+        // TODO: handle msg
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        System.out.println("SERVER2");
-        ctx.flush();
+        ctx.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        System.out.println("SERVER3");
         cause.printStackTrace();
         ctx.close();
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if(evt instanceof IdleStateEvent) {
+            IdleStateEvent e = (IdleStateEvent) evt;
+            if(e.state() == IdleState.ALL_IDLE) {
+                System.out.println("Server detected idle channel!");
+                ctx.close();
+            }
+        }
     }
 }

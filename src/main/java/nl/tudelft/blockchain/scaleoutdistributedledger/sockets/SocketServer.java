@@ -12,17 +12,27 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 
 /**
- * Created by bartd on 17-12-2017.
+ * Socket server.
  */
-public class SocketServer {
+public class SocketServer implements Runnable {
 
-    public static void main(String[] args) {
-        new SocketServer().initServer(8007);
+    private int port;
+
+    /**
+     * Constructor.
+     * @param port - the port to listen on.
+     */
+    public SocketServer(int port) {
+        this.port = port;
     }
 
-    public void initServer(int port) {
+    /**
+     * Init the socket serer.
+     */
+    public void initServer() {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
@@ -35,7 +45,10 @@ public class SocketServer {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             ChannelPipeline p = socketChannel.pipeline();
-                            p.addLast(new ObjectEncoder(), new ObjectDecoder(ClassResolvers.cacheDisabled(null)), new SocketServerHandler());
+                            p.addLast(new IdleStateHandler(0, 0, 5),
+                                    new ObjectEncoder(),
+                                    new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
+                                    new SocketServerHandler());
                         }
                     });
 
@@ -46,5 +59,10 @@ public class SocketServer {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
+    }
+
+    @Override
+    public void run() {
+        this.initServer();
     }
 }
