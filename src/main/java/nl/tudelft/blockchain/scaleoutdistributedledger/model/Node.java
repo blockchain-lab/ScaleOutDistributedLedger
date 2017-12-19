@@ -1,12 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Node class.
@@ -31,6 +31,9 @@ public class Node {
 	
 	@Getter @Setter
 	private String address;
+
+	@Getter @Setter
+	private int port;
 	
 	/**
 	 * @return a map containing what we know that this node knows
@@ -52,11 +55,13 @@ public class Node {
 	 * @param id - the id of this node.
 	 * @param publicKey - the public key of this node.
 	 * @param address - the address of this node.
+	 * @param port = the port of this node.
 	 */
-	public Node(int id, byte[] publicKey, String address) {
+	public Node(int id, byte[] publicKey, String address, int port) {
 		this.id = id;
 		this.publicKey = publicKey;
 		this.address = address;
+		this.port = port;
 		this.chain = new Chain(this);
 	}
 

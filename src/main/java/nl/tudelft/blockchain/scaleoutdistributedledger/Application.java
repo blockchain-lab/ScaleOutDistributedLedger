@@ -1,21 +1,25 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.RSAKey;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
-import lombok.Getter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Class to represent an application.
  */
 public class Application {
+
+	public static final String NODE_ADDRESS = "localhost";
+	public static final int NODE_PORT = 8007;
+
 	private final Verification verification = new Verification();
 	
 	@Getter
@@ -30,7 +34,7 @@ public class Application {
 	/**
 	 * Creates a new application.
 	 */
-	public Application() {
+	public Application() throws IOException {
 		init();
 	}
 	
@@ -38,7 +42,7 @@ public class Application {
 	 * @param id - the id
 	 * @return the node with the given id, or null
 	 */
-	public Node getNode(int id) {
+	public Node getNode(int id) throws IOException {
 		Node node = nodes.get(id);
 		if (node == null) {
 			TrackerHelper.updateNodes(nodes);
@@ -73,12 +77,12 @@ public class Application {
 	/**
 	 * Initializes this application.
 	 */
-	private void init() {
+	private void init() throws IOException {
 		RSAKey key = new RSAKey();
-		int id = TrackerHelper.registerNode(key.getPublicKey());
-		this.ownNode = new Node(id, key.getPublicKey(), "localhost");
+		this.ownNode = TrackerHelper.registerNode(key.getPublicKey(), "localhost", 80);
+		// TODO: set actual IP address and port
 		this.ownNode.setPrivateKey(key.getPrivateKey());
 		
-		nodes.put(id, this.ownNode);
+		nodes.put(this.ownNode.getId(), this.ownNode);
 	}
 }
