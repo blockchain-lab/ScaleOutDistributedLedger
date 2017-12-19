@@ -35,23 +35,24 @@ public class BlockAbstract implements Serializable {
 	@Setter
 	private Optional<Boolean> onMainChain; // any means unknown
 
-	@Setter @Getter
+	@Setter	@Getter
 	private Sha256Hash abstractHash;
 
 	/**
-     * Constructor.
-     * @param owner - the owner of the block this abstract is for.
-     * @param blockNumber - the number of the block this abstract is for.
-     * @param blockHash - the hash of the block this abstract is for.
-     * @param signature - the signature for the block by the owner.
-     */
-    public BlockAbstract(Node owner, int blockNumber, Sha256Hash blockHash, byte[] signature) {
-        this.owner = owner;
-        this.blockNumber = blockNumber;
-        this.blockHash = blockHash;
-        this.signature = signature;
-        this.onMainChain = Optional.empty();
-    }
+	 * Constructor.
+	 *
+	 * @param owner       - the owner of the block this abstract is for.
+	 * @param blockNumber - the number of the block this abstract is for.
+	 * @param blockHash   - the hash of the block this abstract is for.
+	 * @param signature   - the signature for the block by the owner.
+	 */
+	public BlockAbstract(Node owner, int blockNumber, Sha256Hash blockHash, byte[] signature) {
+		this.owner = owner;
+		this.blockNumber = blockNumber;
+		this.blockHash = blockHash;
+		this.signature = signature;
+		this.onMainChain = Optional.empty();
+	}
 
 	/**
 	 * Convert this abstract to a byte array.
@@ -70,7 +71,7 @@ public class BlockAbstract implements Serializable {
 			ret = null;
 		}
 		return ret;
-    }
+	}
 
 	/**
 	 * Construct a {@link BlockAbstract} from a byte array.
@@ -90,10 +91,11 @@ public class BlockAbstract implements Serializable {
 			block = null;
 		}
 		return block;
-    }
+	}
 
 	/**
 	 * Returns the boolean onMainChain, and gets it if it is not present.
+	 *
 	 * @return - boolean identifying if this abstract is on the main chain.
 	 */
 	public boolean isOnMainChain() {
@@ -105,6 +107,7 @@ public class BlockAbstract implements Serializable {
 
 	/**
 	 * Checks if the given blocks corresponds with the blockHash in this abstract.
+	 *
 	 * @param block - the block to check
 	 * @return - boolean identifying if the blockhash was correct or not.
 	 */
@@ -114,20 +117,21 @@ public class BlockAbstract implements Serializable {
 
 	/**
 	 * Checks if the signature included in this abstract is valid.
+	 *
 	 * @return - boolean identifying if the signature is valid.
 	 */
 	public boolean checkSignature() {
-	    try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(Utils.intToByteArray(this.owner.getId()));
-            outputStream.write(Utils.intToByteArray(this.blockNumber));
-            outputStream.write(this.blockHash.getBytes());
-            byte[] attrInBytes = outputStream.toByteArray();
+		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			outputStream.write(Utils.intToByteArray(this.owner.getId()));
+			outputStream.write(Utils.intToByteArray(this.blockNumber));
+			outputStream.write(this.blockHash.getBytes());
+			byte[] attrInBytes = outputStream.toByteArray();
 
-            return RSAKey.verify(attrInBytes, this.signature, this.owner.getPublicKey());
-        } catch (Exception e) {
-	    	//TODO: we are potentially swallowing a huge stack of exceptions here; this should really only be catching relevant exceptions (e.g. signature exception)
-	        return false;
-        }
+			return RSAKey.verify(attrInBytes, this.signature, this.owner.getPublicKey());
+		} catch (Exception e) {
+			//TODO: we are potentially swallowing a huge stack of exceptions here; this should really only be catching relevant exceptions (e.g. signature exception)
+			return false;
+		}
 	}
 }
