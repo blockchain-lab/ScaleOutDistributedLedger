@@ -54,6 +54,7 @@ class ABCIClient {
 	 * @return - true when the block is present, false otherwise
 	 */
 	boolean query(Sha256Hash hash) {
+		//TODO: Verify that the abstractHash of the abstract is the correct hash
 		JSONObject result = sendQuery(hash.getBytes());
 		return result != null && result.has("result");
 	}
