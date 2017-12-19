@@ -5,6 +5,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.apache.http.client.fluent.Request;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -78,14 +79,7 @@ class ABCIClient {
 	 * @return - the JSON response
 	 */
 	private JSONObject sendTx(byte[] data) {
-		try {
-			String str = "http://" + addr + "/broadcast_tx_sync?tx=0x" + Utils.bytesToHexString(data);
-			return new JSONObject(Request.Get(str).execute().returnContent().toString());
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
+		return sendRequest("broadcast_tx_sync", new String[]{"tx=0x" + Utils.bytesToHexString(data)});
 	}
 
 	/**
@@ -95,13 +89,7 @@ class ABCIClient {
 	 * @return - the JSON response
 	 */
 	private JSONObject sendQuery(byte[] hash) {
-		try {
-			return new JSONObject(Request.Get("http://" + addr + "/tx?hash=0x" + Utils.bytesToHexString(hash)).execute().returnContent().toString());
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
+		return sendRequest("tx", new String[]{"hash=0x" + Utils.bytesToHexString(hash)});
 	}
 
 	/**
@@ -112,12 +100,27 @@ class ABCIClient {
 	 */
 	JSONObject sendConnect(String address) {
 		//TODO: this endpoint seems to be removed
-//		try {
-//			return new JSONObject(Request.Get(addr + "/dial_seeds?seeds=%22" + address + %22").execute().returnContent());
-//
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-		return null;
+//		return sendRequest("/dial_seeds", new String[]{"seeds=%22" + address + "%22"});
+		throw new UnsupportedOperationException("Not yet implemented");
+	}
+
+	/**
+	 * Send a request to an endpoint and return the JSON response.
+	 *
+	 * @param endpoint - the endpoint to connect to
+	 * @param args - the args passed along with the request
+	 * @return - the JSON response, or null when the response was invalid JSON
+	 */
+	private JSONObject sendRequest(String endpoint, String[] args) {
+		try {
+			StringBuilder str = new StringBuilder("http://" + addr + "/" + endpoint);
+			for (String arg : args) {
+				str.append('?').append(arg);
+			}
+			return new JSONObject(Request.Get(str.toString()).execute().returnContent().toString());
+		} catch (IOException | JSONException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }
