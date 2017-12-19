@@ -21,7 +21,7 @@ public final class TendermintChain implements MainChain {
 	private ABCIClient client;
 	private TSocket socket;
 	public static final String DEFAULT_ADDRESS = "localhost";
-	public static final int DEFAULT_PORT = 46657;
+	public static final int DEFAULT_PORT = 46658;
 
 	/**
 	 * Create and start the connection with Tendermint on the given address.

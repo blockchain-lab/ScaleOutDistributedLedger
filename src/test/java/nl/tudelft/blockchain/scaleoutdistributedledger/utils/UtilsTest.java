@@ -12,15 +12,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class UtilsTest {
     /**
-     * Test the byte array conversion when using the 0x prefix.
-     */
-    @Test
-    public void testHexStringToByteArrayWithPrefix() {
-        String test = "0x0011FF";
-        assertTrue(Arrays.equals(new byte[] {0x00, 0x11, (byte) 0xFF}, Utils.hexStringToBytes(test)));
-    }
-
-    /**
      * Test the byte array conversion without using the 0x prefix.
      */
     @Test
@@ -35,6 +26,6 @@ public class UtilsTest {
     @Test
     public void testByteArrayToHexString() {
         byte[] array = new byte[]{0x00, 0x12, (byte) 0xFF};
-        assertEquals("0x0012FF", Utils.bytesToHexString(array));
+        assertEquals("0012ff", Utils.bytesToHexString(array));
     }
 }
