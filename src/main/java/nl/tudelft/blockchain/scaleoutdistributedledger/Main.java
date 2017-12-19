@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Main starting point of the application.
+ * Class to handle multiple applications.
  */
 public final class Main {
 
@@ -16,8 +16,14 @@ public final class Main {
 	/**
 	 * Main method, starting point of the application.
 	 * @param args - command line arguments.
+	 * @throws IOException - error while registering nodes.
+	 * @throws NoSuchAlgorithmException - no such algorithm.
 	 */
 	public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
-		//TODO
+		// Start a new node
+		Application app = new Application();
+		
+		// TODO: Make an example transaction?
+		
 	}
 }
