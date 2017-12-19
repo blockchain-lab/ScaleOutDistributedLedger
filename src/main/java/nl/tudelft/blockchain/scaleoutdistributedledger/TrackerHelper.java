@@ -23,17 +23,16 @@ public final class TrackerHelper {
 	}
 
 	/**
-	 *
 	 * Registers this node with the given public key.
-	 * @param publicKey - the public key to register with
 	 * @return            the assigned id
-	 * @throws IOException - exception while registering node
+	 * @throws IOException - IOException while registering node
+	 * @throws IOException - Server side exception while registering node
 	 */
-	public static int registerNode(byte[] publicKey) throws IOException, NodeRegisterFailedException {
+	public static int registerNode(Node node) throws IOException, NodeRegisterFailedException {
 		JSONObject json = new JSONObject();
-		json.put("address", Application.NODE_ADDRESS);
-		json.put("port", Application.NODE_PORT);
-		json.put("publicKey", publicKey);
+		json.put("address", node.getAddress());
+		json.put("port", node.getPort());
+		json.put("publicKey", node.getPublicKey());
 		HttpClient client = HttpClientBuilder.create().build();
 		StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
 		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.NODE_ADDRESS, Application.NODE_PORT));
