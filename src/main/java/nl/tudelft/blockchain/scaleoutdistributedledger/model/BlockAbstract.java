@@ -35,7 +35,10 @@ public class BlockAbstract implements Serializable {
 	@Setter
 	private Optional<Boolean> onMainChain; // any means unknown
 
-    /**
+	@Setter @Getter
+	private Sha256Hash abstractHash;
+
+	/**
      * Constructor.
      * @param owner - the owner of the block this abstract is for.
      * @param blockNumber - the number of the block this abstract is for.
@@ -59,7 +62,9 @@ public class BlockAbstract implements Serializable {
 	public byte[] toBytes() {
 		byte[] ret;
 		try {
-			ret = SerializationUtils.serialize(this);
+			// TODO: this is probably not safe
+			Object[] toSerialize = {this.owner.getId(), this.blockNumber, this.blockHash, this.signature};
+			ret = SerializationUtils.serialize(toSerialize);
 		} catch (SerializationException e) {
 			Log.log(Level.WARNING, "Could not serialize the BlockAbstract to bytes", e);
 			ret = null;
@@ -77,8 +82,10 @@ public class BlockAbstract implements Serializable {
 	public static BlockAbstract fromBytes(byte[] bytes) {
 		BlockAbstract block;
 		try {
-			block = SerializationUtils.deserialize(bytes);
-		} catch (SerializationException e) {
+			//TODO: make this safe
+			Object[] list = SerializationUtils.deserialize(bytes);
+			block = new BlockAbstract(new Node((Integer) list[0]), (Integer) list[1], (Sha256Hash) list[2], (byte[]) list[3]);
+		} catch (SerializationException | ClassCastException e) {
 			Log.log(Level.WARNING, "Could not deserialize BlockAbstract from bytes", e);
 			block = null;
 		}
@@ -87,7 +94,7 @@ public class BlockAbstract implements Serializable {
 
 	/**
 	 * Returns the boolean onMainChain, and gets it if it is not present.
-	 * @return - boolean identifiying if this abstract is on the main chain.
+	 * @return - boolean identifying if this abstract is on the main chain.
 	 */
 	public boolean isOnMainChain() {
 		if (!this.onMainChain.isPresent()) {

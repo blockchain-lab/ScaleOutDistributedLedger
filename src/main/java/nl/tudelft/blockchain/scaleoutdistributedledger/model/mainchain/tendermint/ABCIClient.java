@@ -2,11 +2,13 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermi
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.apache.http.client.fluent.Request;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * An ABCI client for sending to the Tendermint chain.
@@ -39,6 +41,7 @@ class ABCIClient {
 				return null;
 			}
 		} catch (Exception e) {		// Malformed result
+			Log.log(Level.WARNING, "Result parsing failed", e);
 			return null;
 		}
 	}
@@ -76,7 +79,8 @@ class ABCIClient {
 	 */
 	private JSONObject sendTx(byte[] data) {
 		try {
-			return new JSONObject(Request.Get(addr + "/broadcast_tx_sync?tx=" + Utils.bytesToHexString(data)).execute().returnContent());
+			String str = "http://" + addr + "/broadcast_tx_sync?tx=0x" + Utils.bytesToHexString(data);
+			return new JSONObject(Request.Get(str).execute().returnContent().toString());
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -92,7 +96,7 @@ class ABCIClient {
 	 */
 	private JSONObject sendQuery(byte[] hash) {
 		try {
-			return new JSONObject(Request.Get(addr + "tx?hash=" + Utils.bytesToHexString(hash)).execute().returnContent());
+			return new JSONObject(Request.Get("http://" + addr + "/tx?hash=0x" + Utils.bytesToHexString(hash)).execute().returnContent().toString());
 
 		} catch (IOException e) {
 			e.printStackTrace();

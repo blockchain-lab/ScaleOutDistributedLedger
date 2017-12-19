@@ -32,7 +32,7 @@ public final class TendermintChain implements MainChain {
 		System.out.println("Starting Tendermint chain on " + DEFAULT_ADDRESS +":"+port);
 		socket = new TSocket();
 		handler = new ABCIServer();
-		client = new ABCIClient(DEFAULT_ADDRESS + ":" + port);
+		client = new ABCIClient(DEFAULT_ADDRESS + ":" + (port-1));
 
 		socket.registerListener(handler);
 
@@ -56,8 +56,7 @@ public final class TendermintChain implements MainChain {
 			Log.log(Level.WARNING, "Tendermint [COMMIT] failed");
 			return null;
 		} else {
-			//TODO: Check if the following line is needed (so if abs.hash != hash)
-			//abs.setHash(Sha256Hash.withHash(hash))
+			abs.setAbstractHash(Sha256Hash.withHash(hash));
 
 			abs.setOnMainChain(Optional.of(true));
 			return Sha256Hash.withHash(hash);
@@ -66,7 +65,11 @@ public final class TendermintChain implements MainChain {
 
 	@Override
 	public boolean isPresent(BlockAbstract abs) {
-		return client.query(null);
+		if(abs.getAbstractHash() == null) {
+			Log.log(Level.WARNING, "Cannot query for an abstract with unknown hash");
+			return false;
+		}
+		return client.query(abs.getAbstractHash());
 	}
 
 	@Override
