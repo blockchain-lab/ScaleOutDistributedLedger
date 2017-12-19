@@ -79,11 +79,10 @@ public class Application {
 	 */
 	private void init() throws IOException {
 		RSAKey key = new RSAKey();
-		int id = TrackerHelper.registerNode(key.getPublicKey());
+		this.ownNode = TrackerHelper.registerNode(key.getPublicKey(), "localhost", 80);
 		// TODO: set actual IP address and port
-		this.ownNode = new Node(id, key.getPublicKey(), "localhost", 80);
 		this.ownNode.setPrivateKey(key.getPrivateKey());
 		
-		nodes.put(id, this.ownNode);
+		nodes.put(this.ownNode.getId(), this.ownNode);
 	}
 }

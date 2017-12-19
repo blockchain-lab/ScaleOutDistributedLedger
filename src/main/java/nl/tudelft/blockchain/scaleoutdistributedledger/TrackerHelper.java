@@ -24,21 +24,24 @@ public final class TrackerHelper {
 
 	/**
 	 * Registers this node with the given public key.
-	 * @return            the assigned id
+	 * @param publicKey - the publicKey of the new node
+	 * @param address - the address of the new node
+	 * @param port - the port of the new node
+	 * @return - the registered node
 	 * @throws IOException - IOException while registering node
-	 * @throws IOException - Server side exception while registering node
+	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
-	public static int registerNode(Node node) throws IOException, NodeRegisterFailedException {
+	public static Node registerNode(byte[] publicKey, String address, int port) throws IOException, NodeRegisterFailedException {
 		JSONObject json = new JSONObject();
-		json.put("address", node.getAddress());
-		json.put("port", node.getPort());
-		json.put("publicKey", node.getPublicKey());
+		json.put("address", address);
+		json.put("port", port);
+		json.put("publicKey", publicKey);
 		HttpClient client = HttpClientBuilder.create().build();
 		StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
 		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.NODE_ADDRESS, Application.NODE_PORT));
 		request.setEntity(requestEntity);
 		JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-		if (response.getBoolean("success")) return response.getInt("id");
+		if (response.getBoolean("success")) return new Node(response.getInt("id"), publicKey, address, port);
 		throw new NodeRegisterFailedException();
 	}
 
