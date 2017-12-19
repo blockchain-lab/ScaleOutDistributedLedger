@@ -9,15 +9,17 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.util.HashMap;
+import java.util.logging.Level;
 
 /**
  * Socket client.
  */
 public class SocketClient {
 
-    private HashMap<Integer, Channel> connections;
+    private HashMap<Node, Channel> connections;
 
     private Bootstrap bootstrap;
 
@@ -54,21 +56,26 @@ public class SocketClient {
      * @param msg - the message object to send
      * @return - whether the message was sent successfully (does not mean it was received)
      */
-    public boolean sendObject(Node node, Object msg) {
-        ChannelFuture future = bootstrap.connect(node.getAddress(), node.get);
-        if (!future.awaitUninterruptibly().isSuccess()) {
-            // Could not connect
-            return false;
-        }
-        assert future.isDone();
-        future = future.channel().writeAndFlush(msg);
-        this.connections.put()
-        future.channel().closeFuture().addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                System.out.println("CHANNEL CLOSED BITCHES");
+    public boolean sendMessage(Node node, Object msg) {
+        Channel channel = connections.get(node);
+        if (channel == null || !channel.isOpen()) {
+            Log.log(Level.INFO, "No open connection found, connecting...");
+            ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
+            if (!future.awaitUninterruptibly().isSuccess()) {
+                // Could not connect
+                return false;
             }
-        });
+            assert future.isDone();
+            channel = future.channel();
+            future.channel().closeFuture().addListener((ChannelFutureListener) channelFuture -> Log.log(Level.INFO, "Client detected channel close"));
+            Log.log(Level.INFO, "Client connected to server!");
+        }
+
+        ChannelFuture future = channel.writeAndFlush(msg);
+        Log.log(Level.INFO, "Message sent by client");
+
+        this.connections.put(node, future.channel());
+
         return future.awaitUninterruptibly().isSuccess();
     }
 }

@@ -19,6 +19,9 @@ import io.netty.handler.timeout.IdleStateHandler;
  */
 public class SocketServer implements Runnable {
 
+    // In seconds.
+    private static final int CHANNEL_TIMEOUT = 5;
+
     private int port;
 
     /**
@@ -45,7 +48,7 @@ public class SocketServer implements Runnable {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             ChannelPipeline p = socketChannel.pipeline();
-                            p.addLast(new IdleStateHandler(0, 0, 5),
+                            p.addLast(new IdleStateHandler(0, 0, CHANNEL_TIMEOUT),
                                     new ObjectEncoder(),
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new SocketServerHandler());
