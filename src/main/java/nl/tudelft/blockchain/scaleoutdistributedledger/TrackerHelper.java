@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -12,7 +13,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Helper class for interacting with the tracker.
@@ -25,23 +28,26 @@ public final class TrackerHelper {
 	/**
 	 * Registers this node with the given public key.
 	 * @param publicKey - the publicKey of the new node
-	 * @param address - the address of the new node
-	 * @param port - the port of the new node
 	 * @return - the registered node
 	 * @throws IOException - IOException while registering node
 	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
-	public static Node registerNode(byte[] publicKey, String address, int port) throws IOException, NodeRegisterFailedException {
+	public static Node registerNode(byte[] publicKey) throws IOException, NodeRegisterFailedException {
 		JSONObject json = new JSONObject();
-		json.put("address", address);
-		json.put("port", port);
+		json.put("address", Inet4Address.getLocalHost().getHostAddress());
+		json.put("port", Application.NODE_PORT);
 		json.put("publicKey", publicKey);
 		HttpClient client = HttpClientBuilder.create().build();
 		StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.NODE_ADDRESS, Application.NODE_PORT));
+		HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
 		request.setEntity(requestEntity);
 		JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-		if (response.getBoolean("success")) return new Node(response.getInt("id"), publicKey, address, port);
+		if (response.getBoolean("success")) {
+			Log.log(Level.INFO, "Successfully registered node to tracker server");
+			return new Node(response.getInt("id"), publicKey,
+					Inet4Address.getLocalHost().getHostAddress(), Application.NODE_PORT);
+		}
+		Log.log(Level.SEVERE, "Error while registering node");
 		throw new NodeRegisterFailedException();
 	}
 
@@ -53,7 +59,7 @@ public final class TrackerHelper {
 	 */
 	public static void updateNodes(Map<Integer, Node> nodes) throws IOException {
 		HttpClient client = HttpClientBuilder.create().build();
-		HttpGet request = new HttpGet(String.format("http://%s:%d", Application.NODE_ADDRESS, Application.NODE_PORT));
+		HttpGet request = new HttpGet(String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
 		JSONArray nodesArray = (JSONArray) new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).get("nodes");
 
 		for (int i = 0; i < nodesArray.length(); i++) {

@@ -3,14 +3,12 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * Main starting point of the application.
+ * Class to handle multiple applications.
  */
 public final class Main {
 
@@ -22,10 +20,12 @@ public final class Main {
 	/**
 	 * Main method, starting point of the application.
 	 * @param args - command line arguments.
+	 * @throws IOException - error while registering nodes.
 	 */
-	public static void main(String[] args) {
-		//TODO
-		testSockets();
+	public static void main(String[] args) throws IOException {
+		// Start a new node
+		// TODO: Make an example transaction?
+		Application app = new Application();
 	}
 
 	/**

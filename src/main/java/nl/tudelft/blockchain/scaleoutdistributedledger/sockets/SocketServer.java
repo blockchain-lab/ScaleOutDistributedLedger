@@ -13,6 +13,10 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
+import java.util.logging.Level;
 
 /**
  * Socket server.
@@ -55,9 +59,10 @@ public class SocketServer implements Runnable {
                         }
                     });
 
+            Log.log(Level.INFO, "Starting socket server on port " + Application.NODE_PORT);
             b.bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Log.log(Level.SEVERE, "Exception in socket server", e);
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
