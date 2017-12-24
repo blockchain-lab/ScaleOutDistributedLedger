@@ -1,61 +1,38 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import java.io.IOException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.RSAKey;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
-import lombok.Getter;
-
 /**
- * Class to represent an application.
+ * Class to run a node.
  */
 public class Application {
-	private final Verification verification = new Verification();
+
+	public static final String NODE_ADDRESS = "localhost";
+	public static final int NODE_PORT = 8007;
 	
-	@Getter
-	private Node ownNode;
-	
-	@Getter
-	private Map<Integer, Node> nodes = new HashMap<>();
-	
-	@Getter
-	private Set<Transaction> unspent = new HashSet<>();
-	
+	private LocalStore localStore;
+
 	/**
 	 * Creates a new application.
+	 * @throws IOException - error while registering nodes
 	 */
-	public Application() {
-		init();
+	public Application() throws IOException {
+		this.setupNode();
 	}
-	
-	/**
-	 * @param id - the id
-	 * @return the node with the given id, or null
-	 */
-	public Node getNode(int id) {
-		Node node = nodes.get(id);
-		if (node == null) {
-			TrackerHelper.updateNodes(nodes);
-			node = nodes.get(id);
-		}
-		return node;
-	}
-	
+
 	/**
 	 * Called when we receive a new transaction.
 	 * @param transaction - the transaction
 	 * @param proof       - the proof
 	 */
 	public synchronized void receiveTransaction(Transaction transaction, Proof proof) {
-		if (CommunicationHelper.receiveTransaction(verification, transaction, proof)) {
+		if (CommunicationHelper.receiveTransaction(localStore.getVerification(), transaction, proof)) {
 			if (transaction.getAmount() > 0) {
-				unspent.add(transaction);
+				localStore.getUnspent().add(transaction);
 			}
 		}
 	}
@@ -71,14 +48,17 @@ public class Application {
 	}
 	
 	/**
-	 * Initializes this application.
+	 * Setup your own node.
+	 * Register to the tracker and setup the local store.
+	 * @throws java.io.IOException - error while registering node
 	 */
-	private void init() {
+	private void setupNode() throws IOException {
+		// Create and register node
 		RSAKey key = new RSAKey();
-		int id = TrackerHelper.registerNode(key.getPublicKey());
-		this.ownNode = new Node(id, key.getPublicKey(), "localhost");
-		this.ownNode.setPrivateKey(key.getPrivateKey());
+		Node ownNode = TrackerHelper.registerNode(key.getPublicKey(), "localhost", 80);
+		ownNode.setPrivateKey(key.getPrivateKey());
 		
-		nodes.put(id, this.ownNode);
+		// Setup local store
+		localStore = new LocalStore(ownNode);
 	}
 }

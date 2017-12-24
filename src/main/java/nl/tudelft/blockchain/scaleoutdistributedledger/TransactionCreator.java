@@ -22,7 +22,7 @@ import lombok.Getter;
  * sources for a transaction.
  */
 public class TransactionCreator {
-	private final Application application;
+	private final LocalStore localStore;
 	private final int nodesCount;
 	@Getter
 	private final Node sender;
@@ -34,14 +34,14 @@ public class TransactionCreator {
 	private TransactionTuple currentBestTuple;
 
 	/**
-	 * @param application - the application
+	 * @param localStore  - the local store
 	 * @param receiver    - the receiver of the transaction
 	 * @param amount      - the amount to send
 	 */
-	public TransactionCreator(Application application, Node receiver, long amount) {
-		this.application = application;
-		this.nodesCount = application.getNodes().size();
-		this.sender = application.getOwnNode();
+	public TransactionCreator(LocalStore localStore, Node receiver, long amount) {
+		this.localStore = localStore;
+		this.nodesCount = localStore.getNodes().size();
+		this.sender = localStore.getOwnNode();
 		this.receiver = receiver;
 		this.amount = amount;
 		this.known = calculateKnowledge();
@@ -82,11 +82,11 @@ public class TransactionCreator {
 		long remainder = sources.getAmount() - amount;
 
 		//Mark sources as spent.
-		application.getUnspent().removeAll(sourceSet);
+		localStore.getUnspent().removeAll(sourceSet);
 		
 		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, sourceSet);
 		if (remainder > 0) {
-			application.getUnspent().add(transaction);
+			localStore.getUnspent().add(transaction);
 		}
 		
 		return transaction;
@@ -98,7 +98,7 @@ public class TransactionCreator {
 	protected TransactionTuple bestSources() {
 		//Step 1: Group all unspent transactions that have the same chain requirements.
 		Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
-		for (Transaction transaction : application.getUnspent()) {
+		for (Transaction transaction : localStore.getUnspent()) {
 			TransactionTuple tuple = new TransactionTuple(this, transaction);
 			candidateMap.merge(tuple.getChainsRequired(), tuple, TransactionTuple::mergeNonOverlappingSameChainsTuple);
 		}
