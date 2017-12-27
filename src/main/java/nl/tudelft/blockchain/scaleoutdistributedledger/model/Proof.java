@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import java.io.IOException;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -10,6 +11,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.Set;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 
 /**
  * Proof class.
@@ -40,7 +43,18 @@ public class Proof {
 		this.transaction = transaction;
 		this.chainUpdates = chainUpdates;
 	}
-
+	
+	/**
+	 * Constructor.
+	 * @param proofMessage - proof received from the network
+	 * @param localstore - local store
+	 * @throws IOException - error while getting node info from tracker
+	 */
+	public Proof(ProofMessage proofMessage, LocalStore localstore) throws IOException {
+		this.transaction = new Transaction(proofMessage.getTransactionMessage(), localstore);
+		this.chainUpdates = proofMessage.getChainUpdates();
+	}
+	
 	/**
 	 * Add a block to the proof.
 	 * @param block - the block to be added

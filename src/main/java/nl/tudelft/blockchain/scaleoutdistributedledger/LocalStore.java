@@ -10,6 +10,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 
 /**
  * Class to store information related to our own node.
@@ -55,6 +56,24 @@ public class LocalStore {
 			node = nodes.get(id);
 		}
 		return node;
+	}
+	
+	/**
+	 * Get transaction from a specific node with a transaction id.
+	 * @param nodeId - identifier of the node
+	 * @param transactionId - identifier of the transaction
+	 * @return transaction
+	 * @throws IOException - error while getting the node
+	 */
+	public Transaction getTransactionFromNode(int nodeId, int transactionId) throws IOException {
+		Node node = getNode(nodeId);
+		for (Block block : node.getChain().getBlocks()) {
+			for (Transaction transaction : block.getTransactions()) {
+				if (transaction.getNumber() == transactionId) return transaction;
+			}
+		}
+		
+		throw new IllegalStateException("Transaction with id " + transactionId + " from node " + nodeId + " not found.");
 	}
 	
 }
