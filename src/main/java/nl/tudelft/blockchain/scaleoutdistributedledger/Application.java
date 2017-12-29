@@ -1,9 +1,9 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.io.IOException;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.RSAKey;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 /**
@@ -54,7 +54,7 @@ public class Application {
 	 */
 	private void setupNode() throws IOException {
 		// Create and register node
-		RSAKey key = new RSAKey();
+		Ed25519Key key = new Ed25519Key();
 		Node ownNode = TrackerHelper.registerNode(key.getPublicKey(), "localhost", 80);
 		ownNode.setPrivateKey(key.getPrivateKey());
 		

@@ -37,8 +37,12 @@ public class Ed25519Key {
 	 */
 	public Ed25519Key() {
 		KeyPair keyPair = generateKeys();
-		this.privateKey = keyPair.getPrivate().getEncoded();
-		this.publicKey = keyPair.getPublic().getEncoded();
+		this.privateKey = new byte[64];
+		byte[] seedByte = ((EdDSAPrivateKey) keyPair.getPrivate()).getSeed();
+		byte[] aByte = ((EdDSAPrivateKey) keyPair.getPrivate()).getAbyte();
+		System.arraycopy(seedByte, 0, this.privateKey, 0, seedByte.length);
+		System.arraycopy(aByte, 0, this.privateKey, aByte.length, aByte.length);
+		this.publicKey = aByte;
 	}
 	
 	/**
@@ -61,7 +65,6 @@ public class Ed25519Key {
 	}
 	
 	/**
-	 * TODO
 	 * Verify an array of bytes with signature and public key.
 	 * @param message - array of bytes of the message
 	 * @param signature - signature of the message

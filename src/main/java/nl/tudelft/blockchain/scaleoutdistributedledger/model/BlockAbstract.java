@@ -75,7 +75,7 @@ public class BlockAbstract {
             outputStream.write(this.blockHash.getBytes());
             byte[] attrInBytes = outputStream.toByteArray();
 
-            return RSAKey.verify(attrInBytes, this.signature, this.owner.getPublicKey());
+            return Ed25519Key.verify(attrInBytes, this.signature, this.owner.getPublicKey());
         } catch (Exception e) {
 	        return false;
         }

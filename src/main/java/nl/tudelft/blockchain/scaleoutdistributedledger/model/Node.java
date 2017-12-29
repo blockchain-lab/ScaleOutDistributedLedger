@@ -68,10 +68,10 @@ public class Node {
 	/**
 	 * @param message - the message to sign
 	 * @return - the signed message
-	 * @throws Exception - See {@link RSAKey#sign(byte[], byte[])}
+	 * @throws Exception - See {@link Ed25519Key#sign(byte[], byte[])}
 	 */
 	public byte[] sign(byte[] message) throws Exception {
-		return RSAKey.sign(message, this.privateKey);
+		return Ed25519Key.sign(message, this.privateKey);
 	}
 	
 	/**
@@ -79,10 +79,10 @@ public class Node {
 	 * @param message - message to be verified
 	 * @param signature - signature of the message
 	 * @return - the signature
-	 * @throws Exception - See {@link RSAKey#verify(byte[], byte[], byte[])}
+	 * @throws Exception - See {@link Ed25519Key#verify(byte[], byte[], byte[])}
 	 */
 	public boolean verify(byte[] message, byte[] signature) throws Exception {
-		return RSAKey.verify(message, signature, this.publicKey);
+		return Ed25519Key.verify(message, signature, this.publicKey);
 	}
 	
 	/**
