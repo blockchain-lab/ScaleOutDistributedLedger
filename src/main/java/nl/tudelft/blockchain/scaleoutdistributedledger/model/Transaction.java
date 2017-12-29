@@ -69,14 +69,15 @@ public class Transaction {
 		this.receiver = localStore.getNode(transactionMessage.getReceiverId());
 		this.amount = transactionMessage.getAmount();
 		this.remainder = transactionMessage.getRemainder();
+		// Decode transaction messages to normal transactions
 		this.source = new HashSet<>();
 		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
 			Integer nodeId = knownSourceEntry.getKey();
 			Integer transactionId = knownSourceEntry.getValue();
 			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
 		}
-		for (Transaction transaction : transactionMessage.getNewSource()) {
-			this.source.add(transaction);
+		for (TransactionMessage transactionMessageAux : transactionMessage.getNewSource()) {
+			this.source.add(new Transaction(transactionMessageAux, localStore));
 		}
 		this.hash = transactionMessage.getHash();
 		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());

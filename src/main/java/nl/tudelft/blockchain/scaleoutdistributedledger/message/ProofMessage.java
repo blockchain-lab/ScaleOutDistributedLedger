@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,17 +17,33 @@ public class ProofMessage {
 	@Getter
 	private final TransactionMessage transactionMessage;
 
+	/**
+	 * Same map as in the original proof.
+	 * Map: node id, list of blocks
+	 */
 	@Getter
-	private final Map<Node, List<Block>> chainUpdates;
+	private final Map<Integer, List<BlockMessage>> chainUpdates;
 	
 	/**
 	 * Constructor.
 	 * @param proof - original proof 
 	 */
 	public ProofMessage(Proof proof) {
-		// TODO
-		this.transactionMessage = new TransactionMessage(proof);
-		this.chainUpdates = proof.getChainUpdates();
+		this.transactionMessage = new TransactionMessage(proof.getTransaction());
+		this.chainUpdates = new HashMap<>();
+		for (Map.Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
+			Node node = entry.getKey();
+			List<Block> blockList = entry.getValue();
+			// Convert Block to BlockMessage
+			List<BlockMessage> blockMessageList = new ArrayList<>();
+			// Don't use "previousBlock" pointer in the first block
+			blockMessageList.add(new BlockMessage(blockList.get(0), true));
+			for (int i = 1; i < blockList.size(); i++) {
+				Block block = blockList.get(i);
+				blockMessageList.add(new BlockMessage(block));
+			}
+			this.chainUpdates.put(node.getId(), blockMessageList);
+		}
 	}
 	
 }

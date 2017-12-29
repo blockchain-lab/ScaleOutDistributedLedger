@@ -3,10 +3,14 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import lombok.Getter;
 
 import java.util.List;
 import java.util.logging.Level;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
@@ -60,6 +64,32 @@ public class Block {
 		this.transactions = transactions;
 	}
 
+	/**
+	 * Constructor to decode a block message.
+	 * @param blockMessage - block message from network.
+	 * @param localStore - local store.
+	 * @throws IOException - error while getting node from tracker.
+	 */
+	public Block(BlockMessage blockMessage, LocalStore localStore) throws IOException {
+		this.number = blockMessage.getNumber();
+		this.owner = localStore.getNode(blockMessage.getOwnerId());
+		
+		if (blockMessage.getPreviousBlock() != null) {
+			// Convert BlockMessage to Block
+			this.previousBlock = new Block(blockMessage.getPreviousBlock(), localStore);
+		} else {
+			// Get block by number from owner
+			this.previousBlock = this.owner.getChain().getBlocks().get(blockMessage.getPreviousBlockNumber());
+		}
+		
+		// Convert TransactionMessage to Transaction
+		this.transactions = new ArrayList<>();
+		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
+			this.transactions.add(new Transaction(transactionMessage, localStore));
+		}
+		this.hash = blockMessage.getHash();
+	}
+	
 	/**
 	 * Get hash of the block.
 	 * @return Hash SHA256

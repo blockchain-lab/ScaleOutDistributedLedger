@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.Set;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 
 /**
@@ -45,14 +46,24 @@ public class Proof {
 	}
 	
 	/**
-	 * Constructor.
+	 * Constructor to decode a proof message.
 	 * @param proofMessage - proof received from the network
-	 * @param localstore - local store
+	 * @param localStore - local store
 	 * @throws IOException - error while getting node info from tracker
 	 */
-	public Proof(ProofMessage proofMessage, LocalStore localstore) throws IOException {
-		this.transaction = new Transaction(proofMessage.getTransactionMessage(), localstore);
-		this.chainUpdates = proofMessage.getChainUpdates();
+	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
+		this.transaction = new Transaction(proofMessage.getTransactionMessage(), localStore);
+		this.chainUpdates = new HashMap<>();
+		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
+			Node node = localStore.getNode(entry.getKey());
+			List<BlockMessage> blockMessageList = entry.getValue();
+			// Convert BlockMessage to Block
+			List<Block> blockList = new ArrayList<>();
+			for (BlockMessage blockMessage : blockMessageList) {
+				blockList.add(new Block(blockMessage, localStore));
+			}
+			this.chainUpdates.put(node, blockList);
+		}
 	}
 	
 	/**

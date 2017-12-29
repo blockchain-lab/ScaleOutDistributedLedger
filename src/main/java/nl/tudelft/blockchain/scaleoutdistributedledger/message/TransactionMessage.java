@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
@@ -26,7 +25,7 @@ public class TransactionMessage {
 
 	/**
 	 * Transactions known by the receiver.
-	 * Entry: Node => last block number
+	 * Entry: node id, last block number
 	 */
 	@Getter
 	private final Set<Entry<Integer, Integer>> knownSource;
@@ -35,7 +34,7 @@ public class TransactionMessage {
 	 * Transactions new to the receiver.
 	 */
 	@Getter
-	private final Set<Transaction> newSource;
+	private final Set<TransactionMessage> newSource;
 
 	@Getter
 	private final Sha256Hash hash;
@@ -45,10 +44,9 @@ public class TransactionMessage {
 
 	/**
 	 * Constructor.
-	 * @param proof - the original transaction object
+	 * @param transaction - the original transaction object
 	 */
-	public TransactionMessage(Proof proof) {
-		Transaction transaction = proof.getTransaction();
+	public TransactionMessage(Transaction transaction) {
 		if (!transaction.getBlockNumber().isPresent()) {
 			throw new RuntimeException("Block number not present");
 		}
@@ -67,7 +65,7 @@ public class TransactionMessage {
 			if (transactionAux.getBlockNumber().getAsInt() <= lastBlockNumber) {
 				this.knownSource.add(new SimpleEntry<>(transactionAuxOwner.getId(), transactionAux.getNumber()));
 			} else {
-				this.newSource.add(transactionAux);
+				this.newSource.add(new TransactionMessage(transactionAux));
 			}
 		}
 		this.hash = transaction.getHash();
