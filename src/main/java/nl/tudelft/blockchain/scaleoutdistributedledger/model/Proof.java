@@ -65,7 +65,9 @@ public class Proof {
 			BlockAbstract blockAbstract = block.getBlockAbstract();
 			if (blockAbstract != null && blockAbstract.isOnMainChain()) {
 				absmark = blockAbstract.getBlockNumber();
-				if (!blockAbstract.checkBlockHash(block) || !blockAbstract.checkSignature()) return false;
+				//TODO: is this the correct public key?
+				byte[] baOwnerPublicKey = transaction.getSender().getPublicKey();
+				if (!blockAbstract.checkBlockHash(block) || !blockAbstract.checkSignature(baOwnerPublicKey)) return false;
 			}
 		}
 

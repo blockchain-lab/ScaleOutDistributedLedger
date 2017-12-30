@@ -1,10 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
-
-import java.util.List;
 
 /**
  * Interface for main chain inplementations.
@@ -25,22 +22,4 @@ public interface MainChain {
 	 * @return - true when present, false otherwise
 	 */
 	public boolean isPresent(BlockAbstract abs);
-
-	/**
-	 * Connect to another node.
-	 *
-	 * @param node - the node to connect to
-	 */
-	public void connectTo(Node node);
-
-	/**
-	 * Connect to multiple nodes.
-	 *
-	 * @param nodes - a list of node to connect to
-	 */
-	public default void connectTo(List<Node> nodes) {
-		for (Node node : nodes) {
-			connectTo(node);
-		}
-	}
 }

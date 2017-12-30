@@ -84,6 +84,7 @@ public class Block {
 			if (this.owner.getPrivateKey() != null) {
 				try {
 					this.blockAbstract = this.calculateBlockAbstract();
+					this.hasAbstract = true;
 					return this.blockAbstract;
 				} catch (Exception e) {
 					return null;
@@ -110,7 +111,7 @@ public class Block {
 
 		// Sign the attributes
 		byte[] signature = this.owner.sign(attrInBytes);
-		return new BlockAbstract(this.owner, this.number, this.getHash(), signature);
+		return new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
 	}
 
 	@Override

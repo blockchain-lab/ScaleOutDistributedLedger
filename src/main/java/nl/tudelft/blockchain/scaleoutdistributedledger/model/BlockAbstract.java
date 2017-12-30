@@ -8,8 +8,12 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.apache.commons.lang3.SerializationException;
 import org.apache.commons.lang3.SerializationUtils;
 
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.ByteArrayOutputStream;
+import java.security.SignatureException;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -21,19 +25,19 @@ public class BlockAbstract implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Getter
-	private final Node owner;
+	private int ownerNodeId;
 
 	@Getter
-	private final int blockNumber;
+	private int blockNumber;
 
 	@Getter
-	private final Sha256Hash blockHash;
+	private Sha256Hash blockHash;
 
 	@Getter
-	private final byte[] signature;
+	private byte[] signature;
 
 	@Setter
-	private Optional<Boolean> onMainChain; // any means unknown
+	private transient Optional<Boolean> onMainChain; // any means unknown
 
 	@Setter	@Getter
 	private Sha256Hash abstractHash;
@@ -41,13 +45,13 @@ public class BlockAbstract implements Serializable {
 	/**
 	 * Constructor.
 	 *
-	 * @param owner       - the owner of the block this abstract is for.
+	 * @param ownerNodeId - the id of the owner of the block this abstract is for.
 	 * @param blockNumber - the number of the block this abstract is for.
 	 * @param blockHash   - the hash of the block this abstract is for.
 	 * @param signature   - the signature for the block by the owner.
 	 */
-	public BlockAbstract(Node owner, int blockNumber, Sha256Hash blockHash, byte[] signature) {
-		this.owner = owner;
+	public BlockAbstract(int ownerNodeId, int blockNumber, Sha256Hash blockHash, byte[] signature) {
+		this.ownerNodeId = ownerNodeId;
 		this.blockNumber = blockNumber;
 		this.blockHash = blockHash;
 		this.signature = signature;
@@ -63,9 +67,7 @@ public class BlockAbstract implements Serializable {
 	public byte[] toBytes() {
 		byte[] ret;
 		try {
-			// TODO: this is probably not safe
-			Object[] toSerialize = {this.owner.getId(), this.blockNumber, this.blockHash, this.signature};
-			ret = SerializationUtils.serialize(toSerialize);
+			ret = SerializationUtils.serialize(this);
 		} catch (SerializationException e) {
 			Log.log(Level.WARNING, "Could not serialize the BlockAbstract to bytes", e);
 			ret = null;
@@ -83,9 +85,7 @@ public class BlockAbstract implements Serializable {
 	public static BlockAbstract fromBytes(byte[] bytes) {
 		BlockAbstract block;
 		try {
-			//TODO: make this safe
-			Object[] list = SerializationUtils.deserialize(bytes);
-			block = new BlockAbstract(new Node((Integer) list[0]), (Integer) list[1], (Sha256Hash) list[2], (byte[]) list[3]);
+			block = SerializationUtils.deserialize(bytes);
 		} catch (SerializationException | ClassCastException e) {
 			Log.log(Level.WARNING, "Could not deserialize BlockAbstract from bytes", e);
 			block = null;
@@ -118,20 +118,34 @@ public class BlockAbstract implements Serializable {
 	/**
 	 * Checks if the signature included in this abstract is valid.
 	 *
+	 * @param signatureKey - the key that we want to check signature with (public key of owner)
 	 * @return - boolean identifying if the signature is valid.
 	 */
-	public boolean checkSignature() {
+	public boolean checkSignature(byte[] signatureKey) {
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			outputStream.write(Utils.intToByteArray(this.owner.getId()));
+			outputStream.write(Utils.intToByteArray(this.ownerNodeId));
 			outputStream.write(Utils.intToByteArray(this.blockNumber));
 			outputStream.write(this.blockHash.getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
 
-			return RSAKey.verify(attrInBytes, this.signature, this.owner.getPublicKey());
-		} catch (Exception e) {
-			//TODO: we are potentially swallowing a huge stack of exceptions here; this should really only be catching relevant exceptions (e.g. signature exception)
+			return RSAKey.verify(attrInBytes, this.signature, signatureKey);
+		} catch (IOException e) {
+			Log.log(Level.WARNING, "Exception while checking signature", e);
+			return false;
+		} catch (SignatureException e) {
 			return false;
 		}
 	}
+
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		stream.defaultWriteObject();
+	}
+
+	private void readObject(ObjectInputStream stream) throws IOException,
+			ClassNotFoundException {
+		stream.defaultReadObject();
+		this.onMainChain = Optional.empty();
+	}
+
 }

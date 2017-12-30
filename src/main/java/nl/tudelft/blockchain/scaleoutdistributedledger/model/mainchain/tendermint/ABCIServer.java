@@ -21,7 +21,7 @@ class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseCheckTx requestCheckTx(RequestCheckTx requestCheckTx) {
-		Log.log(Level.SEVERE, "[TENDERMINT] New transaction proposed");
+		Log.log(Level.FINE, "[TENDERMINT] New transaction proposed");
 		BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
 
 		//TODO: validate the abstract

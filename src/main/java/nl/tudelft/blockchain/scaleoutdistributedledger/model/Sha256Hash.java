@@ -1,6 +1,8 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,7 +14,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 /**
  * Class to wrap a SHA256 hash.
  */
-public class Sha256Hash {
+public class Sha256Hash implements Serializable {
 
 	@Getter
 	private byte[] bytes;

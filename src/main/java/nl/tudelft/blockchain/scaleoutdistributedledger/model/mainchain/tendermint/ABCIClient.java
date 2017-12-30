@@ -33,7 +33,13 @@ class ABCIClient {
 	byte[] commit(BlockAbstract abs) {
 		JSONObject result = sendTx(abs.toBytes());
 		if (result == null) return null;
-
+		try {
+			JSONObject error = result.getJSONObject("error");
+			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data") + ".\n" + result.toString());
+			return null;
+		} catch (Exception e) {
+			Log.log(Level.FINER, "No error found: ", e);
+		}
 		try {
 			JSONObject resultField = result.getJSONObject("result");
 			if (resultField.getInt("code") == 0) {
@@ -42,7 +48,7 @@ class ABCIClient {
 				return null;
 			}
 		} catch (Exception e) {		// Malformed result
-			Log.log(Level.WARNING, "Result parsing failed", e);
+			Log.log(Level.WARNING, "Result parsing failed, result of sending was: \n" + result.toString(), e);
 			return null;
 		}
 	}
@@ -57,20 +63,6 @@ class ABCIClient {
 		//TODO: Verify that the abstractHash of the abstract is the correct hash
 		JSONObject result = sendQuery(hash.getBytes());
 		return result != null && result.has("result");
-	}
-
-	/**
-	 * Connect with another peer.
-	 *
-	 * @param address - the address of the peer
-	 * @return - true when the connection was successfully made, false otherwise
-	 */
-	boolean connect(String address) {
-		JSONObject result = sendConnect(address);
-		if (result == null) return false;
-
-		//TODO: Check response
-		return false;
 	}
 
 	/**
@@ -93,17 +85,6 @@ class ABCIClient {
 		return sendRequest("tx", new String[]{"hash=0x" + Utils.bytesToHexString(hash)});
 	}
 
-	/**
-	 * Send a connect message to Tendermint.
-	 *
-	 * @param address - the address to connect to
-	 * @return - the JSON response
-	 */
-	JSONObject sendConnect(String address) {
-		//TODO: this endpoint seems to be removed
-//		return sendRequest("/dial_seeds", new String[]{"seeds=%22" + address + "%22"});
-		throw new UnsupportedOperationException("Not yet implemented");
-	}
 
 	/**
 	 * Send a request to an endpoint and return the JSON response.
