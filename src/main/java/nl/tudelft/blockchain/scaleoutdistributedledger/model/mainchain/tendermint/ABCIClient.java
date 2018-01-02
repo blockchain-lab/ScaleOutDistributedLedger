@@ -37,7 +37,7 @@ class ABCIClient {
 			JSONObject error = result.getJSONObject("error");
 			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data") + ".\n" + result.toString());
 			return null;
-		} catch (Exception e) {
+		} catch (Exception e) { //could not find the 'error' in JSON, result was OK.
 			Log.log(Level.FINER, "No error found: ", e);
 		}
 		try {

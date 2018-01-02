@@ -21,6 +21,10 @@ public final class Main {
 	 */
 	public static void main(String[] args) {
 		//TODO
+		testTendermintCommitQuery();
+	}
+
+	private static void testTendermintCommitQuery() {
 		Application app = new Application(46658);
 		Node node = new Node(0);
 		BlockAbstract abs1 = new BlockAbstract(node.getId(), 0, null, null);

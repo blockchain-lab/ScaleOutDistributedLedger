@@ -130,10 +130,7 @@ public class BlockAbstract implements Serializable {
 			byte[] attrInBytes = outputStream.toByteArray();
 
 			return RSAKey.verify(attrInBytes, this.signature, signatureKey);
-		} catch (IOException e) {
-			Log.log(Level.WARNING, "Exception while checking signature", e);
-			return false;
-		} catch (SignatureException e) {
+		} catch (IOException | SignatureException e) {
 			return false;
 		}
 	}
