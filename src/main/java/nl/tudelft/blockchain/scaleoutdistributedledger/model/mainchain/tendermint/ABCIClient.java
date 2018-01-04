@@ -9,6 +9,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -33,22 +36,37 @@ class ABCIClient {
 	byte[] commit(BlockAbstract abs) {
 		JSONObject result = sendTx(abs.toBytes());
 		if (result == null) return null;
-		try {
-			JSONObject error = result.getJSONObject("error");
-			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data") + ".\n" + result.toString());
+		JSONObject error;
+		if ((error = getError(result)) != null) {
+			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data"));
+			Log.log(Level.FINE, result.toString());
 			return null;
+		} else { //No error coming from Tendermint found
+			byte[] ret = null;
+			try {
+				JSONObject resultField = result.getJSONObject("result");
+				if (resultField.getInt("code") == 0) { //double check we succeeded
+					ret = Utils.hexStringToBytes(resultField.getString("hash"));
+				}
+			} catch (Exception e) {		// Malformed result
+				Log.log(Level.WARNING, "Result parsing failed, result of sending was: \n" + result.toString(), e);
+			}
+			return ret;
+		}
+
+
+	}
+
+	/**
+	 * Check whether HTTP response has an error coming from Tendermint (in JSON).
+	 * @param obj http response
+	 * @return error JSON object if has, null otherwise
+	 */
+	private JSONObject getError(JSONObject obj) {
+		try {
+			return obj.getJSONObject("error");
 		} catch (Exception e) { //could not find the 'error' in JSON, result was OK.
 			Log.log(Level.FINER, "No error found: ", e);
-		}
-		try {
-			JSONObject resultField = result.getJSONObject("result");
-			if (resultField.getInt("code") == 0) {
-				return Utils.hexStringToBytes(resultField.getString("hash"));
-			} else {
-				return null;
-			}
-		} catch (Exception e) {		// Malformed result
-			Log.log(Level.WARNING, "Result parsing failed, result of sending was: \n" + result.toString(), e);
 			return null;
 		}
 	}
@@ -72,7 +90,9 @@ class ABCIClient {
 	 * @return - the JSON response
 	 */
 	private JSONObject sendTx(byte[] data) {
-		return sendRequest("broadcast_tx_sync", new String[]{"tx=0x" + Utils.bytesToHexString(data)});
+		Map<String, String> params = new HashMap<>();
+		params.put("tx", "0x" + Utils.bytesToHexString(data));
+		return sendRequest("broadcast_tx_sync", params);
 	}
 
 	/**
@@ -82,7 +102,9 @@ class ABCIClient {
 	 * @return - the JSON response
 	 */
 	private JSONObject sendQuery(byte[] hash) {
-		return sendRequest("tx", new String[]{"hash=0x" + Utils.bytesToHexString(hash)});
+		Map<String, String> params = new HashMap<>();
+		params.put("hash", "0x" + Utils.bytesToHexString(hash));
+		return sendRequest("tx", params);
 	}
 
 
@@ -90,18 +112,26 @@ class ABCIClient {
 	 * Send a request to an endpoint and return the JSON response.
 	 *
 	 * @param endpoint - the endpoint to connect to
-	 * @param args - the args passed along with the request
+	 * @param params - the params passed along with the request
 	 * @return - the JSON response, or null when the response was invalid JSON
 	 */
-	private JSONObject sendRequest(String endpoint, String[] args) {
+	private JSONObject sendRequest(String endpoint, Map<String, String> params) {
 		try {
 			StringBuilder str = new StringBuilder("http://" + addr + "/" + endpoint);
-			for (String arg : args) {
-				str.append('?').append(arg);
+
+			Iterator<Map.Entry<String, String>> it = params.entrySet().iterator();
+			if (it.hasNext()) {
+				Map.Entry<String, String> param = it.next();
+				str.append('?').append(param.getKey()).append('=').append(param.getValue());
 			}
+			while (it.hasNext()) {
+				Map.Entry<String, String> param = it.next();
+				str.append('&').append(param.getKey()).append('=').append(param.getValue());
+			}
+
 			return new JSONObject(Request.Get(str.toString()).execute().returnContent().toString());
 		} catch (IOException | JSONException e) {
-			e.printStackTrace();
+			Log.log(Level.INFO, "Failed executing request", e);
 			return null;
 		}
 	}
