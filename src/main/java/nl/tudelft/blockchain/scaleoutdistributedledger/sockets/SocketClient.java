@@ -28,13 +28,14 @@ public class SocketClient {
      */
     public SocketClient() {
         this.connections = new HashMap<>();
+        this.initSocketClient();
     }
 
     /**
      * Init the client.
      * Note: one client can be used to send to multiple servers, this just sets the settings and pipeline.
      */
-    public void initSocketClient() {
+    private void initSocketClient() {
         EventLoopGroup group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         bootstrap.group(group)
