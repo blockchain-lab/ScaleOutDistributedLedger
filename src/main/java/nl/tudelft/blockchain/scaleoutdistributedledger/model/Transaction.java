@@ -60,6 +60,8 @@ public class Transaction {
 	 * @return - the proof
 	 */
 	public Proof getProof() {
+		// TODO: do a smart include of chainUpdates
+
 		Map<Node, List<Block>> chainUpdates = new HashMap<>();
 		for (Transaction t : source) {
 			if (!chainUpdates.containsKey(t.getSender()))
