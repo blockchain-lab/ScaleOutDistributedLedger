@@ -1,7 +1,11 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
+import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
+
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 
 /**
  * Class to handle multiple applications.
@@ -17,14 +21,32 @@ public final class Main {
 	 * Main method, starting point of the application.
 	 * @param args - command line arguments.
 	 * @throws IOException - error while registering nodes.
-	 * @throws NoSuchAlgorithmException - no such algorithm.
 	 */
-	public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+	public static void main(String[] args) throws IOException {
 		// Start a new node
-		Application app = new Application(46658);
-		
 		// TODO: Make an example transaction?
-		
+		Application app = new Application(46658);
+	}
+
+	/**
+	 * Manual testing method for sockets.
+	 */
+	private static void testSockets() {
+		try {
+			Thread t = new Thread(new SocketServer(8007));
+			t.start();
+
+			Node node = new Node(1, null, "localhost", 8007);
+
+			SocketClient client = new SocketClient();
+			client.sendMessage(node, new ArrayList<Integer>());
+			Thread.sleep(2500);
+			client.sendMessage(node, new ArrayList<>());
+			Thread.sleep(7500);
+			client.sendMessage(node, new ArrayList<>());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 
