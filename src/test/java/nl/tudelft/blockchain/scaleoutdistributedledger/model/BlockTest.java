@@ -22,7 +22,7 @@ public class BlockTest {
 	@Before
 	public void setUp() {
 		this.owner = new Node(24);
-		RSAKey keyPair = new RSAKey();
+		Ed25519Key keyPair = new Ed25519Key();
 		this.owner.setPrivateKey(keyPair.getPrivateKey());
 		this.owner.setPublicKey(keyPair.getPublicKey());
 		this.block = new Block(1234, owner, new ArrayList<>());
