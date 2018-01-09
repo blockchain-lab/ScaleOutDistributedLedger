@@ -37,28 +37,16 @@ public class Application {
 	public Application(int tendermintPort) throws IOException {
 		this.setupNode(tendermintPort);
 	}
-
-	/**
-	 * Called when we receive a new transaction.
-	 * @param transaction - the transaction
-	 * @param proof       - the proof
-	 */
-	public synchronized void receiveTransaction(Transaction transaction, Proof proof) {
-		if (CommunicationHelper.receiveTransaction(localStore.getVerification(), transaction, proof)) {
-			if (transaction.getAmount() > 0) {
-				localStore.getUnspent().add(transaction);
-			}
-		}
-	}
 	
 	/**
 	 * Send a transaction to the receiver of the transaction.
 	 * An abstract of the block containing the transaction (or a block after it) must already be
 	 * committed to the main chain.
 	 * @param transaction - the transaction to send
+	 * @throws InterruptedException - when sending is interrupted
 	 */
-	public void sendTransaction(Transaction transaction) {
-		CommunicationHelper.sendTransaction(transaction);
+	public void sendTransaction(Transaction transaction) throws InterruptedException {
+		CommunicationHelper.sendTransaction(transaction, socketClient);
 	}
 
 	/**

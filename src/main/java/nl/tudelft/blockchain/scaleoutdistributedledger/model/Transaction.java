@@ -2,10 +2,8 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.OptionalInt;
-import java.util.Set;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
@@ -55,6 +53,20 @@ public class Transaction {
 		this.source = source;
 		this.number = number;
 		this.blockNumber = OptionalInt.empty();
+	}
+
+	/**
+	 * Creates a proof for this transaction.
+	 * @return - the proof
+	 */
+	public Proof getProof() {
+		Map<Node, List<Block>> chainUpdates = new HashMap<>();
+		for (Transaction t : source) {
+			if (!chainUpdates.containsKey(t.getSender()))
+				chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
+		}
+
+		return new Proof(this, chainUpdates);
 	}
 
 	/**
