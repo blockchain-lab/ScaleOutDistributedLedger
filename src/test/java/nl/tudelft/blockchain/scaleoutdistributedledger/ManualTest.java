@@ -1,4 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
+import lombok.SneakyThrows;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -17,6 +18,7 @@ public class ManualTest {
 	/**
 	 * Manual test for {@link TendermintChain} commit and query.
 	 */
+	@SneakyThrows
 	private static void testTendermintCommitQuery() {
 		Application app = new Application(46658);
 		Node node = new Node(0);

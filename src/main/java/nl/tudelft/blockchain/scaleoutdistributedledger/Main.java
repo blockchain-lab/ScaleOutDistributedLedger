@@ -21,7 +21,7 @@ public final class Main {
 	 */
 	public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
 		// Start a new node
-		Application app = new Application();
+		Application app = new Application(46658);
 		
 		// TODO: Make an example transaction?
 		
