@@ -46,12 +46,16 @@ public class LocalStore {
 	 * Retrieves it from the tracker if it's not in the local store.
 	 * @param id - the id
 	 * @return the node with the given id, or null
-	 * @throws IOException - exception while updating nodes
+	 * @throws IllegalStateException - exception while updating nodes
 	 */
-	public Node getNode(int id) throws IOException {
+	public Node getNode(int id) {
 		Node node = nodes.get(id);
 		if (node == null) {
-			TrackerHelper.updateNodes(nodes);
+			try {
+				TrackerHelper.updateNodes(nodes);
+			} catch (IOException ex) {
+				throw new IllegalStateException("Node " + id + " was not found locally and the tracker update failed!", ex);
+			}
 			node = nodes.get(id);
 		}
 		return node;
