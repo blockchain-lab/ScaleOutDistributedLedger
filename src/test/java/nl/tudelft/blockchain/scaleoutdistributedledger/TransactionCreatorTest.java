@@ -81,7 +81,6 @@ public class TransactionCreatorTest {
 	/**
 	 * Convenience method for getting nodes by id.
 	 * @param id - the id of the node to get
-	 * @return 
 	 * @return     the node with the given id
 	 */
 	public Node getNode(int id) {
@@ -107,7 +106,7 @@ public class TransactionCreatorTest {
 	 * @param receiver  - the receiver of the transaction
 	 * @param amount    - the amount
 	 * @param remainder - the remainder
-	 * @return          the transaction
+	 * @return            the transaction
 	 */
 	public Transaction addUnspent(Node sender, Node receiver, long amount, long remainder) {
 		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new HashSet<>());
