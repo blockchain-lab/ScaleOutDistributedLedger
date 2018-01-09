@@ -66,7 +66,9 @@ The final combination of transactions returned is the **smallest** set of source
 The performance of the algorithm is still O(2^n) in the worst case. The worst case would be if all transactions are needed to get the amount of money required. Then the algorithm will consider all possible combinations.
 
 ### Future optimizations ###
-* We might want to do a check for how many transactions we would need at minimum to cover the transaction (if the current implementation proves inadequate). If we try to spend money we don't have, this algorithm is very costly.
+* It would probably be useful to keep track of how much money we have, to prevent the costly case where we don't have enough money.
+* It could be beneficial to group transactions together that have the same chain requirements in the first step, and use these as the input for the current implementation instead of the individual transactions. Grouping transactions together can be done in O(|transactions|) by hashing them into buckets.
+* There could be 2 algorithms, one for when we expect many transactions will be required, one for when we expect only a few transactions will be required. The current algorithm works bottom up, the other algorithm could work top down. (How many transactions do we need at minimum to cover the transaction?)
 
 ### Implementation Details ###
 BitSets are used as a convenient and efficient way to represent the chains that are required. They represent a sequence of bits of a particular size (e.g. 1000 bits).
@@ -75,3 +77,6 @@ BitSets are used as a convenient and efficient way to represent the chains that 
 * Combining the chains required of 2 tuples is done with a bitwise or.
 * The number of chains required is the cardinality of a bitset.
 * Removing the chains that the receiver already knows is done with a bitwise andNot.
+
+## Tracker Server
+The tracker server can be installed by installing NodeJS and running `npm install` in the tracker-server folder. After this it can be run by running `npm start` in that same folder.
