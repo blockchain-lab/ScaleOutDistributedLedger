@@ -80,3 +80,13 @@ BitSets are used as a convenient and efficient way to represent the chains that 
 
 ## Tracker Server
 The tracker server can be installed by installing NodeJS and running `npm install` in the tracker-server folder. After this it can be run by running `npm start` in that same folder.
+
+## Main Chain
+For the main chain we use [Tendermint](https://tendermint.com/). We can communicate to this chain using the provided ABCI interface. 
+
+### Running tendermint
+Initialize tendermint and run a node using the following commands:  
+`./tendermint init`  
+`./tendermint node --consensus.create_empty_blocks=false` (Note that Tendermint creates empty blocks by default)
+
+See the [tendermint documentation](https://tendermint.readthedocs.io/en/master/using-tendermint.html) for more information.
