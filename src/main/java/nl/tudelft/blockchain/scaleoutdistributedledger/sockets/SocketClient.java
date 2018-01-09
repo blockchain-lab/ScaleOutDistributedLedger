@@ -53,16 +53,17 @@ public class SocketClient {
 
     /**
      * Send object to specified host.
+     * Is blocking until message is actually sent, or failed (up to 60 seconds)
      * @param node - the node to send the message to.
      * @param msg - the message object to send
-     * @return - whether the message was sent successfully (does not mean it was received)
+     * @return - whether the message was sent successfully
      */
-    public boolean sendMessage(Node node, Object msg) {
+    public boolean sendMessage(Node node, Object msg) throws InterruptedException {
         Channel channel = connections.get(node);
         if (channel == null || !channel.isOpen()) {
             Log.log(Level.INFO, "No open connection found, connecting...");
             ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
-            if (!future.awaitUninterruptibly().isSuccess()) {
+            if(!future.await().isSuccess()) {
                 // Could not connect
                 return false;
             }

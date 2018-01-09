@@ -39,7 +39,6 @@ public final class Main {
 			Node node = new Node(1, null, "localhost", 8007);
 
 			SocketClient client = new SocketClient();
-			client.initSocketClient();
 			client.sendMessage(node, new ArrayList<Integer>());
 			Thread.sleep(2500);
 			client.sendMessage(node, new ArrayList<>());

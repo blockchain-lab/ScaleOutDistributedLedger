@@ -23,8 +23,8 @@ import java.util.logging.Level;
  */
 public class SocketServer implements Runnable {
 
-    // In seconds.
-    private static final int CHANNEL_TIMEOUT = 5;
+    // In seconds, time connections are kept open after messages.
+    private static final int CHANNEL_TIMEOUT = 30;
 
     private int port;
 

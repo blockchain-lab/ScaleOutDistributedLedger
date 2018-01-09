@@ -22,9 +22,9 @@ public class Application {
 	private LocalStore localStore;
 
 	@Getter
-	Thread serverThread;
+	private Thread serverThread;
 	@Getter
-	SocketClient socketClient;
+	private SocketClient socketClient;
 
 	/**
 	 * Creates a new application.
