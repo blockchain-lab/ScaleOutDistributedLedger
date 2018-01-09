@@ -61,4 +61,14 @@ public class LocalStore {
 		return node;
 	}
 	
+	/**
+	 * Updates the node list.
+	 */
+	public void updateNodes() {
+		try {
+			TrackerHelper.updateNodes(nodes);
+		} catch (IOException ex) {
+			throw new IllegalStateException("Tracker update failed!", ex);
+		}
+	}
 }
