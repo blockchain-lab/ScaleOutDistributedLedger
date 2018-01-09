@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,13 @@ public class Chain {
 
 	@Getter
 	private final List<Block> blocks;
+	
+	/**
+	 * TODO The last committed Block has to be set somewhere.
+	 * @return the last block that was committed to the main chain
+	 */
+	@Getter @Setter
+	private Block lastCommittedBlock;
 
 	/**
 	 * Constructor.
