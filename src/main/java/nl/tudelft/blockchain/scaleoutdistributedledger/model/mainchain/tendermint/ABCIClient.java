@@ -17,13 +17,13 @@ import java.util.logging.Level;
 /**
  * An ABCI client for sending to the Tendermint chain.
  */
-class ABCIClient {
+public class ABCIClient {
 	private final String addr;
 
 	/**
 	 * @param address - the address of the Tendermint node
 	 */
-	ABCIClient(String address) {
+	public ABCIClient(String address) {
 		this.addr = address;
 	}
 
@@ -33,7 +33,7 @@ class ABCIClient {
 	 * @param abs - the abstract to commit
 	 * @return - the hash of the block on the chain if successful, null otherwise
 	 */
-	byte[] commit(BlockAbstract abs) {
+	public byte[] commit(BlockAbstract abs) {
 		JSONObject result = sendTx(abs.toBytes());
 		if (result == null) return null;
 		JSONObject error;
@@ -77,7 +77,7 @@ class ABCIClient {
 	 * @param hash - the hash of the transaction
 	 * @return - true when the block is present, false otherwise
 	 */
-	boolean query(Sha256Hash hash) {
+	public boolean query(Sha256Hash hash) {
 		//TODO: Verify that the abstractHash of the abstract is the correct hash
 		JSONObject result = sendQuery(hash.getBytes());
 		return result != null && result.has("result");
