@@ -38,7 +38,7 @@ public class LocalStore {
 		this.nodes.put(this.ownNode.getId(), this.ownNode);
 		
 		// Get current list of nodes from tracker
-		TrackerHelper.updateNodes(this.nodes);
+//		TrackerHelper.updateNodes(this.nodes);
 	}
 	
 	/**

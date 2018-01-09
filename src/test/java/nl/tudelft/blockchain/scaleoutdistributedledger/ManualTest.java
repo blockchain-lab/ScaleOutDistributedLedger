@@ -44,6 +44,6 @@ public class ManualTest {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		System.out.println("Query for the same abstract gives a " + Application.getMainChain().isPresent(abs2));
+		System.out.println("Query for the same abstract gives a " + Application.getMainChain().isPresent(abs2.getBlockHash()));
 	}
 }

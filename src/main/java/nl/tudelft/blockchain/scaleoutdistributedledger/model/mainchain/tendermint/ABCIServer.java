@@ -13,6 +13,15 @@ import java.util.logging.Level;
  * @see <a href="https://github.com/tendermint/abci#message-types">Tendermint ABCI message type documentation</a>
  */
 public class ABCIServer implements ABCIAPI {
+	private final TendermintChain chain;
+
+	/**
+	 * @param chain - the main chain this server is part of
+	 */
+	public ABCIServer(TendermintChain chain) {
+		this.chain = chain;
+	}
+
 	@Override
 	public ResponseBeginBlock requestBeginBlock(RequestBeginBlock requestBeginBlock) {
 		Log.log(Level.FINE, "[TENDERMINT] New block started");
@@ -22,6 +31,8 @@ public class ABCIServer implements ABCIAPI {
 	@Override
 	public ResponseCheckTx requestCheckTx(RequestCheckTx requestCheckTx) {
 		Log.log(Level.FINE, "[TENDERMINT] New transaction proposed");
+
+		// Comment the next line when using a mock chain
 		BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
 
 		//TODO: validate the abstract
@@ -55,6 +66,8 @@ public class ABCIServer implements ABCIAPI {
 	@Override
 	public ResponseEndBlock requestEndBlock(RequestEndBlock requestEndBlock) {
 		Log.log(Level.FINE, "[TENDERMINT] Block ended");
+		chain.updateCache(requestEndBlock.getHeight());
+
 		return ResponseEndBlock.newBuilder().build();
 	}
 

@@ -5,13 +5,12 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.apache.http.client.fluent.Request;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -53,8 +52,64 @@ public class ABCIClient {
 			}
 			return ret;
 		}
+	}
 
+	/**
+	 * Query Tendermint for the presence of a transaction.
+	 *
+	 * @param hash - the hash of the transaction
+	 * @return - true when the block is present, false otherwise
+	 */
+	public boolean query(Sha256Hash hash) {
+		//TODO: Verify that the abstractHash of the abstract is the correct hash
+		JSONObject result = sendQuery(hash.getBytes());
+		return result != null && result.has("result");
+	}
 
+	/**
+	 * Query the main chain for blocks on a given height.
+	 *
+	 * @param height - The height to look at
+	 * @return - A list of blocks at the given height, or an empty list if the height was invalid
+	 */
+	public List<BlockAbstract> query(long height) {
+		List<BlockAbstract> abss = new ArrayList<>();
+
+		JSONObject result = sendQuery(height);
+
+		// Height is not valid, so return
+		if (getError(result) != null) {
+			return abss;
+		}
+
+		try {
+			JSONArray bytes = result.getJSONObject("result").getJSONObject("block").getJSONObject("data").getJSONArray("txs");
+			for (Object obj : bytes) {
+				abss.add(BlockAbstract.fromBytes(Utils.base64StringToBytes((String) obj)));
+
+				// Use the following lines when testing on a mock chain that does not contain actual abstracts
+// 				byte[] b = Utils.base64StringToBytes((String) obj);
+//				abss.add(new BlockAbstract(0, 0, Sha256Hash.withHash(b), b));
+			}
+		} catch (Exception e) {
+			Log.log(Level.WARNING, "Malformed result " + result.toString(1) + "\nCausing exception:", e);
+		}
+		return abss;
+	}
+
+	/**
+	 * Get the status JSON object of the main chain.
+	 *
+	 * @return - A JSON object representing the status of the chain
+	 */
+	public JSONObject status() {
+		JSONObject result = sendRequest("status", new HashMap<>());
+		try {
+			return result.getJSONObject("result");
+		} catch (NullPointerException e) {
+			Log.log(Level.SEVERE, "The main chain appears broken, this should not happen");
+			return new JSONObject();
+		}
 	}
 
 	/**
@@ -69,18 +124,6 @@ public class ABCIClient {
 			Log.log(Level.FINER, "No error found: ", e);
 			return null;
 		}
-	}
-
-	/**
-	 * Query Tendermint for the presence of a transaction.
-	 *
-	 * @param hash - the hash of the transaction
-	 * @return - true when the block is present, false otherwise
-	 */
-	public boolean query(Sha256Hash hash) {
-		//TODO: Verify that the abstractHash of the abstract is the correct hash
-		JSONObject result = sendQuery(hash.getBytes());
-		return result != null && result.has("result");
 	}
 
 	/**
@@ -107,6 +150,17 @@ public class ABCIClient {
 		return sendRequest("tx", params);
 	}
 
+	/**
+	 * Send a query to Tendermint.
+	 *
+	 * @param height - the height to query at
+	 * @return - the JSON response
+	 */
+	private JSONObject sendQuery(long height) {
+		Map<String, String> params = new HashMap<>();
+		params.put("height", Long.toString(height));
+		return sendRequest("block", params);
+	}
 
 	/**
 	 * Send a request to an endpoint and return the JSON response.

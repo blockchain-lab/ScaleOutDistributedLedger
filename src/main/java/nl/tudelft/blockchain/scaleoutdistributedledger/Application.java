@@ -70,7 +70,8 @@ public class Application {
 	private void setupNode(int tmPort) throws IOException {
 		// Create and register node
 		RSAKey key = new RSAKey();
-		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
+//		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
+		Node ownNode = new Node(0, new byte[0], "localhost", 80808);
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		this.serverThread = new Thread(new SocketServer(NODE_PORT));
