@@ -36,15 +36,22 @@ public class BlockMessage {
 	/**
 	 * Constructor.
 	 * @param block - original block
-	 * @param usePreviousBlockNumber - check whether to use or not the previous block number
+	 * @param usePreviousBlockNumber - check whether to use or not the previous block number instead of a reference to the object
 	 */
 	public BlockMessage(Block block, boolean usePreviousBlockNumber) {
 		this.number = block.getNumber();
-		this.previousBlockNumber = block.getPreviousBlock().getNumber();
-		if (usePreviousBlockNumber) {
-			this.previousBlock = null;
+		Block prevBlock = block.getPreviousBlock();
+		if (prevBlock != null) {
+			if (usePreviousBlockNumber) {
+				this.previousBlockNumber = prevBlock.getNumber();
+				this.previousBlock = null;
+			} else {
+				this.previousBlockNumber = -1;
+				this.previousBlock = new BlockMessage(prevBlock);
+			}
 		} else {
-			this.previousBlock = new BlockMessage(block.getPreviousBlock());
+			this.previousBlockNumber = -1;
+			this.previousBlock = null;
 		}
 		this.ownerId = block.getOwner().getId();
 		this.transactions = new ArrayList<>();

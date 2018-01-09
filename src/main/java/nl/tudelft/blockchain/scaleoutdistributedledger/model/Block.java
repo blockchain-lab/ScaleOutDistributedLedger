@@ -77,9 +77,12 @@ public class Block {
 		if (blockMessage.getPreviousBlock() != null) {
 			// Convert BlockMessage to Block
 			this.previousBlock = new Block(blockMessage.getPreviousBlock(), localStore);
-		} else {
+		} else if (blockMessage.getPreviousBlockNumber() != -1) {
 			// Get block by number from owner
 			this.previousBlock = this.owner.getChain().getBlocks().get(blockMessage.getPreviousBlockNumber());
+		} else {
+			// It's a genesis block
+			this.previousBlock = null;
 		}
 		
 		// Convert TransactionMessage to Transaction
