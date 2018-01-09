@@ -1,9 +1,9 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.RSAKey;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
@@ -69,7 +69,7 @@ public class Application {
 	 */
 	private void setupNode(int tmPort) throws IOException {
 		// Create and register node
-		RSAKey key = new RSAKey();
+		Ed25519Key key = new Ed25519Key();
 		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
