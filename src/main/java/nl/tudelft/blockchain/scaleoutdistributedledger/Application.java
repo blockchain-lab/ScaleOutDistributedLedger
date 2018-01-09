@@ -68,7 +68,7 @@ public class Application {
 		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
-		this.serverThread = new Thread(new SocketServer(NODE_PORT));
+		this.serverThread = new Thread(new SocketServer(NODE_PORT, localStore));
 		serverThread.start();
 		this.socketClient = new SocketClient();
 		

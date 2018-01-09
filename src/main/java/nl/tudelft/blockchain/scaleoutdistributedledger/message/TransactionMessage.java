@@ -1,18 +1,20 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import java.util.AbstractMap.SimpleEntry;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.Set;
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
+import java.util.AbstractMap.SimpleEntry;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Set;
+
 /**
  * Transaction message for netty.
  */
-public class TransactionMessage {
+public class TransactionMessage extends Message {
 	
 	@Getter
 	private final int number;
@@ -72,4 +74,8 @@ public class TransactionMessage {
 		this.blockNumber = transaction.getBlockNumber().getAsInt();
 	}
 
+	@Override
+	public void handle(LocalStore localStore) {
+		// Do nothing
+	}
 }

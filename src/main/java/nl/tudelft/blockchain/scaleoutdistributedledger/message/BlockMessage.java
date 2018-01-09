@@ -1,16 +1,18 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Block message for netty.
  */
-public class BlockMessage {
+public class BlockMessage extends Message {
 	
 	@Getter
 	private final int number;
@@ -68,5 +70,9 @@ public class BlockMessage {
 	public BlockMessage(Block block) {
 		this(block, false);
 	}
-	
+
+	@Override
+	public void handle(LocalStore localStore) {
+		// Do nothing.
+	}
 }

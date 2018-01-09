@@ -1,18 +1,20 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Proof message for netty.
  */
-public class ProofMessage {
+public class ProofMessage extends Message {
 	
 	@Getter
 	private final TransactionMessage transactionMessage;
@@ -45,5 +47,9 @@ public class ProofMessage {
 			this.chainUpdates.put(node.getId(), blockMessageList);
 		}
 	}
-	
+
+	@Override
+	public void handle(LocalStore localStore) {
+
+	}
 }
