@@ -24,7 +24,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 public class TransactionCreatorTest {
 	private Node ownNodeMock;
 	
-	private Application applicationMock;
+	private LocalStore storeMock;
 	
 	private Map<Integer, Node> nodes;
 	private Set<Transaction> unspent;
@@ -42,11 +42,11 @@ public class TransactionCreatorTest {
 		
 		ownNodeMock = createNodeMock(0);
 		
-		applicationMock = mock(Application.class);
-		when(applicationMock.getOwnNode()).thenReturn(ownNodeMock);
-		when(applicationMock.getNodes()).thenReturn(nodes);
-		when(applicationMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
-		when(applicationMock.getUnspent()).thenReturn(unspent);
+		storeMock = mock(LocalStore.class);
+		when(storeMock.getOwnNode()).thenReturn(ownNodeMock);
+		when(storeMock.getNodes()).thenReturn(nodes);
+		when(storeMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
+		when(storeMock.getUnspent()).thenReturn(unspent);
 		
 		nodes.put(0, ownNodeMock);
 	}
@@ -85,7 +85,7 @@ public class TransactionCreatorTest {
 	 * @return     the node with the given id
 	 */
 	public Node getNode(int id) {
-		return applicationMock.getNode(id);
+		return storeMock.getNode(id);
 	}
 	
 	/**
@@ -156,7 +156,7 @@ public class TransactionCreatorTest {
 	public void testNotEnoughMoney1() {
 		createNodes(1, 1);
 		
-		TransactionCreator tc = new TransactionCreator(applicationMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
 		tc.createTransaction(2);
 	}
 	
@@ -170,7 +170,7 @@ public class TransactionCreatorTest {
 		//We have 5 money, received from node 2.
 		addReceivedMoney(getNode(2), 5);
 		
-		TransactionCreator tc = new TransactionCreator(applicationMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
 		tc.createTransaction(2);
 	}
 	
@@ -219,7 +219,7 @@ public class TransactionCreatorTest {
 		Transaction t4 = addReceivedMoney(getNode(4), 10);
 		
 		//We want to send 10 money to node 1
-		TransactionCreator tc = new TransactionCreator(applicationMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
 		
 		Transaction transaction = tc.createTransaction(2);
 		
@@ -283,7 +283,7 @@ public class TransactionCreatorTest {
 		Transaction t5 = addReceivedMoney(getNode(5), 1);
 		
 		//We want to send 10 money to node 1
-		TransactionCreator tc = new TransactionCreator(applicationMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
 		
 		Transaction transaction = tc.createTransaction(2);
 		
