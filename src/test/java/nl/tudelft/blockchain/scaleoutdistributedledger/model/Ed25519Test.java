@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class Ed25519Test {
 			byte[] signature = Ed25519Key.sign(message, priv);
 			boolean valid = Ed25519Key.verify(message, signature, pub);
 			
-			assertTrue(!valid);
+			assertFalse(valid);
 		} catch (Exception ex) {
 			fail();
 		}

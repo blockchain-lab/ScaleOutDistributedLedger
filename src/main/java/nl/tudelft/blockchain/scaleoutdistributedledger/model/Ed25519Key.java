@@ -5,8 +5,6 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import lombok.Getter;
 import net.i2p.crypto.eddsa.EdDSAEngine;
@@ -101,8 +99,7 @@ public class Ed25519Key {
 	 */
 	public static byte[] sign(byte[] message, byte[] privateKey) throws Exception {
 		// Get seed
-		byte[] seed = new byte[32];
-		System.arraycopy(privateKey, 0, seed, 0, seed.length);
+		byte[] seed = Arrays.copyOf(privateKey, 32);
 		// Sign
 		EdDSAPrivateKeySpec privateKeySpec = new EdDSAPrivateKeySpec(seed, specification);
 		PrivateKey privateKeyObject = new EdDSAPrivateKey(privateKeySpec);
