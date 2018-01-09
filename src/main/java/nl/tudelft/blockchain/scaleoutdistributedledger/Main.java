@@ -33,7 +33,7 @@ public final class Main {
 	 */
 	private static void testSockets() {
 		try {
-			Thread t = new Thread(new SocketServer(8007));
+			Thread t = new Thread(new SocketServer(8007, new LocalStore(new Node(0))));
 			t.start();
 
 			Node node = new Node(1, null, "localhost", 8007);
