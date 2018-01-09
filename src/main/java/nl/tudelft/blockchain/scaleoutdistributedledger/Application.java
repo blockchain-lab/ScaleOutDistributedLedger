@@ -10,14 +10,17 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 
 import java.io.IOException;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
+
 /**
  * Class to run a node.
  */
 public class Application {
-
 	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final String TRACKER_SERVER_ADDRESS = "localhost";
 	public static final int NODE_PORT = 8007;
+	private static MainChain mainChain;
 	
 	private LocalStore localStore;
 
@@ -28,10 +31,11 @@ public class Application {
 
 	/**
 	 * Creates a new application.
+	 * @param tendermintPort - the port on which the tendermint server will run.
 	 * @throws IOException - error while registering nodes
 	 */
-	public Application() throws IOException {
-		this.setupNode();
+	public Application(int tendermintPort) throws IOException {
+		this.setupNode(tendermintPort);
 	}
 
 	/**
@@ -56,13 +60,14 @@ public class Application {
 	public void sendTransaction(Transaction transaction) {
 		CommunicationHelper.sendTransaction(transaction);
 	}
-	
+
 	/**
 	 * Setup your own node.
 	 * Register to the tracker and setup the local store.
+	 * @param tmPort - the port on which to run the Tendermint server
 	 * @throws java.io.IOException - error while registering node
 	 */
-	private void setupNode() throws IOException {
+	private void setupNode(int tmPort) throws IOException {
 		// Create and register node
 		RSAKey key = new RSAKey();
 		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
@@ -74,5 +79,14 @@ public class Application {
 		
 		// Setup local store
 		localStore = new LocalStore(ownNode);
+		mainChain = new TendermintChain(tmPort);
+	}
+
+	/**
+	 * Returns the singleton main chain.
+	 * @return -
+	 */
+	public static MainChain getMainChain() {
+		return mainChain;
 	}
 }
