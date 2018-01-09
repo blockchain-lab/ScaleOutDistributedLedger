@@ -78,6 +78,6 @@ public class SocketClient {
 
         this.connections.put(node, future.channel());
 
-        return future.awaitUninterruptibly().isSuccess();
+        return future.await().isSuccess();
     }
 }
