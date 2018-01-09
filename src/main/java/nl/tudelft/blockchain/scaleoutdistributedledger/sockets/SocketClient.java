@@ -63,7 +63,7 @@ public class SocketClient {
         if (channel == null || !channel.isOpen()) {
             Log.log(Level.INFO, "No open connection found, connecting...");
             ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
-            if(!future.await().isSuccess()) {
+            if (!future.await().isSuccess()) {
                 // Could not connect
                 return false;
             }
