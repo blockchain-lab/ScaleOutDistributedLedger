@@ -18,9 +18,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
  * Class to run a node.
  */
 public class Application {
-	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final String TRACKER_SERVER_ADDRESS = "localhost";
-	public static final int NODE_PORT = 8007;
+	public static final int TRACKER_SERVER_PORT = 3000;
+	public static final int NODE_PORT = 40000;
 	private static MainChain mainChain;
 	
 	private LocalStore localStore;
@@ -47,10 +47,10 @@ public class Application {
 	 */
 	public void init(int nodePort, int tendermintPort) throws IOException {
 		Ed25519Key key = new Ed25519Key();
-		OwnNode ownNode = TrackerHelper.registerNode(key.getPublicKey());
+		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
-		this.serverThread = new Thread(new SocketServer(NODE_PORT, localStore));
+		this.serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
 		this.socketClient = new SocketClient();
 		

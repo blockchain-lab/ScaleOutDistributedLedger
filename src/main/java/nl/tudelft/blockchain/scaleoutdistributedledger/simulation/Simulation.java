@@ -60,11 +60,12 @@ public class Simulation {
 		
 		localApplications = new Application[amount];
 		for (int i = 0; i < amount; i++) {
+			int basePort = Application.NODE_PORT + i * 4;
 			Application app = new Application();
 			try {
-				app.init(Application.NODE_PORT + i, 46658);
+				app.init(basePort, basePort + 3);
 			} catch (Exception ex) {
-				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + (Application.NODE_PORT + i) + "!", ex);
+				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
 			}
 			localApplications[i] = app;
 		}
@@ -189,7 +190,11 @@ public class Simulation {
 		
 		for (Node node : nodes.values()) {
 			try {
-				socketClient.sendMessage(node, msg);
+				if (!socketClient.sendMessage(node, msg)) {
+					Log.log(Level.SEVERE,
+							"Failed to send message " + msg + " to node " + node.getId() +
+							" at " + node.getAddress() + ":" + node.getPort());
+				}
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE,
 						"[Simulation] Failed to send message " + msg + " to node " + node.getId() +
