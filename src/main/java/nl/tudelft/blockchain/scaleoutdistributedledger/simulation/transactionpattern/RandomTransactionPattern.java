@@ -30,7 +30,6 @@ public class RandomTransactionPattern implements ITransactionPattern {
 	private int commitEvery;
 	private Long seed;
 	private transient Random random;
-	private transient boolean listUpdated;
 
 	/**
 	 * @param minAmount   - the minimal transaction amount
@@ -78,15 +77,16 @@ public class RandomTransactionPattern implements ITransactionPattern {
 	 * @return           - a randomly selected node
 	 */
 	public Node selectNode(LocalStore localStore) {
-		if (!listUpdated) {
-			localStore.updateNodes();
-			listUpdated = true;
-		}
-		
-		//TODO the selection should not include ourselves!
 		int amount = localStore.getNodes().size();
-		int selected = random.nextInt(amount);
-		return localStore.getNode(selected);
+		if (amount <= 1) throw new IllegalStateException("There is only 1 node!");
+		
+		int selected;
+		Node node;
+		do {
+			selected = random.nextInt(amount);
+			node = localStore.getNode(selected);
+		} while (node == localStore.getOwnNode());
+		return node;
 	}
 	
 	/**

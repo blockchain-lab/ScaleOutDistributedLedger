@@ -100,7 +100,7 @@ public class BlockAbstract implements Serializable {
 	 */
 	public boolean isOnMainChain() {
 		if (!this.onMainChain.isPresent()) {
-			this.onMainChain = Optional.of(Application.getMainChain().isPresent(this));
+			this.onMainChain = Optional.of(Application.getAMainChain().isPresent(this));
 		}
 		return this.onMainChain.get();
 	}

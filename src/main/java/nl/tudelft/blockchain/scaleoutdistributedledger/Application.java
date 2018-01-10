@@ -6,8 +6,10 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
@@ -21,8 +23,9 @@ public class Application {
 	public static final String TRACKER_SERVER_ADDRESS = "localhost";
 	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final int NODE_PORT = 40000;
-	private static MainChain mainChain;
+	private static MainChain aMainChain;
 	
+	private MainChain mainChain;
 	private LocalStore localStore;
 	private Thread executor;
 	private CancellableInfiniteRunnable transactionExecutable;
@@ -58,8 +61,10 @@ public class Application {
 		serverThread.start();
 		socketClient = new SocketClient();
 
-		if (mainChain == null) {
-			mainChain = new TendermintChain(tendermintPort);
+		mainChain = new TendermintChain(tendermintPort);
+
+		if (aMainChain == null) {
+			aMainChain = mainChain;
 		}
 	}
 	
@@ -81,6 +86,7 @@ public class Application {
 	public synchronized void setTransactionPattern(ITransactionPattern pattern) {
 		if (isTransacting()) throw new IllegalStateException("There is already a transaction pattern running!");
 		this.transactionExecutable = pattern.getRunnable(localStore);
+		Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + ": Set transaction pattern " + pattern.getName());
 	}
 	
 	/**
@@ -90,7 +96,11 @@ public class Application {
 	public synchronized void startTransacting() {
 		if (isTransacting()) throw new IllegalStateException("There is already a transaction pattern running!");
 		this.executor = new Thread(this.transactionExecutable);
+		this.executor.setUncaughtExceptionHandler((t, ex) -> 
+			Log.log(Level.SEVERE, "Node " + localStore.getOwnNode().getId() + ": Uncaught exception in transaction pattern executor!", ex)
+		);
 		this.executor.start();
+		Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + ": Started transacting with transaction pattern.");
 	}
 	
 	/**
@@ -99,6 +109,7 @@ public class Application {
 	public synchronized void stopTransacting() {
 		if (!isTransacting()) return;
 		this.transactionExecutable.cancel();
+		Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + ": Stopped transacting with transaction pattern.");
 	}
 	
 	/**
@@ -120,10 +131,17 @@ public class Application {
 	}
 
 	/**
-	 * Returns the singleton main chain.
-	 * @return -
+	 * @return - the main chain of this application
 	 */
-	public static MainChain getMainChain() {
+	public MainChain getMainChain() {
 		return mainChain;
+	}
+	
+	/**
+	 * Only use the returned instance for checking if BlockAbstracts are on the main chain.
+	 * @return - a MainChain instance
+	 */
+	public static MainChain getAMainChain() {
+		return aMainChain;
 	}
 }

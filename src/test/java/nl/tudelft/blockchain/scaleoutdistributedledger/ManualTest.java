@@ -31,7 +31,7 @@ public class ManualTest {
 			e.printStackTrace();
 		}
 
-		Sha256Hash h = Application.getMainChain().commitAbstract(abs1);
+		Sha256Hash h = app.getMainChain().commitAbstract(abs1);
 		if (h != null) {
 			System.out.println("Committed an abstract with hash " + h.toString());
 		}
@@ -45,6 +45,6 @@ public class ManualTest {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		System.out.println("Query for the same abstract gives a " + Application.getMainChain().isPresent(abs2));
+		System.out.println("Query for the same abstract gives a " + app.getMainChain().isPresent(abs2));
 	}
 }
