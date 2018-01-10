@@ -3,10 +3,14 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import lombok.Getter;
 
 import java.util.List;
 import java.util.logging.Level;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
@@ -61,6 +65,35 @@ public class Block {
 	}
 
 	/**
+	 * Constructor to decode a block message.
+	 * @param blockMessage - block message from network.
+	 * @param localStore - local store.
+	 * @throws IOException - error while getting node from tracker.
+	 */
+	public Block(BlockMessage blockMessage, LocalStore localStore) throws IOException {
+		this.number = blockMessage.getNumber();
+		this.owner = localStore.getNode(blockMessage.getOwnerId());
+		
+		if (blockMessage.getPreviousBlock() != null) {
+			// Convert BlockMessage to Block
+			this.previousBlock = new Block(blockMessage.getPreviousBlock(), localStore);
+		} else if (blockMessage.getPreviousBlockNumber() != -1) {
+			// Get block by number from owner
+			this.previousBlock = this.owner.getChain().getBlocks().get(blockMessage.getPreviousBlockNumber());
+		} else {
+			// It's a genesis block
+			this.previousBlock = null;
+		}
+		
+		// Convert TransactionMessage to Transaction
+		this.transactions = new ArrayList<>();
+		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
+			this.transactions.add(new Transaction(transactionMessage, localStore));
+		}
+		this.hash = blockMessage.getHash();
+	}
+	
+	/**
 	 * Get hash of the block.
 	 * @return Hash SHA256
 	 */
@@ -81,7 +114,7 @@ public class Block {
 	public BlockAbstract getBlockAbstract() {
 		if (this.hasAbstract == null) {
 			// TODO: change to more legit check if we own this block
-			if (this.owner.getPrivateKey() != null) {
+			if (this.owner instanceof OwnNode) {
 				try {
 					this.blockAbstract = this.calculateBlockAbstract();
 					this.hasAbstract = true;
@@ -100,7 +133,11 @@ public class Block {
 	 * @return abstract of the block
 	 * @throws Exception - something went wrong while signing the block
 	 */
-	private BlockAbstract calculateBlockAbstract() throws Exception {
+	protected BlockAbstract calculateBlockAbstract() throws Exception {
+		if (!(this.owner instanceof OwnNode)) {
+			throw new UnsupportedOperationException("You cannot calculate the block abstract of a block you do not own!");
+		}
+		
 		// Convert attributes of abstract into an array of bytes, for the signature
 		// Important to keep the order of writings
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -110,7 +147,7 @@ public class Block {
 		byte[] attrInBytes = outputStream.toByteArray();
 
 		// Sign the attributes
-		byte[] signature = this.owner.sign(attrInBytes);
+		byte[] signature = ((OwnNode) this.owner).sign(attrInBytes);
 		return new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
 	}
 

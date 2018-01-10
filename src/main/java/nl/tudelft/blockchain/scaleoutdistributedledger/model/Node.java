@@ -26,13 +26,6 @@ public class Node {
 
 	@Getter @Setter
 	private byte[] publicKey;
-
-	/**
-	 * Only used by the node himself.
-	 * @return private key
-	 */
-	@Getter @Setter
-	private transient byte[] privateKey;
 	
 	@Getter @Setter
 	private String address;
@@ -71,25 +64,16 @@ public class Node {
 		this.chain = new Chain(this);
 		this.mainChain = new TendermintChain(port+3);
 	}
-
-	/**
-	 * @param message - the message to sign
-	 * @return - the signed message
-	 * @throws Exception - See {@link RSAKey#sign(byte[], byte[])}
-	 */
-	public byte[] sign(byte[] message) throws Exception {
-		return RSAKey.sign(message, this.privateKey);
-	}
 	
 	/**
 	 * Verify the signature of a message made by this node.
 	 * @param message - message to be verified
 	 * @param signature - signature of the message
 	 * @return - the signature
-	 * @throws Exception - See {@link RSAKey#verify(byte[], byte[], byte[])}
+	 * @throws Exception - See {@link Ed25519Key#verify(byte[], byte[], byte[])}
 	 */
 	public boolean verify(byte[] message, byte[] signature) throws Exception {
-		return RSAKey.verify(message, signature, this.publicKey);
+		return Ed25519Key.verify(message, signature, this.publicKey);
 	}
 	
 	/**

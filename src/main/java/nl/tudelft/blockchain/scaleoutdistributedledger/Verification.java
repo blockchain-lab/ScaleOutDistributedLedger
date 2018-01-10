@@ -16,7 +16,7 @@ public class Verification {
 
 	/**
 	 * Implementation of algorithm 1 in the paper.
-	 * 
+	 *
 	 * @param transaction - the transaction to validate
 	 * @param proof       - the proof to validate with
 	 * @return              true if the transaction is valid, false otherwise

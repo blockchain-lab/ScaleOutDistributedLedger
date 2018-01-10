@@ -62,4 +62,13 @@ public class Chain {
 			}
 		}
 	}
+	
+	/**
+	 * @return the last block in this chain
+	 */
+	public Block getLastBlock() {
+		if (blocks.isEmpty()) return null;
+
+		return blocks.get(blocks.size() - 1);
+	}
 }

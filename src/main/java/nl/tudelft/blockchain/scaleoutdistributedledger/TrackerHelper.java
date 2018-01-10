@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -27,15 +28,16 @@ public final class TrackerHelper {
 
 	/**
 	 * Registers this node with the given public key.
+	 * @param nodePort  - the port of the node
 	 * @param publicKey - the publicKey of the new node
 	 * @return - the registered node
 	 * @throws IOException - IOException while registering node
 	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
-	public static Node registerNode(byte[] publicKey) throws IOException, NodeRegisterFailedException {
+	public static OwnNode registerNode(int nodePort, byte[] publicKey) throws IOException, NodeRegisterFailedException {
 		JSONObject json = new JSONObject();
 		json.put("address", Inet4Address.getLocalHost().getHostAddress());
-		json.put("port", Application.NODE_PORT);
+		json.put("port", nodePort);
 		json.put("publicKey", publicKey);
 
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
@@ -45,8 +47,8 @@ public final class TrackerHelper {
 			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 			if (response.getBoolean("success")) {
 				Log.log(Level.INFO, "Successfully registered node to tracker server");
-				return new Node(response.getInt("id"), publicKey,
-						Inet4Address.getLocalHost().getHostAddress(), Application.NODE_PORT);
+				return new OwnNode(response.getInt("id"), publicKey,
+						Inet4Address.getLocalHost().getHostAddress(), nodePort);
 			}
 			Log.log(Level.SEVERE, "Error while registering node");
 			throw new NodeRegisterFailedException();

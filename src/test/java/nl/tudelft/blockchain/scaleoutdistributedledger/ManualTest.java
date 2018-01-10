@@ -20,7 +20,8 @@ public class ManualTest {
 	 */
 	@SneakyThrows
 	private static void testTendermintCommitQuery() {
-		Application app = new Application(46658);
+		Application app = new Application();
+		app.init(Application.NODE_PORT, 46658);
 		Node node = new Node(0);
 		BlockAbstract abs1 = new BlockAbstract(node.getId(), 0, null, null);
 		try {
@@ -30,7 +31,7 @@ public class ManualTest {
 			e.printStackTrace();
 		}
 
-		Sha256Hash h = Application.getMainChain().commitAbstract(abs1);
+		Sha256Hash h = app.getMainChain().commitAbstract(abs1);
 		if (h != null) {
 			System.out.println("Committed an abstract with hash " + h.toString());
 		}
@@ -44,6 +45,10 @@ public class ManualTest {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+<<<<<<< HEAD
 		System.out.println("Query for the same abstract gives a " + Application.getMainChain().isPresent(abs2.getBlockHash()));
+=======
+		System.out.println("Query for the same abstract gives a " + app.getMainChain().isPresent(abs2));
+>>>>>>> origin/feature-simulation
 	}
 }

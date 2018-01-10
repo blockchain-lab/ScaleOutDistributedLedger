@@ -65,6 +65,7 @@ public class SocketClient {
             ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
             if (!future.await().isSuccess()) {
                 // Could not connect
+            	Log.log(Level.SEVERE, "Unable to connect to " + node.getAddress() + ":" + node.getPort(), future.cause());
                 return false;
             }
             assert future.isDone();
@@ -78,6 +79,13 @@ public class SocketClient {
 
         this.connections.put(node, future.channel());
 
-        return future.await().isSuccess();
+        future.await();
+        
+        if (!future.isSuccess()) {
+        	Log.log(Level.SEVERE, "Failed to send message", future.cause());
+        	return false;
+        }
+        
+        return true;
     }
 }

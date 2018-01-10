@@ -2,9 +2,11 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.util.logging.Level;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
@@ -17,34 +19,39 @@ public final class CommunicationHelper {
 	
 	/**
 	 * Sends the given transaction to the receiver of the transaction.
+	 * Can block up to 60 seconds.
 	 * @param transaction - the transaction to send
+	 * @param socketClient - the socketClient to send the transaction with.
+	 * @throws InterruptedException - when the sending is interrupted.
 	 */
-	public static void sendTransaction(Transaction transaction) {
+	public static void sendTransaction(Transaction transaction, SocketClient socketClient) throws InterruptedException {
 		Node to = transaction.getReceiver();
-		String address = to.getAddress();
-		//TODO Open socket connection to other
-		//TODO Create message and send it
-		throw new UnsupportedOperationException("TODO: Sending transactions is not yet implemented!");
+		Proof proof = transaction.getProof();
+		socketClient.sendMessage(to, new ProofMessage(proof));
 	}
 	
 	/**
-	 * @param verification - the verification object to verify transactions with
-	 * @param transaction  - the transaction that was received
-	 * @param proof        - the proof provided with the transaction
+	 * @param proof         - the proof provided with the transaction
+	 * @param localStore	- the localstore of the node
 	 * @return               true if the transaction was accepted, false otherwise
 	 */
-	public static boolean receiveTransaction(Verification verification, Transaction transaction, Proof proof) {
+	public static boolean receiveTransaction(Proof proof, LocalStore localStore) {
 		//If we have seen this transaction before, reject it
-		if (verification.isCached(transaction)) {
+		if (localStore.getVerification().isCached(proof.getTransaction())) {
 			Log.log(Level.WARNING, "Received a transaction we already received before!");
 			return false;
 		}
 		
-		if (!verification.isValid(transaction, proof)) return false;
+		if (!localStore.getVerification().isValid(proof.getTransaction(), proof)) return false;
 		
 		proof.applyUpdates();
 
 		//TODO: Update metaKnowledge based on what we received?
+
+		if (proof.getTransaction().getAmount() > 0) {
+			localStore.addUnspentTransaction(proof.getTransaction());
+		}
+
 		return true;
 	}
 }

@@ -13,7 +13,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.util.logging.Level;
@@ -27,13 +27,16 @@ public class SocketServer implements Runnable {
     private static final int CHANNEL_TIMEOUT = 30;
 
     private int port;
+    private LocalStore localStore;
 
     /**
      * Constructor.
      * @param port - the port to listen on.
+     * @param localStore - the localstore of the node.
      */
-    public SocketServer(int port) {
+    public SocketServer(int port, LocalStore localStore) {
         this.port = port;
+        this.localStore = localStore;
     }
 
     /**
@@ -55,14 +58,16 @@ public class SocketServer implements Runnable {
                             p.addLast(new IdleStateHandler(0, 0, CHANNEL_TIMEOUT),
                                     new ObjectEncoder(),
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
-                                    new SocketServerHandler());
+                                    new SocketServerHandler(localStore));
                         }
                     });
 
-            Log.log(Level.INFO, "Starting socket server on port " + Application.NODE_PORT);
+            Log.log(Level.INFO, "Starting socket server on port " + this.port);
             b.bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            Log.log(Level.SEVERE, "Exception in socket server", e);
+            Log.log(Level.WARNING, "Socket server was interrupted", e);
+        } catch (Exception ex) {
+        	Log.log(Level.SEVERE, "Exception in socket server", ex);
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
