@@ -62,6 +62,7 @@ public class Application {
 		socketClient = new SocketClient();
 
 		mainChain = new TendermintChain(tendermintPort);
+		//TODO Retrieve money from tendermint
 
 		if (aMainChain == null) {
 			aMainChain = mainChain;
