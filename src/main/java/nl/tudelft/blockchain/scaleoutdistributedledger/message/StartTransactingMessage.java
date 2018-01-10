@@ -9,6 +9,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
  * Message to indicate that the receiver can start transacting.
  */
 public class StartTransactingMessage extends Message {
+	private static final long serialVersionUID = 1L;
 
 	@Override
 	public void handle(LocalStore localStore) {

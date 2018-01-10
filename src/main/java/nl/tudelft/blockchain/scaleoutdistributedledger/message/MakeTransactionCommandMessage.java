@@ -6,6 +6,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
  * Message for the "make transaction" command from the simulation server.
  */
 public class MakeTransactionCommandMessage extends Message {
+	private static final long serialVersionUID = 1L;
+	
 	private int receiverId;
 	private long amount;
 	

@@ -10,6 +10,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
  * Message containing the transaction pattern that the receiver should use.
  */
 public class TransactionPatternMessage extends Message {
+	private static final long serialVersionUID = 1L;
+	
 	private ITransactionPattern pattern;
 	
 	/**
