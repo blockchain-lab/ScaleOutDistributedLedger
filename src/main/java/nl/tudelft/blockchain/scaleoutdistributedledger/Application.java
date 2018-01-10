@@ -50,13 +50,14 @@ public class Application {
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
-		this.serverThread = new Thread(new SocketServer(nodePort, localStore));
-		serverThread.start();
-		this.socketClient = new SocketClient();
-		
 		// Setup local store
 		localStore = new LocalStore(ownNode, this);
 		localStore.updateNodes();
+
+		serverThread = new Thread(new SocketServer(nodePort, localStore));
+		serverThread.start();
+		socketClient = new SocketClient();
+
 		if (mainChain == null) {
 			mainChain = new TendermintChain(tendermintPort);
 		}
