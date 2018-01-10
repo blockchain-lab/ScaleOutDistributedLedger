@@ -49,7 +49,7 @@ public final class CommunicationHelper {
 		//TODO: Update metaKnowledge based on what we received?
 
 		if (proof.getTransaction().getAmount() > 0) {
-			localStore.getUnspent().add(proof.getTransaction());
+			localStore.addUnspentTransaction(proof.getTransaction());
 		}
 
 		return true;

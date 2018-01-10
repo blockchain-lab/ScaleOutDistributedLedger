@@ -111,7 +111,7 @@ public class TransactionCreatorTest {
 	 */
 	public Transaction addUnspent(Node sender, Node receiver, long amount, long remainder) {
 		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new HashSet<>());
-		Transaction transaction = new Transaction(++transactionId, sender, receiver, amount, remainder, Collections.singleton(genesis));
+		Transaction transaction = new Transaction(storeMock.getNewTransactionId(), sender, receiver, amount, remainder, Collections.singleton(genesis));
 		unspent.add(transaction);
 		return transaction;
 	}
@@ -157,7 +157,7 @@ public class TransactionCreatorTest {
 		createNodes(1, 1);
 		
 		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
-		tc.createTransaction(2);
+		tc.createTransaction();
 	}
 	
 	/**
@@ -171,7 +171,7 @@ public class TransactionCreatorTest {
 		addReceivedMoney(getNode(2), 5);
 		
 		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
-		tc.createTransaction(2);
+		tc.createTransaction();
 	}
 	
 	/**
@@ -221,7 +221,7 @@ public class TransactionCreatorTest {
 		//We want to send 10 money to node 1
 		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
 		
-		Transaction transaction = tc.createTransaction(2);
+		Transaction transaction = tc.createTransaction();
 		
 		//Check if all the fields are correct
 		assertEquals(ownNodeMock, transaction.getSender());
@@ -285,7 +285,7 @@ public class TransactionCreatorTest {
 		//We want to send 10 money to node 1
 		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
 		
-		Transaction transaction = tc.createTransaction(2);
+		Transaction transaction = tc.createTransaction();
 		
 		//Check if all the fields are correct
 		assertEquals(ownNodeMock, transaction.getSender());

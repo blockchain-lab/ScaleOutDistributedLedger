@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,6 +29,11 @@ public class LocalStore {
 	
 	@Getter
 	private final Set<Transaction> unspent = new HashSet<>();
+	
+	@Getter
+	private long availableMoney;
+	
+	private int transactionId;
 	
 	/**
 	 * Constructor.
@@ -63,7 +69,7 @@ public class LocalStore {
 	}
 	
 	/**
-	 * Updates the node list.
+	 * Gets the current list of nodes from the tracker.
 	 */
 	public void updateNodes() {
 		try {
@@ -89,5 +95,43 @@ public class LocalStore {
 		}
 		
 		throw new IllegalStateException("Transaction with id " + transactionId + " from node " + nodeId + " not found.");
+	}
+	
+	/**
+	 * Adds the given transaction as unspent.
+	 * @param transaction - the transaction to add
+	 */
+	public void addUnspentTransaction(Transaction transaction) {
+		if (!unspent.add(transaction)) return;
+
+		if (transaction.getReceiver() == ownNode) {
+			availableMoney += transaction.getAmount();
+		}
+		if (transaction.getSender() == ownNode) {
+			availableMoney += transaction.getRemainder();
+		}
+	}
+	
+	/**
+	 * @param toRemove - the unspent transactions to remove
+	 */
+	public void removeUnspentTransactions(Collection<Transaction> toRemove) {
+		for (Transaction transaction : toRemove) {
+			if (!unspent.remove(transaction)) continue;
+			
+			if (transaction.getReceiver() == ownNode) {
+				availableMoney -= transaction.getAmount();
+			}
+			if (transaction.getSender() == ownNode) {
+				availableMoney -= transaction.getRemainder();
+			}
+		}
+	}
+
+	/**
+	 * @return a new transaction id
+	 */
+	public int getNewTransactionId() {
+		return ++transactionId;
 	}
 }
