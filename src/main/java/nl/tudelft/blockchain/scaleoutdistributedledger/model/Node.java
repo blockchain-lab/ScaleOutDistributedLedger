@@ -21,13 +21,6 @@ public class Node {
 
 	@Getter @Setter
 	private byte[] publicKey;
-
-	/**
-	 * Only used by the node himself.
-	 * @return private key
-	 */
-	@Getter @Setter
-	private transient byte[] privateKey;
 	
 	@Getter @Setter
 	private String address;
@@ -63,15 +56,6 @@ public class Node {
 		this.address = address;
 		this.port = port;
 		this.chain = new Chain(this);
-	}
-
-	/**
-	 * @param message - the message to sign
-	 * @return - the signed message
-	 * @throws Exception - See {@link Ed25519Key#sign(byte[], byte[])}
-	 */
-	public byte[] sign(byte[] message) throws Exception {
-		return Ed25519Key.sign(message, this.privateKey);
 	}
 	
 	/**

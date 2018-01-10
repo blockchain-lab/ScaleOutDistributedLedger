@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import lombok.Getter;
@@ -17,9 +18,11 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
  * Class to store information related to our own node.
  */
 public class LocalStore {
+	@Getter
+	private final Application application;
 	
 	@Getter
-	private final Node ownNode;
+	private final OwnNode ownNode;
 	
 	@Getter
 	private final Map<Integer, Node> nodes = new HashMap<>();
@@ -38,14 +41,12 @@ public class LocalStore {
 	/**
 	 * Constructor.
 	 * @param ownNode - our own node.
-	 * @throws IOException - exception while updating nodes
+	 * @param application - the application
 	 */
-	public LocalStore(Node ownNode) throws IOException {
+	public LocalStore(OwnNode ownNode, Application application) {
 		this.ownNode = ownNode;
-		this.nodes.put(this.ownNode.getId(), this.ownNode);
-		
-		// Get current list of nodes from tracker
-		TrackerHelper.updateNodes(this.nodes);
+		this.application = application;
+		this.nodes.put(ownNode.getId(), ownNode);
 	}
 	
 	/**

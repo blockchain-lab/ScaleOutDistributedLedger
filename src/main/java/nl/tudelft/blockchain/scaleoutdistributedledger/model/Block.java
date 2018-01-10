@@ -114,7 +114,7 @@ public class Block {
 	public BlockAbstract getBlockAbstract() {
 		if (this.hasAbstract == null) {
 			// TODO: change to more legit check if we own this block
-			if (this.owner.getPrivateKey() != null) {
+			if (this.owner instanceof OwnNode) {
 				try {
 					this.blockAbstract = this.calculateBlockAbstract();
 					this.hasAbstract = true;
@@ -133,7 +133,11 @@ public class Block {
 	 * @return abstract of the block
 	 * @throws Exception - something went wrong while signing the block
 	 */
-	private BlockAbstract calculateBlockAbstract() throws Exception {
+	protected BlockAbstract calculateBlockAbstract() throws Exception {
+		if (!(this.owner instanceof OwnNode)) {
+			throw new UnsupportedOperationException("You cannot calculate the block abstract of a block you do not own!");
+		}
+		
 		// Convert attributes of abstract into an array of bytes, for the signature
 		// Important to keep the order of writings
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -143,7 +147,7 @@ public class Block {
 		byte[] attrInBytes = outputStream.toByteArray();
 
 		// Sign the attributes
-		byte[] signature = this.owner.sign(attrInBytes);
+		byte[] signature = ((OwnNode) this.owner).sign(attrInBytes);
 		return new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
 	}
 
