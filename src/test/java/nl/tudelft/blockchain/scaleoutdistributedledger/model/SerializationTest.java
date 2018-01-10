@@ -39,14 +39,14 @@ public class SerializationTest {
 	public void setUp() throws IOException {
 		// Encode: transactions, proofs and blocks
 		// Setup sender and block
-		Node sender = new Node(1);
+		OwnNode sender = new OwnNode(1);
 		this.block = new Block(1234, sender, new ArrayList<>());
 		List<Block> blockList = new ArrayList<>();
 		blockList.add(this.block);
 		sender.getChain().update(blockList);
 		Node receiver = new Node(2);
 		// Setup LocalStore
-		this.localStore = new LocalStore(sender);
+		this.localStore = new LocalStore(sender, null);
 		this.localStore.getNodes().put(receiver.getId(), receiver);
 		// Add Transaction
 		this.transaction = new Transaction(44, sender, receiver, 100, 20, new HashSet<>());

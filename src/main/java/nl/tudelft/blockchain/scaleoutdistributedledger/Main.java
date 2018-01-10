@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 
@@ -25,7 +26,7 @@ public final class Main {
 	public static void main(String[] args) throws IOException {
 		// Start a new node
 		// TODO: Make an example transaction?
-		Application app = new Application(46658);
+		Application app = new Application();
 	}
 
 	/**
@@ -33,7 +34,7 @@ public final class Main {
 	 */
 	private static void testSockets() {
 		try {
-			Thread t = new Thread(new SocketServer(8007, new LocalStore(new Node(0))));
+			Thread t = new Thread(new SocketServer(8007, new LocalStore(new OwnNode(0), null)));
 			t.start();
 
 			Node node = new Node(1, null, "localhost", 8007);

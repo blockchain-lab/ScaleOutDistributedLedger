@@ -20,7 +20,8 @@ public class ManualTest {
 	 */
 	@SneakyThrows
 	private static void testTendermintCommitQuery() {
-		Application app = new Application(46658);
+		Application app = new Application();
+		app.init(Application.NODE_PORT, 46658);
 		Node node = new Node(0);
 		BlockAbstract abs1 = new BlockAbstract(node.getId(), 0, null, null);
 		try {

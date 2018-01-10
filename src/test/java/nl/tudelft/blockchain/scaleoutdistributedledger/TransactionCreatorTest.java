@@ -15,20 +15,19 @@ import org.junit.Test;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
-
 
 /**
  * Test class for TransactionCreator.
  */
 public class TransactionCreatorTest {
-	private Node ownNodeMock;
+	private OwnNode ownNodeMock;
 	
 	private LocalStore storeMock;
 	
 	private Map<Integer, Node> nodes;
 	private Set<Transaction> unspent;
-	private int transactionId;
 	
 	/**
 	 * Called before every test.
@@ -36,17 +35,15 @@ public class TransactionCreatorTest {
 	 */
 	@Before
 	public void setUp() {
-		transactionId = 0;
-		nodes = new HashMap<>();
-		unspent = new HashSet<>();
+		ownNodeMock = mock(OwnNode.class);
+		when(ownNodeMock.getId()).thenReturn(0);
+		when(ownNodeMock.getMetaKnowledge()).thenReturn(new HashMap<>());
+		when(ownNodeMock.getChain()).thenReturn(new Chain(ownNodeMock));
 		
-		ownNodeMock = createNodeMock(0);
-		
-		storeMock = mock(LocalStore.class);
-		when(storeMock.getOwnNode()).thenReturn(ownNodeMock);
-		when(storeMock.getNodes()).thenReturn(nodes);
+		storeMock = spy(new LocalStore(ownNodeMock, null));
+		nodes = storeMock.getNodes();
+		unspent = storeMock.getUnspent();
 		when(storeMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
-		when(storeMock.getUnspent()).thenReturn(unspent);
 		
 		nodes.put(0, ownNodeMock);
 	}

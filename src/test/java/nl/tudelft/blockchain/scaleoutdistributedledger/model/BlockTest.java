@@ -12,7 +12,7 @@ import org.junit.Test;
  */
 public class BlockTest {
 	
-	private Node owner;
+	private OwnNode owner;
 	
 	private Block block;
 	
@@ -21,7 +21,7 @@ public class BlockTest {
 	 */
 	@Before
 	public void setUp() {
-		this.owner = new Node(24);
+		this.owner = new OwnNode(24);
 		Ed25519Key keyPair = new Ed25519Key();
 		this.owner.setPrivateKey(keyPair.getPrivateKey());
 		this.owner.setPublicKey(keyPair.getPublicKey());
