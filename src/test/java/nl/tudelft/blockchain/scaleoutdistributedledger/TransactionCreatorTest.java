@@ -27,7 +27,6 @@ public class TransactionCreatorTest {
 	private LocalStore storeMock;
 	
 	private Map<Integer, Node> nodes;
-	private Set<Transaction> unspent;
 	
 	/**
 	 * Called before every test.
@@ -42,7 +41,6 @@ public class TransactionCreatorTest {
 		
 		storeMock = spy(new LocalStore(ownNodeMock, null));
 		nodes = storeMock.getNodes();
-		unspent = storeMock.getUnspent();
 		when(storeMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
 		
 		nodes.put(0, ownNodeMock);
@@ -109,7 +107,7 @@ public class TransactionCreatorTest {
 	public Transaction addUnspent(Node sender, Node receiver, long amount, long remainder) {
 		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new HashSet<>());
 		Transaction transaction = new Transaction(storeMock.getNewTransactionId(), sender, receiver, amount, remainder, Collections.singleton(genesis));
-		unspent.add(transaction);
+		storeMock.addUnspentTransaction(transaction);
 		return transaction;
 	}
 	
