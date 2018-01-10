@@ -55,9 +55,9 @@ public class ABCIClient {
 	}
 
 	/**
-	 * Query Tendermint for the presence of a transaction.
+	 * Query Tendermint for the presence of a transaction (main chain block).
 	 *
-	 * @param hash - the hash of the transaction
+	 * @param hash - the hash of the transaction (main chain block)
 	 * @return - true when the block is present, false otherwise
 	 */
 	public boolean query(Sha256Hash hash) {
@@ -73,19 +73,20 @@ public class ABCIClient {
 	 * @return - A list of blocks at the given height, or an empty list if the height was invalid
 	 */
 	public List<BlockAbstract> query(long height) {
-		List<BlockAbstract> abss = new ArrayList<>();
+		List<BlockAbstract> abstracts = new ArrayList<>();
 
-		JSONObject result = sendQuery(height);
+		JSONObject result = getBlockAt(height);
 
 		// Height is not valid, so return
 		if (getError(result) != null) {
-			return abss;
+			Log.log(Level.INFO, "Error while querying for height");
+			return abstracts;
 		}
 
 		try {
 			JSONArray bytes = result.getJSONObject("result").getJSONObject("block").getJSONObject("data").getJSONArray("txs");
 			for (Object obj : bytes) {
-				abss.add(BlockAbstract.fromBytes(Utils.base64StringToBytes((String) obj)));
+				abstracts.add(BlockAbstract.fromBytes(Utils.base64StringToBytes((String) obj)));
 
 				// Use the following lines when testing on a mock chain that does not contain actual abstracts
 // 				byte[] b = Utils.base64StringToBytes((String) obj);
@@ -94,7 +95,7 @@ public class ABCIClient {
 		} catch (Exception e) {
 			Log.log(Level.WARNING, "Malformed result " + result.toString(1) + "\nCausing exception:", e);
 		}
-		return abss;
+		return abstracts;
 	}
 
 	/**
@@ -135,7 +136,7 @@ public class ABCIClient {
 	private JSONObject sendTx(byte[] data) {
 		Map<String, String> params = new HashMap<>();
 		params.put("tx", "0x" + Utils.bytesToHexString(data));
-		return sendRequest("broadcast_tx_sync", params);
+		return sendRequest("broadcast_tx_commit", params);
 	}
 
 	/**
@@ -156,7 +157,7 @@ public class ABCIClient {
 	 * @param height - the height to query at
 	 * @return - the JSON response
 	 */
-	private JSONObject sendQuery(long height) {
+	private JSONObject getBlockAt(long height) {
 		Map<String, String> params = new HashMap<>();
 		params.put("height", Long.toString(height));
 		return sendRequest("block", params);

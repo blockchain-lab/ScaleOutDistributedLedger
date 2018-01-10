@@ -16,7 +16,8 @@ import java.util.logging.Level;
  */
 public final class TendermintChain implements MainChain {
 	public static final String DEFAULT_ADDRESS = "localhost";
-	public static int TENDERMINT_PORT;
+	public static final int DEFAULT_ABCI_SERVER_PORT = 46658;
+	public int ABCI_SERVER_PORT;
 
 	private ABCIServer handler;
 	private ABCIClient client;
@@ -26,21 +27,28 @@ public final class TendermintChain implements MainChain {
 	private long currentHeight = 0;
 
 	/**
-	 * Create and start the connection with Tendermint on the given address.
-	 * This is a singleton, should be one per {@link Application}.
+	 * Create and start the ABCI app (server) to connect with Tendermint on the default port (46658).
+	 * Also uses (port - 1), which Tendermint should listen on for RPC (rpc.laddr)
+	 */
+	public TendermintChain() {
+		this(DEFAULT_ABCI_SERVER_PORT);
+	}
+	/**
+	 * Create and start the ABCI app (server) to connect with Tendermint on the given port.
+	 * Also uses (port - 1), which Tendermint should listen on for RPC (rpc.laddr)
 	 * @param port - the port on which we run the server
 	 */
 	public TendermintChain(final int port) {
-		TENDERMINT_PORT = port;
-		Log.log(Level.INFO, "Starting Tendermint chain on " + DEFAULT_ADDRESS + ":" + TENDERMINT_PORT);
-		this.cache = new HashSet<Sha256Hash>();
+		ABCI_SERVER_PORT = port;
+		Log.log(Level.INFO, "Starting Tendermint chain on " + DEFAULT_ADDRESS + ":" + ABCI_SERVER_PORT);
+		this.cache = new HashSet<>();
 
 		socket = new TSocket();
 		handler = new ABCIServer(this);
 
 		socket.registerListener(handler);
 
-		Thread t = new Thread(() -> socket.start(TENDERMINT_PORT));
+		Thread t = new Thread(() -> socket.start(ABCI_SERVER_PORT));
 		t.setName("Main Chain Socket");
 		t.start();
 
@@ -59,8 +67,8 @@ public final class TendermintChain implements MainChain {
 	 * Called on start of the instance.
 	 */
 	public void start() {
-		client = new ABCIClient(DEFAULT_ADDRESS + ":" + (TENDERMINT_PORT - 1));
-		Log.log(Level.INFO, "Started Tendermint chain on " + DEFAULT_ADDRESS + ":" + TENDERMINT_PORT);
+		client = new ABCIClient(DEFAULT_ADDRESS + ":" + (ABCI_SERVER_PORT - 1));
+		Log.log(Level.INFO, "Started Tendermint chain on " + DEFAULT_ADDRESS + ":" + ABCI_SERVER_PORT);
 	}
 
 	/**

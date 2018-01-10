@@ -71,7 +71,7 @@ public class Application {
 		// Create and register node
 		RSAKey key = new RSAKey();
 //		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
-		Node ownNode = new Node(0, new byte[0], "localhost", 80808);
+		Node ownNode = new Node(0, new byte[0], "localhost", 80808, tmPort);
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		this.serverThread = new Thread(new SocketServer(NODE_PORT));
@@ -80,14 +80,8 @@ public class Application {
 		
 		// Setup local store
 		localStore = new LocalStore(ownNode);
-		mainChain = new TendermintChain(tmPort);
+
 	}
 
-	/**
-	 * Returns the singleton main chain.
-	 * @return -
-	 */
-	public static MainChain getMainChain() {
-		return mainChain;
-	}
+
 }
