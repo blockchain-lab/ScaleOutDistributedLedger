@@ -56,7 +56,7 @@ public class Simulation {
 	 * @throws IllegalStateException - if the state is not STOPPED.
 	 */
 	public void runNodesLocally(int amount) {
-		if (state != SimulationState.STOPPED) throw new IllegalStateException("You can only start local nodes when the simulation is in the STOPPED state.");
+		checkState(SimulationState.STOPPED, "start local nodes");
 		
 		localApplications = new Application[amount];
 		for (int i = 0; i < amount; i++) {
@@ -75,7 +75,7 @@ public class Simulation {
 	 * @throws IllegalStateException - if the state is not STOPPED.
 	 */
 	public void stopLocalNodes() {
-		if (state != SimulationState.STOPPED) throw new IllegalStateException("You can only stop local nodes when the simulation is in the STOPPED state.");
+		checkState(SimulationState.STOPPED, "stop local nodes");
 		if (localApplications == null) return;
 		
 		for (Application app : localApplications) {
@@ -92,7 +92,7 @@ public class Simulation {
 	 * @throws NullPointerException  - if the transaction pattern has not been set.
 	 */
 	public void initialize() {
-		if (state != SimulationState.STOPPED) throw new IllegalStateException("You can only initialize when the simulation is in the STOPPED state.");
+		checkState(SimulationState.STOPPED, "initialize");
 		if (transactionPattern == null) throw new NullPointerException("TransactionPattern must not be null!");
 		
 		getNodeListFromTracker();
@@ -119,7 +119,7 @@ public class Simulation {
 	 * @throws IllegalStateException - if the state is not INITIALIZED.
 	 */
 	public void start() {
-		if (state != SimulationState.INITIALIZED) throw new IllegalStateException("You can only start when the simulation is in the INIALIZED state.");
+		checkState(SimulationState.INITIALIZED, "start");
 		
 		if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
 			broadcastMessage(new StartTransactingMessage());
@@ -137,7 +137,7 @@ public class Simulation {
 	 * @throws IllegalStateException - if the state is not RUNNING.
 	 */
 	public void stop() {
-		if (state != SimulationState.RUNNING) throw new IllegalStateException("You can only stop when the simulation is in the RUNNING state.");
+		checkState(SimulationState.RUNNING, "stop");
 		
 		broadcastMessage(new StopTransactingMessage());
 		Log.log(Level.INFO, "[Simulation] Stopped");
@@ -154,6 +154,18 @@ public class Simulation {
 		this.nodes = null;
 		//TODO Close socketClient?
 		state = SimulationState.STOPPED;
+	}
+	
+	/**
+	 * Checks if the current state is the expected state.
+	 * @param expected - the expected state
+	 * @param msg      - the message
+	 * @throws IllegalStateException - If the current state is not the expected state.
+	 */
+	protected void checkState(SimulationState expected, String msg) {
+		if (state != expected) {
+			throw new IllegalStateException("You can only " + msg + " when the simulation is in the " + expected.name() + " state.");
+		}
 	}
 	
 	/**
