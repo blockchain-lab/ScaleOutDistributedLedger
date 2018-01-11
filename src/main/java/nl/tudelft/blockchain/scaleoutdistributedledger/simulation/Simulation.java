@@ -63,7 +63,7 @@ public class Simulation {
 			int basePort = Application.NODE_PORT + i * 4;
 			Application app = new Application();
 			try {
-				app.init(basePort, basePort + 3);
+				app.init(basePort);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
 			}

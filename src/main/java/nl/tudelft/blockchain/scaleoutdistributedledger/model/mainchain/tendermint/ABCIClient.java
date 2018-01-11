@@ -38,13 +38,14 @@ public class ABCIClient {
 		JSONObject error;
 		if ((error = getError(result)) != null) {
 			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data"));
-			Log.log(Level.FINE, result.toString());
+			Log.log(Level.INFO, result.toString());
 			return null;
 		} else { //No error coming from Tendermint found
 			byte[] ret = null;
 			try {
 				JSONObject resultField = result.getJSONObject("result");
-				if (resultField.getInt("code") == 0) { //double check we succeeded
+				JSONObject deliverTx = resultField.getJSONObject("deliver_tx");
+				if (deliverTx.getInt("code") == 0) { //double check we succeeded
 					ret = Utils.hexStringToBytes(resultField.getString("hash"));
 				}
 			} catch (Exception e) {		// Malformed result
@@ -76,11 +77,15 @@ public class ABCIClient {
 		List<BlockAbstract> abstracts = new ArrayList<>();
 
 		JSONObject result = getBlockAt(height);
-
+		if (result == null) {
+			//Could not get the block at the given height.
+			return null;
+		}
 		// Height is not valid, so return
-		if (getError(result) != null) {
-			Log.log(Level.INFO, "Error while querying for height");
-			return abstracts;
+		JSONObject error;
+		if ((error = getError(result)) != null) {
+			Log.log(Level.INFO, "Error while querying for height" + error.toString(1));
+			return null;
 		}
 
 		try {
@@ -93,7 +98,8 @@ public class ABCIClient {
 //				abss.add(new BlockAbstract(0, 0, Sha256Hash.withHash(b), b));
 			}
 		} catch (Exception e) {
-			Log.log(Level.WARNING, "Malformed result " + result.toString(1) + "\nCausing exception:", e);
+			Log.log(Level.WARNING, "Malformed result " + result + "\nCausing exception:", e);
+			if (abstracts.isEmpty()) abstracts = null;
 		}
 		return abstracts;
 	}
@@ -108,7 +114,7 @@ public class ABCIClient {
 		try {
 			return result.getJSONObject("result");
 		} catch (NullPointerException e) {
-			Log.log(Level.SEVERE, "The main chain appears broken, this should not happen");
+			Log.log(Level.SEVERE, "The main chain does not respond. Did you start tendermint?");
 			return new JSONObject();
 		}
 	}
@@ -186,7 +192,8 @@ public class ABCIClient {
 
 			return new JSONObject(Request.Get(str.toString()).execute().returnContent().toString());
 		} catch (IOException | JSONException e) {
-			Log.log(Level.INFO, "Failed executing request", e);
+			Log.log(Level.INFO, "Failed executing http request.");
+			Log.log(Level.FINE, "", e);
 			return null;
 		}
 	}

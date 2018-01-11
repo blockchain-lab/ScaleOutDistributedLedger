@@ -1,7 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint;
 
 import com.github.jtendermint.jabci.socket.TSocket;
-import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
@@ -17,7 +16,7 @@ import java.util.logging.Level;
 public final class TendermintChain implements MainChain {
 	public static final String DEFAULT_ADDRESS = "localhost";
 	public static final int DEFAULT_ABCI_SERVER_PORT = 46658;
-	public int ABCI_SERVER_PORT;
+	public int abciServerPort;
 
 	private ABCIServer handler;
 	private ABCIClient client;
@@ -39,8 +38,7 @@ public final class TendermintChain implements MainChain {
 	 * @param port - the port on which we run the server
 	 */
 	public TendermintChain(final int port) {
-		ABCI_SERVER_PORT = port;
-		Log.log(Level.INFO, "Starting Tendermint chain on " + DEFAULT_ADDRESS + ":" + ABCI_SERVER_PORT);
+		abciServerPort = port;
 		this.cache = new HashSet<>();
 
 		socket = new TSocket();
@@ -48,27 +46,40 @@ public final class TendermintChain implements MainChain {
 
 		socket.registerListener(handler);
 
-		Thread t = new Thread(() -> socket.start(ABCI_SERVER_PORT));
+		Thread t = new Thread(() -> socket.start(abciServerPort));
 		t.setName("Main Chain Socket");
 		t.start();
-
-		//TODO: There should be a better way to do this than just waiting and hoping Tendermint initializes before we continue
-		new Thread(() -> {
-			try {
-				Thread.sleep(10000);
-				start();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}).start();
+		this.initClient();
+		this.initialUpdateCache();
+		Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort);
 	}
 
 	/**
 	 * Called on start of the instance.
 	 */
-	public void start() {
-		client = new ABCIClient(DEFAULT_ADDRESS + ":" + (ABCI_SERVER_PORT - 1));
-		Log.log(Level.INFO, "Started Tendermint chain on " + DEFAULT_ADDRESS + ":" + ABCI_SERVER_PORT);
+	public void initClient() {
+		this.client = new ABCIClient(DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
+		Log.log(Level.INFO, "Started ABCI Client on " + DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
+	}
+
+	private void initialUpdateCache() {
+		boolean updated = false;
+		do {
+			try {
+				updateCacheBlocking(-1);
+				updated = true;
+			} catch (Exception e) {
+				int retryTime = 3;
+				Log.log(Level.INFO, "Could not update cache on startup, trying again in " + retryTime + "s.");
+				Log.log(Level.FINE, "", e);
+				try {
+					Thread.sleep(retryTime * 1000);
+				} catch (InterruptedException e1) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		} while (!updated);
+		Log.log(Level.INFO, "Successfully updated cache on startup.");
 	}
 
 	/**
@@ -96,12 +107,20 @@ public final class TendermintChain implements MainChain {
 			height = this.client.status().getLong("latest_block_height");
 		}
 
-		for(long i = currentHeight; i <= height; i++) {
-			for(BlockAbstract abs : this.client.query(i)) {
+		for (long i = currentHeight + 1; i <= height; i++) {
+			List<BlockAbstract> abstractsAtCurrentHeight = this.client.query(i);
+			if (abstractsAtCurrentHeight == null) {
+				Log.log(Level.WARNING, "Could not get block at height " + i + ", perhaps the tendermint rpc is not (yet) running (or broken)");
+				return;
+			}
+			for (BlockAbstract abs : abstractsAtCurrentHeight) {
 				cache.add(abs.getBlockHash());
 			}
 		}
-		Log.log(Level.INFO,"Updated the Tendermint cache from " + currentHeight + " -> " + height + ", new size is " + cache.size());
+		if (currentHeight < height) {
+			Log.log(Level.INFO, "Successfully updated the Tendermint cache from height " + currentHeight + " -> " + height
+					+ ", number of cached hashes of abstracts on main chain is now " + cache.size());
+		}
 		currentHeight = Math.max(currentHeight, height);	// For concurrency reasons use the maximum
 	}
 
@@ -117,7 +136,7 @@ public final class TendermintChain implements MainChain {
 	public Sha256Hash commitAbstract(BlockAbstract abs) {
 		byte[] hash = client.commit(abs);
 		if (hash == null) {
-			Log.log(Level.INFO, "Tendermint [COMMIT] failed");
+			Log.log(Level.INFO, "Commiting abstract to tendermint failed");
 			return null;
 		} else {
 			abs.setAbstractHash(Sha256Hash.withHash(hash));
@@ -129,7 +148,7 @@ public final class TendermintChain implements MainChain {
 
 	@Override
 	public boolean isPresent(Sha256Hash blockHash) {
-		if (cache.contains(blockHash)){
+		if (cache.contains(blockHash)) {
 			return true;
 		} else {
 			// We could miss some blocks in our cache, so update and wait for the results

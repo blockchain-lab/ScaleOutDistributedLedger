@@ -40,7 +40,7 @@ public class ABCIServer implements ABCIAPI {
 		if (valid) {
 			return ResponseCheckTx.newBuilder().setCode(CodeType.OK).build();
 		} else {
-			String log = "Discription of what went wrong while validating";
+			String log = "Description of what went wrong while validating";
 			Log.log(Level.INFO, "[TENDERMINT] Proposed block rejected because: " + log);
 			return ResponseCheckTx.newBuilder().setCode(CodeType.BadNonce).setLog(log).build();
 		}
@@ -48,7 +48,7 @@ public class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseCommit requestCommit(RequestCommit requestCommit) {
-		Log.log(Level.FINE, "[TENDERMINT] Commit requested");
+		Log.log(Level.FINE, "[TENDERMINT] Finalize commit request");
 		return ResponseCommit.newBuilder().setCode(CodeType.OK).build();
 	}
 
@@ -65,8 +65,11 @@ public class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseEndBlock requestEndBlock(RequestEndBlock requestEndBlock) {
-		Log.log(Level.FINE, "[TENDERMINT] Block ended");
-		chain.updateCache(requestEndBlock.getHeight());
+		long height = requestEndBlock.getHeight();
+		if (height > 0) {
+			Log.log(Level.INFO, "[TENDERMINT] Block #" + height + " ended, going to update the cache");
+			chain.updateCache(height);
+		}
 
 		return ResponseEndBlock.newBuilder().build();
 	}

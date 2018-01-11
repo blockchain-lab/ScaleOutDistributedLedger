@@ -2,8 +2,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,9 +18,6 @@ public class Node {
 
 	@Getter
 	private final Chain chain;
-
-	@Getter
-	private final MainChain mainChain;
 
 	@Getter @Setter
 	private byte[] publicKey;
@@ -46,7 +41,6 @@ public class Node {
 	public Node(int id) {
 		this.id = id;
 		this.chain = new Chain(this);
-		mainChain = new TendermintChain();
 	}
 
 	/**
@@ -54,7 +48,7 @@ public class Node {
 	 * @param id - the id of this node.
 	 * @param publicKey - the public key of this node.
 	 * @param address - the address of this node.
-	 * @param port = the port of this node. Note, also port+1, port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
+	 * @param port = the port of this node.
 	 */
 	public Node(int id, byte[] publicKey, String address, int port) {
 		this.id = id;
@@ -62,7 +56,6 @@ public class Node {
 		this.address = address;
 		this.port = port;
 		this.chain = new Chain(this);
-		this.mainChain = new TendermintChain(port+3);
 	}
 	
 	/**

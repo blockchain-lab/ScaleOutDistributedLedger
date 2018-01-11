@@ -9,10 +9,10 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 
@@ -24,8 +24,9 @@ public class Application {
 	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final int NODE_PORT = 40000;
 	private static MainChain aMainChain;
+	private static AtomicBoolean staticMainChainPresent = new AtomicBoolean(false);
 	
-	private MainChain mainChain;
+
 	private LocalStore localStore;
 	private Thread executor;
 	private CancellableInfiniteRunnable transactionExecutable;
@@ -37,18 +38,18 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int, int)} before it can be used.
+	 * The application must be initialized with {@link #init(int)} before it can be used.
 	 */
 	public Application() {}
 	
 	/**
 	 * Initializes the application.
 	 * Registers to the tracker and creates the local store.
-	 * @param nodePort       - the port on which the node will accept connections.
-	 * @param tendermintPort - the port on which the tendermint server will run.
+	 * @param nodePort       - the port on which the node will accept connections. Note, also port+1,
+	 *                          port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
 	 * @throws IOException   - error while registering node
 	 */
-	public void init(int nodePort, int tendermintPort) throws IOException {
+	public void init(int nodePort) throws IOException {
 		Ed25519Key key = new Ed25519Key();
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
@@ -61,10 +62,9 @@ public class Application {
 		serverThread.start();
 		socketClient = new SocketClient();
 
-		mainChain = new TendermintChain(tendermintPort);
 
-		if (aMainChain == null) {
-			aMainChain = mainChain;
+		if (!staticMainChainPresent.getAndSet(true)) {
+			aMainChain = localStore.getMainChain();
 		}
 	}
 	
@@ -134,7 +134,7 @@ public class Application {
 	 * @return - the main chain of this application
 	 */
 	public MainChain getMainChain() {
-		return mainChain;
+		return localStore.getMainChain();
 	}
 	
 	/**
