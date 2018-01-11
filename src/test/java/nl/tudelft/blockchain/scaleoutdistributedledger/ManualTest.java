@@ -15,6 +15,9 @@ import java.util.*;
  * Class for running manual tests
  */
 public class ManualTest {
+	//TODO: adjust this to your own liking
+	static String tendermintBinary = "/path/to/tendermint";
+	static String nodeFilesBaseLocation = "/some/random/location/eg/tmp/node";
 
 	public static void main(String[] args){
 //		testRunningTendermint();
@@ -28,15 +31,13 @@ public class ManualTest {
 	 */
 	@SneakyThrows
 	public static void testRunningTendermint(){
-		String tendermintBinary = "/home/karol/dev/delft/BlockchainEngineering/tendermint/tendermint";
-		String nodeFilesBaseLocation = "/home/karol/tmp_tendermint/node";
+
 		int numberOfNodes = 3;
 		List<String> publicKeys = new LinkedList<>();
 		for (int i = 1; i <= numberOfNodes; i++) {
 			String nodeLoc = nodeFilesBaseLocation + i;
 			Ed25519Key nodeKey = TendermintHelper.generatePrivValidatorFile(tendermintBinary, nodeLoc);
 			publicKeys.add(Utils.bytesToHexString(nodeKey.getPublicKey()).toUpperCase());
-			TendermintHelper.generateConfigFile(nodeLoc);
 		}
 
 		Date now = new Date();
@@ -93,8 +94,8 @@ public class ManualTest {
 	private static void testTendermintCommitQuery() {
 		Application app = new Application();
 
-		TendermintHelper.runTendermintNode("/home/karol/dev/delft/BlockchainEngineering/tendermint/tendermint",
-				"/home/karol/.tendermint", Application.NODE_PORT, new LinkedList<>());
+		TendermintHelper.runTendermintNode(tendermintBinary,
+				nodeFilesBaseLocation, Application.NODE_PORT, new LinkedList<>());
 		app.init(Application.NODE_PORT);
 		Random random = new Random();
 		int randomBlockNumber = random.nextInt();

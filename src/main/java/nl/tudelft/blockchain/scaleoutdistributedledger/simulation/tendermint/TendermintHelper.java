@@ -178,6 +178,7 @@ public class TendermintHelper {
 		}
 
 		//add arguments
+		script.append("--home ").append(nodeFilesLocation).append(" ");
 		script.append("--p2p.laddr=tcp://0.0.0.0:").append(nodeBasePort + 1).append(" ");
 		script.append("--rpc.laddr=tcp://0.0.0.0:").append(nodeBasePort + 2).append(" ");
 		script.append("--proxy_app=tcp://127.0.0.1:").append(nodeBasePort + 3).append(" ");
@@ -211,22 +212,6 @@ public class TendermintHelper {
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * Generate a config.toml for a tendermint node in a given location.
-	 * This file is necessary to be able to run multiple tendermint nodes on the same machine
-	 * @param nodeLoc the location to create the config.toml file in
-	 */
-	public static void generateConfigFile(String nodeLoc) {
-		try {
-			ensureDirectoryExists(nodeLoc);
-			BufferedWriter writer = new BufferedWriter(new FileWriter(Paths.get(nodeLoc, "config.toml").toString(), true));
-			writer.write("addrbook_strict=false");
-			writer.close();
-		} catch (IOException e) {
-			Log.log(Level.WARNING, "Could not generate config.toml due to IO exception.", e);
-		}
 	}
 
 	/**
