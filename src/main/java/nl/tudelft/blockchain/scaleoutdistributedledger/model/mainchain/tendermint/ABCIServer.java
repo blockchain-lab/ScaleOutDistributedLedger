@@ -67,7 +67,7 @@ public class ABCIServer implements ABCIAPI {
 	public ResponseEndBlock requestEndBlock(RequestEndBlock requestEndBlock) {
 		long height = requestEndBlock.getHeight();
 		if (height > 0) {
-			Log.log(Level.INFO, "[TENDERMINT] Block #" + height + " ended, going to update the cache");
+			Log.log(Level.FINE, "[TENDERMINT] Block #" + height + " ended, going to update the cache");
 			chain.updateCache(height);
 		}
 

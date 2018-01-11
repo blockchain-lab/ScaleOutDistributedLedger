@@ -6,13 +6,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 
+import java.security.KeyPair;
+
 /**
- * Test class for {@link ED25119}.
+ * Test class for {@link Ed25519Key}.
  */
 public class Ed25519Test {
 	
 	/**
-	 * Test for {@link ED25519#sign()}.
+	 * Test for {@link Ed25519Key#sign(byte[], byte[])}.
 	 */
 	@Test
 	public void testSign_Valid() {
@@ -33,7 +35,7 @@ public class Ed25519Test {
 	}
 	
 	/**
-	 * Test for {@link ED25519#sign()}.
+	 * Test for {@link Ed25519Key#sign(byte[], byte[])}.
 	 */
 	@Test
 	public void testSign_Invalid() {
@@ -52,5 +54,24 @@ public class Ed25519Test {
 			fail();
 		}
 	}
-	
+
+	/**
+	 * Test for {@link Ed25519Key#generateKeys()}
+	 */
+	@Test
+	public void testGenerateKeys() {
+		Ed25519Key keyPair = new Ed25519Key();
+		byte[] pub = keyPair.getPublicKey();
+		byte[] priv = keyPair.getPrivateKey();
+		byte[] message = "testing message".getBytes();
+
+		try {
+			byte[] signature = Ed25519Key.sign(message, priv);
+			boolean valid = Ed25519Key.verify(message, signature, pub);
+
+			assertTrue(valid);
+		} catch (Exception ex) {
+			fail();
+		}
+	}
 }
