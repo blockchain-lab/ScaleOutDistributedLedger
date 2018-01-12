@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +17,10 @@ import org.junit.Test;
  * Test class for serialization of classes.
  */
 public class SerializationTest {
+	
+	private Node sender;
+	
+	private Node receiver;
 	
 	private LocalStore localStore;
 	
@@ -39,22 +44,23 @@ public class SerializationTest {
 	public void setUp() throws IOException {
 		// Encode: transactions, proofs and blocks
 		// Setup sender and block
-		Node sender = new Node(1);
-		this.block = new Block(1234, sender, new ArrayList<>());
+		this.sender = new Node(1);
+		this.block = new Block(1234, this.sender, new ArrayList<>());
 		List<Block> blockList = new ArrayList<>();
 		blockList.add(this.block);
-		sender.getChain().update(blockList);
-		Node receiver = new Node(2);
+		blockList.add(new Block(1235, this.sender, new ArrayList<>()));
+		this.sender.getChain().update(blockList);
+		this.receiver = new Node(2);
 		// Setup LocalStore
-		this.localStore = new LocalStore(sender);
-		this.localStore.getNodes().put(receiver.getId(), receiver);
+		this.localStore = new LocalStore(this.sender);
+		this.localStore.getNodes().put(this.receiver.getId(), this.receiver);
 		// Add Transaction
-		this.transaction = new Transaction(44, sender, receiver, 100, 20, new HashSet<>());
+		this.transaction = new Transaction(44, this.sender, this.receiver, 100, 20, new HashSet<>());
 		this.block.getTransactions().add(this.transaction);
 		// Encode Block into BlockMessage
 		this.blockMessage = new BlockMessage(this.block);
 		// Encode Transaction into TransactionMessage
-		this.transactionMessage = new TransactionMessage(transaction);
+		this.transactionMessage = new TransactionMessage(this.transaction);
 		// Add Proof
 		this.proof = new Proof(this.transaction);
 		// Encode Proof into ProofMessage
@@ -113,6 +119,41 @@ public class SerializationTest {
 		assertTrue(newBlock.getHash().equals(this.block.getHash()));
 		// Check list
 		assertTrue(newBlock.getTransactions().equals(this.block.getTransactions()));
+	}
+	
+	/**
+	 * Test the serialization of {@link Transaction}.
+	 * @throws IOException - error while getting nodes from tracker
+	 */
+	@Test
+	public void testTransaction_WithMetaknowledge() throws IOException {
+		// Setup new receiver
+		Node newReceiver = new Node(3);
+		newReceiver.getMetaKnowledge().put(this.sender, 1234);
+		this.localStore.getNodes().put(newReceiver.getId(), newReceiver);
+		
+		// Create new transaction
+		HashSet listSources = new HashSet<>();
+		listSources.add(this.transaction);
+		Transaction newTransaction = new Transaction(88, this.sender, newReceiver, 200, 40, listSources);
+		this.sender.getChain().getBlocks().get(1).getTransactions().add(newTransaction);
+		
+		// Encode
+		TransactionMessage newTransactionMessage = new TransactionMessage(newTransaction);
+		// Check the correctness of the encoding
+		assertTrue(newTransactionMessage.getKnownSource().contains(new SimpleEntry<>(this.sender.getId(), this.transaction.getNumber())));
+		assertTrue(newTransactionMessage.getNewSource().isEmpty());
+		// Decode transaction object
+		Transaction decodedTransaction = new Transaction(newTransactionMessage, this.localStore);
+		
+		// newReceiver gets the sources correctly
+		assertTrue(decodedTransaction.getSource().size() == 1);
+		Transaction sourceTransaction = decodedTransaction.getSource().iterator().next();
+		assertTrue(sourceTransaction.getNumber() == this.transaction.getNumber());
+		assertTrue(sourceTransaction.getAmount() == this.transaction.getAmount());
+		assertTrue(sourceTransaction.getRemainder() == this.transaction.getRemainder());
+		assertTrue(sourceTransaction.getHash().equals(this.transaction.getHash()));
+		assertTrue(sourceTransaction.getBlockNumber().equals(this.transaction.getBlockNumber()));
 	}
 	
 }
