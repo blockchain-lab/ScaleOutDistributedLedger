@@ -3,12 +3,12 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 
 import java.io.IOException;
+import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
@@ -22,19 +22,35 @@ public class Application {
 	public static final int NODE_PORT = 8007;
 	private static MainChain mainChain;
 	
+	// Check whether we are in testing or production environment (default: production)
+	public final boolean isProduction;
+	
+	@Getter
 	private LocalStore localStore;
 
 	@Getter
 	private Thread serverThread;
+	
 	@Getter
 	private SocketClient socketClient;
 
 	/**
 	 * Creates a new application.
-	 * @param tendermintPort - the port on which the tendermint server will run.
+	 * @param tendermintPort - the port on which the Tendermint server will run.
 	 * @throws IOException - error while registering nodes
 	 */
 	public Application(int tendermintPort) throws IOException {
+		this(tendermintPort, true);
+	}
+
+	/**
+	 * Creates a new application.
+	 * @param tendermintPort - the port on which the Tendermint server will run.
+	 * @param isProduction - is production environment or not
+	 * @throws IOException - error while registering nodes
+	 */
+	public Application(int tendermintPort, boolean isProduction) throws IOException {
+		this.isProduction = isProduction;
 		this.setupNode(tendermintPort);
 	}
 	
@@ -61,13 +77,21 @@ public class Application {
 		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
-		this.serverThread = new Thread(new SocketServer(NODE_PORT, localStore));
-		serverThread.start();
+		// Setup local store
+		this.localStore = new LocalStore(ownNode);
+
+		this.serverThread = new Thread(new SocketServer(NODE_PORT, this.localStore));
+		this.serverThread.start();
 		this.socketClient = new SocketClient();
 		
-		// Setup local store
-		localStore = new LocalStore(ownNode);
-		mainChain = new TendermintChain(tmPort);
+		// Setup Tendermint
+		if (this.isProduction) {
+			// Production environment
+			mainChain = new TendermintChain(tmPort);
+		} else {
+			// Testing environment - mock external resources
+			mainChain = new TendermintChainMock();
+		}
 	}
 
 	/**
