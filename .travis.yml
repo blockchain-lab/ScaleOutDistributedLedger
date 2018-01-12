@@ -39,6 +39,7 @@ before_install:
   - npm install
   - npm start 2>&1 > /dev/null &
   - sleep 3
+  - cd ..
 
 install:
   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Dpmd.skip=true -Djacoco.skip=true -V -B
