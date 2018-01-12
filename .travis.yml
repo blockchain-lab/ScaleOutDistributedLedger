@@ -19,6 +19,9 @@ language: java
 jdk:
   - oraclejdk8
 
+node_js:
+  - '6'
+
 branches:
   except:
   - /^doc-.*$/
@@ -29,6 +32,13 @@ env:
     - CI_SOURCE_PATH=$(pwd)
 
 ################################################################################
+
+# Start tracker server
+before_install:
+  - cd tracker-server
+  - npm install
+  - npm start 2>&1 > /dev/null &
+  - sleep 3
 
 install:
   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Dpmd.skip=true -Djacoco.skip=true -V -B
