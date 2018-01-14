@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -38,7 +39,7 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int)} before it can be used.
+	 * The application must be initialized with {@link #init(int, Block)} before it can be used.
 	 */
 	public Application() {}
 	
@@ -47,15 +48,16 @@ public class Application {
 	 * Registers to the tracker and creates the local store.
 	 * @param nodePort       - the port on which the node will accept connections. Note, also port+1,
 	 *                          port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
+	 * @param genesisBlock  - the genesis (initial) block for the entire system
 	 * @throws IOException   - error while registering node
 	 */
-	public void init(int nodePort) throws IOException {
+	public void init(int nodePort, Block genesisBlock) throws IOException {
 		Ed25519Key key = new Ed25519Key();
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		// Setup local store
-		localStore = new LocalStore(ownNode, this);
+		localStore = new LocalStore(ownNode, this, genesisBlock);
 		localStore.updateNodes();
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));

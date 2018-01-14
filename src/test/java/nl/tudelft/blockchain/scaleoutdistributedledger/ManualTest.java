@@ -1,9 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 import lombok.SneakyThrows;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
@@ -15,19 +12,20 @@ import java.util.*;
  * Class for running manual tests
  */
 public class ManualTest {
-	//TODO: adjust this to your own liking
-	static String tendermintBinary = "/path/to/tendermint";
-	static String nodeFilesBaseLocation = "/some/random/location/eg/tmp/node";
+	//TODO: adjust this to your own liking; perhaps make get it from properties file?
+	static String tendermintBinary = "/path/to/tendermint/executable";
+	//uses directory of this path+[nodeNumber] for each node
+	static String nodeFilesBaseLocation = "/some/path/to/store/node/tendermint/data/node";
 
 	public static void main(String[] args){
-//		testRunningTendermint();
-		testTendermintCommitQuery();
+		testRunningTendermint();
+//		testTendermintCommitQuery();
 	}
 
 
 	/**
 	 * Test the entire tendermint part - start with generating node keys and files, then genesis and configs,
-	 * then run nodes, commit some stuff and see whether it works.
+	 * then run nodes, commit some stuff and see whether it works. Needs the node server to be running.
 	 */
 	@SneakyThrows
 	public static void testRunningTendermint(){
@@ -42,8 +40,10 @@ public class ManualTest {
 
 		Date now = new Date();
 		List<String> addresses = new ArrayList<>();
+		final Block genesisBlock = TendermintHelper.generateGenesisBlock(numberOfNodes, 1000);
+		byte[] appHash = genesisBlock.getHash().getBytes();
 		for (int i = 1; i <= numberOfNodes; i++) {
-			TendermintHelper.generateGenesisFile(nodeFilesBaseLocation + i, now, publicKeys);
+			TendermintHelper.generateGenesisFile(nodeFilesBaseLocation + i, now, publicKeys, appHash);
 			addresses.add("192.168.1.107:" + (Application.NODE_PORT + 1 + 4 * (i - 1)));
 		}
 		Application[] apps = new Application[numberOfNodes];
@@ -57,7 +57,7 @@ public class ManualTest {
 				try {
 					TendermintHelper.runTendermintNode(tendermintBinary, nodeFilesLocation, nodeBasePort, addressesForThisNode);
 					Application node = new Application();
-					node.init(nodeBasePort);
+					node.init(nodeBasePort, genesisBlock);
 					apps[currentNumber-1] = node;
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -96,7 +96,8 @@ public class ManualTest {
 
 		TendermintHelper.runTendermintNode(tendermintBinary,
 				nodeFilesBaseLocation, Application.NODE_PORT, new LinkedList<>());
-		app.init(Application.NODE_PORT);
+		final Block genesisBlock = TendermintHelper.generateGenesisBlock(1, 1000);
+		app.init(Application.NODE_PORT, genesisBlock);
 		Random random = new Random();
 		int randomBlockNumber = random.nextInt();
 		byte[] randomBlockHashBytes = new byte[20];

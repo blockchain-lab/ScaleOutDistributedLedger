@@ -1,12 +1,17 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint;
 
 import com.github.jtendermint.jabci.socket.TSocket;
+import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -23,26 +28,29 @@ public final class TendermintChain implements MainChain {
 	private TSocket socket;
 
 	private Set<Sha256Hash> cache;
+	@Getter
 	private long currentHeight = 0;
 
 	/**
 	 * Create and start the ABCI app (server) to connect with Tendermint on the default port (46658).
 	 * Also uses (port - 1), which Tendermint should listen on for RPC (rpc.laddr)
+	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 */
-	public TendermintChain() {
-		this(DEFAULT_ABCI_SERVER_PORT);
+	public TendermintChain(Block genesisBlock) {
+		this(DEFAULT_ABCI_SERVER_PORT, genesisBlock);
 	}
 	/**
 	 * Create and start the ABCI app (server) to connect with Tendermint on the given port.
 	 * Also uses (port - 1), which Tendermint should listen on for RPC (rpc.laddr)
 	 * @param port - the port on which we run the server
+	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 */
-	public TendermintChain(final int port) {
+	public TendermintChain(final int port, Block genesisBlock) {
 		abciServerPort = port;
 		this.cache = new HashSet<>();
 
 		socket = new TSocket();
-		handler = new ABCIServer(this);
+		handler = new ABCIServer(this, genesisBlock);
 
 		socket.registerListener(handler);
 
@@ -159,6 +167,15 @@ public final class TendermintChain implements MainChain {
 			//      For when an abstract is in a block that is not yet closed by an ENDBLOCK
 			//		This now works because the block size is 1
 		}
+	}
+
+	/**
+	 * Only to be used for initial block.
+	 * @param genesisBlockHash the hash of the first block (genesis block)
+	 * @return true if succeeded, false otherwise
+	 */
+	boolean addToCache(Sha256Hash genesisBlockHash) {
+		return cache.add(genesisBlockHash);
 	}
 
 }

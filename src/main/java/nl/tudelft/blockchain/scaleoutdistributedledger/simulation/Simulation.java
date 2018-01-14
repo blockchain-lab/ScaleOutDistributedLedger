@@ -10,7 +10,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionPatternMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
@@ -57,13 +59,13 @@ public class Simulation {
 	 */
 	public void runNodesLocally(int amount) {
 		checkState(SimulationState.STOPPED, "start local nodes");
-		
+		final Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, 1000);
 		localApplications = new Application[amount];
 		for (int i = 0; i < amount; i++) {
 			int basePort = Application.NODE_PORT + i * 4;
 			Application app = new Application();
 			try {
-				app.init(basePort);
+				app.init(basePort, genesisBlock);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
 			}

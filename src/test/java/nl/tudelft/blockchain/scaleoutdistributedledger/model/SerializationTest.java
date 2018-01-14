@@ -33,10 +33,9 @@ public class SerializationTest {
 	
 	/**
 	 * Setup method.
-	 * @throws IOException - error while getting nodes from tracker
 	 */
 	@Before
-	public void setUp() throws IOException {
+	public void setUp() {
 		// Encode: transactions, proofs and blocks
 		// Setup sender and block
 		OwnNode sender = new OwnNode(1);
@@ -46,7 +45,7 @@ public class SerializationTest {
 		sender.getChain().update(blockList);
 		Node receiver = new Node(2);
 		// Setup LocalStore
-		this.localStore = new LocalStore(sender, null);
+		this.localStore = new LocalStore(sender, null, null);
 		this.localStore.getNodes().put(receiver.getId(), receiver);
 		// Add Transaction
 		this.transaction = new Transaction(44, sender, receiver, 100, 20, new HashSet<>());

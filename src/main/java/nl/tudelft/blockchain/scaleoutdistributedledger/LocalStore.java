@@ -47,12 +47,13 @@ public class LocalStore {
 	 * Constructor.
 	 * @param ownNode - our own node.
 	 * @param application - the application
+	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 */
-	public LocalStore(OwnNode ownNode, Application application) {
+	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock) {
 		this.ownNode = ownNode;
 		this.application = application;
 		this.nodes.put(ownNode.getId(), ownNode);
-		this.mainChain = new TendermintChain(ownNode.getPort() + 3);
+		this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock);
 	}
 	
 	/**
@@ -91,7 +92,6 @@ public class LocalStore {
 	 * @param nodeId - identifier of the node
 	 * @param transactionId - identifier of the transaction
 	 * @return transaction
-	 * @throws IOException - error while getting the node
 	 */
 	public Transaction getTransactionFromNode(int nodeId, int transactionId) {
 		Node node = getNode(nodeId);

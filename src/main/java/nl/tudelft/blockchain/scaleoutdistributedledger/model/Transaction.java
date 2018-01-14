@@ -2,8 +2,13 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.OptionalInt;
+import java.util.Set;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
@@ -43,7 +48,7 @@ public class Transaction {
 	 * @param receiver - the receiver of this transaction.
 	 * @param amount - the amount to be transferred.
 	 * @param remainder - the remaining amount.
-	 * @param source - set of transactions that are used as sourc for this transaction.
+	 * @param source - set of transactions that are used as source for this transaction.
 	 */
 	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, Set<Transaction> source) {
 		this.sender = sender;
@@ -75,9 +80,8 @@ public class Transaction {
 	 * Constructor to decode a transaction message.
 	 * @param transactionMessage - the message received from a transaction.
 	 * @param localStore - local store, to get each Node object
-	 * @throws IOException - error while getting a Node object
 	 */
-	public Transaction(TransactionMessage transactionMessage, LocalStore localStore) throws IOException {
+	public Transaction(TransactionMessage transactionMessage, LocalStore localStore)  {
 		this.number = transactionMessage.getNumber();
 		this.sender = localStore.getNode(transactionMessage.getSenderId());
 		this.receiver = localStore.getNode(transactionMessage.getReceiverId());

@@ -39,7 +39,7 @@ public class TransactionCreatorTest {
 		when(ownNodeMock.getMetaKnowledge()).thenReturn(new HashMap<>());
 		when(ownNodeMock.getChain()).thenReturn(new Chain(ownNodeMock));
 		
-		storeMock = spy(new LocalStore(ownNodeMock, null));
+		storeMock = spy(new LocalStore(ownNodeMock, null, null));
 		nodes = storeMock.getNodes();
 		when(storeMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
 		
@@ -76,7 +76,6 @@ public class TransactionCreatorTest {
 	/**
 	 * Convenience method for getting nodes by id.
 	 * @param id - the id of the node to get
-	 * @return 
 	 * @return     the node with the given id
 	 */
 	public Node getNode(int id) {
