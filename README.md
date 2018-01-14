@@ -85,8 +85,15 @@ The tracker server can be installed by installing NodeJS and running `npm instal
 For the main chain we use [Tendermint](https://tendermint.com/). We can communicate to this chain using the provided ABCI interface. 
 
 ### Running tendermint
-Initialize tendermint and run a node using the following commands:  
-`./tendermint init`  
+Tendermint process can be spawned using TendermintHelper class, which takes care of everything that is needed to start it up.
+The steps are usually:
+1. Generate priv_validator.json file for each node.
+2. Generate genesis block, which is then passed to calculate the initial application hash.
+3. Generate genesis.json file for each node.
+4. Run tendermint process for each of the nodes (this means there is n tendermint processes running at the same time, one for each node).
+
+Alternatively, running tendermint can also be done with the following command: (the use of which is discouraged though)
 `./tendermint node --consensus.create_empty_blocks=false` (Note that Tendermint creates empty blocks by default)
+Note: For this method to work, you need to have a config.toml file, genesis.json and priv_validator.json for each node, and/or specify more parameters.
 
 See the [tendermint documentation](https://tendermint.readthedocs.io/en/master/using-tendermint.html) for more information.
