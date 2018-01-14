@@ -46,14 +46,20 @@ public final class TendermintChain implements MainChain {
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 */
 	public TendermintChain(final int port, Block genesisBlock) {
-		abciServerPort = port;
+		this.abciServerPort = port;
 		this.cache = new HashSet<>();
 
-		socket = new TSocket();
-		handler = new ABCIServer(this, genesisBlock);
+		this.socket = new TSocket();
+		this.handler = new ABCIServer(this, genesisBlock);
 
-		socket.registerListener(handler);
+		this.socket.registerListener(handler);
 
+		}
+
+	/**
+	 * Initializes the tendermint chain
+	 */
+	public void init() {
 		Thread t = new Thread(() -> socket.start(abciServerPort));
 		t.setName("Main Chain Socket");
 		t.start();
@@ -61,11 +67,10 @@ public final class TendermintChain implements MainChain {
 		this.initialUpdateCache();
 		Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort);
 	}
-
 	/**
 	 * Called on start of the instance.
 	 */
-	public void initClient() {
+	private void initClient() {
 		this.client = new ABCIClient(DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
 		Log.log(Level.INFO, "Started ABCI Client on " + DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
 	}

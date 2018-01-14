@@ -59,11 +59,11 @@ public class Application {
 		// Setup local store
 		localStore = new LocalStore(ownNode, this, genesisBlock);
 		localStore.updateNodes();
+		localStore.initMainChain();
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
 		socketClient = new SocketClient();
-
 
 		if (!staticMainChainPresent.getAndSet(true)) {
 			aMainChain = localStore.getMainChain();

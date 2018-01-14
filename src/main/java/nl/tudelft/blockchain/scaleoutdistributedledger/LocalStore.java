@@ -141,4 +141,8 @@ public class LocalStore {
 	public int getNewTransactionId() {
 		return ++transactionId;
 	}
+
+	public void initMainChain() {
+		this.mainChain.init();
+	}
 }

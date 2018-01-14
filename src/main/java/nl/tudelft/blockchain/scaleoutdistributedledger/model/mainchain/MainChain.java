@@ -27,4 +27,6 @@ public interface MainChain {
 	}
 
 	public boolean isPresent(Sha256Hash blockHash);
+
+	public void init();
 }
