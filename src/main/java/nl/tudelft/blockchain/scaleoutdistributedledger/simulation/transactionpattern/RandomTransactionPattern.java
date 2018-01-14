@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
@@ -16,6 +17,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.SimulationMode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Random transaction pattern that uses a uniform distribution.
@@ -112,13 +114,19 @@ public class RandomTransactionPattern implements ITransactionPattern {
 
 	@Override
 	public void doAction(LocalStore localStore) throws InterruptedException {
+		Log.log(Level.FINER, "Start doAction of node " + localStore.getOwnNode().getId());
+		
 		//Select receiver and amount
 		long amount = selectAmount(localStore);
-		if (amount == -1) return;
+		if (amount == -1) {
+			Log.log(Level.FINE, "Not enough money to make transaction!");
+			return;
+		}
 		
 		Node receiver = selectNode(localStore);
 		
 		OwnNode ownNode = localStore.getOwnNode();
+		Log.log(Level.INFO, "Going to make transaction: $ " + amount + " from " + ownNode.getId() + " -> " + receiver.getId());
 		synchronized (ownNode.getChain()) {
 			//Create the transaction
 			TransactionCreator creator = new TransactionCreator(localStore, receiver, amount);
