@@ -67,6 +67,9 @@ public class Application {
 
 		if (!staticMainChainPresent.getAndSet(true)) {
 			aMainChain = localStore.getMainChain();
+
+		//TODO Retrieve money from tendermint
+
 		}
 	}
 	
