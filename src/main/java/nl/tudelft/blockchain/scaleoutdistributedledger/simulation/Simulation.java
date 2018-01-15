@@ -69,13 +69,13 @@ public class Simulation {
 		checkState(SimulationState.STOPPED, "start local nodes");
 		
 		//Generate keys and nodes
-		List<String> publicKeys = new LinkedList<>();
 		HashMap<Integer, Node> nodelist = new HashMap<>();
+		Map<Integer, Ed25519Key> nodeKeyPair = new HashMap<>();
 		for (int i = 0; i < amount; i++) {
 			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
 			Ed25519Key nodeKey = TendermintHelper.generatePrivValidatorFile(TENDERMINT_BINARY, nodeLoc);
-			publicKeys.add(Utils.bytesToHexString(nodeKey.getPublicKey()).toUpperCase());
 			nodelist.put(i, new Node(i));
+			nodeKeyPair.put(i, nodeKey);
 		}
 
 		//
@@ -83,6 +83,10 @@ public class Simulation {
 		List<String> addresses = new ArrayList<>();
 		final Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, 1000, nodelist);
 		byte[] appHash = genesisBlock.getHash().getBytes();
+		Map<Integer, String> publicKeys = new HashMap<>(nodeKeyPair.size());
+		for (Map.Entry<Integer, Ed25519Key> e : nodeKeyPair.entrySet()) {
+			publicKeys.put(e.getKey(), Utils.bytesToHexString(e.getValue().getPublicKey()));
+		}
 		for (int i = 0; i < amount; i++) {
 			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
 			TendermintHelper.generateGenesisFile(nodeLoc, now, publicKeys, appHash);
@@ -99,7 +103,7 @@ public class Simulation {
 			addressesForThisNode.remove(i);
 			try {
 				TendermintHelper.runTendermintNode(TENDERMINT_BINARY, nodeLoc, basePort, addressesForThisNode);
-				app.init(basePort, genesisBlock, nodelist);
+				app.init(basePort, genesisBlock, nodelist, nodeKeyPair.get(i));
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
 			}

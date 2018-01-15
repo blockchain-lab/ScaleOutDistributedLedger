@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint;
 
 import com.github.jtendermint.jabci.api.ABCIAPI;
+import com.github.jtendermint.jabci.types.Types;
 import com.github.jtendermint.jabci.types.Types.CodeType;
 import com.github.jtendermint.jabci.types.Types.RequestBeginBlock;
 import com.github.jtendermint.jabci.types.Types.RequestCheckTx;
@@ -28,6 +29,11 @@ import com.google.protobuf.ByteString;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -38,7 +44,7 @@ import java.util.logging.Level;
 public class ABCIServer implements ABCIAPI {
 	private final TendermintChain chain;
 	private final Block genesisBlock;
-
+	private Map<Integer, String> validatorToPublicKey;
 	/**
 	 * @param chain - the main chain this server is part of
 	 * @param genesisBlock - the genesis (initial) block for the entire system
@@ -63,14 +69,14 @@ public class ABCIServer implements ABCIAPI {
 
 		// Comment the next line when using a mock chain
 		BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
-
-		//TODO: validate the abstract
-		boolean valid = true;
+		String hexPublicKey = validatorToPublicKey.get(abs.getOwnerNodeId());
+		byte[] publicKey = Utils.hexStringToBytes(hexPublicKey);
+		boolean valid = abs.checkSignature(publicKey);
 		if (valid) {
 			return ResponseCheckTx.newBuilder().setCode(CodeType.OK).build();
 		} else {
-			String log = "Description of what went wrong while validating";
-			Log.log(Level.INFO, "[TENDERMINT] Proposed block rejected because: " + log);
+			String log = "signature on the abstract was invalid. Public key used:" + hexPublicKey;
+			Log.log(Level.INFO, "[TENDERMINT] Proposed block rejected because " + log);
 			return ResponseCheckTx.newBuilder().setCode(CodeType.BadNonce).setLog(log).build();
 		}
 	}
@@ -126,6 +132,12 @@ public class ABCIServer implements ABCIAPI {
 	@Override
 	public ResponseInitChain requestInitChain(RequestInitChain requestInitChain) {
 		Log.log(Level.FINER, "[TENDERMINT] requestInitChain " + requestInitChain.toString());
+		List<Types.Validator> validatorList = requestInitChain.getValidatorsList();
+		this.validatorToPublicKey = new HashMap<>(validatorList.size());
+		//TODO: we're just assuming the order is the same, but not sure whether it actually is
+		for (int i = 0; i < validatorList.size(); i++) {
+			this.validatorToPublicKey.put(i, Utils.bytesToHexString(validatorList.get(i).getPubKey().toByteArray()));
+		}
 		return ResponseInitChain.newBuilder().build();
 	}
 
