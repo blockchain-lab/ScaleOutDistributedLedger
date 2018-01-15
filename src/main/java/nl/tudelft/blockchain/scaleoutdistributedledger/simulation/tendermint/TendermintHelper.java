@@ -261,7 +261,7 @@ public final class TendermintHelper {
 				// read the output from the command
 				String s;
 				while ((s = stdInput.readLine()) != null) {
-					Log.log(Level.INFO, "[TM STDIN " + logPrefix + " ] " + s);
+					Log.log(Level.FINE, "[TM STDIN " + logPrefix + " ] " + s);
 				}
 				stdInput.close();
 			} catch (Exception e) {
@@ -276,7 +276,7 @@ public final class TendermintHelper {
 				// read any errors from the attempted command
 				String s;
 				while ((s = stdError.readLine()) != null) {
-					Log.log(Level.INFO, "[TM STDERROR " + logPrefix + " ] " + s);
+					Log.log(Level.FINE, "[TM STDERROR " + logPrefix + " ] " + s);
 				}
 				stdError.close();
 			} catch (Exception e) {

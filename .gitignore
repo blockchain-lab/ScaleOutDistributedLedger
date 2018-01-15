@@ -32,3 +32,4 @@ nb-configuration.xml
 
 # Tendermint
 tendermint-nodes/
+tendermint.exe
