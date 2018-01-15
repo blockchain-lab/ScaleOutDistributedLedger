@@ -29,7 +29,7 @@ import java.util.logging.Level;
  * Class for simulations.
  */
 public class Simulation {
-	public static final String TENDERMINT_BINARY = "/home/alex/Tendermint/tendermint";
+	public static final String TENDERMINT_BINARY = "D:/tendermint/tendermint.exe";
 	
 	@Getter
 	private ITransactionPattern transactionPattern;
