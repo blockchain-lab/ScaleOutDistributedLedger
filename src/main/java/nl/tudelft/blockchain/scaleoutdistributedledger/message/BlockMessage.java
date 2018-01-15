@@ -56,7 +56,12 @@ public class BlockMessage extends Message {
 			this.previousBlockNumber = -1;
 			this.previousBlock = null;
 		}
-		this.ownerId = block.getOwner().getId();
+		// It's a genesis block
+		if (block.getOwner() == null) {
+			this.ownerId = Transaction.GENESIS_SENDER;
+		} else {
+			this.ownerId = block.getOwner().getId();
+		}
 		this.transactions = new ArrayList<>();
 		for (Transaction transaction : block.getTransactions()) {
 			this.transactions.add(new TransactionMessage(transaction));

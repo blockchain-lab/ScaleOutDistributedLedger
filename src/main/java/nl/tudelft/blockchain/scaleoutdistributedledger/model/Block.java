@@ -18,6 +18,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
  */
 public class Block {
 
+	public static final int GENESIS_BLOCK_NUMBER = 1;
+	
 	@Getter
 	private final int number;
 
