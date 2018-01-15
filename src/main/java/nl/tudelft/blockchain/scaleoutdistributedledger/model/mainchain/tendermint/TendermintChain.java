@@ -173,7 +173,6 @@ public final class TendermintChain implements MainChain {
 		} else {
 			// We could miss some blocks in our cache, so update and wait for the results
 			updateCacheBlocking(-1);
-
 			return cache.contains(blockHash);
 			//TODO: We might want to check the actual main chain in the false case
 			//      For when an abstract is in a block that is not yet closed by an ENDBLOCK

@@ -67,11 +67,7 @@ public class Proof {
 	 * @param block - the block to be added
 	 */
 	public void addBlock(Block block) {
-		List<Block> blocks = chainUpdates.get(block.getOwner());
-		if (blocks == null) {
-			blocks = new ArrayList<>();
-			chainUpdates.put(block.getOwner(), blocks);
-		}
+		List<Block> blocks = chainUpdates.computeIfAbsent(block.getOwner(), k -> new ArrayList<>());
 		blocks.add(block);
 	}
 	
@@ -134,6 +130,9 @@ public class Proof {
 
 		OptionalInt blockNumber = transaction.getBlockNumber();
 		if (!blockNumber.isPresent() || absmark < blockNumber.getAsInt()) {
+			System.out.println(blockNumber);
+			System.out.println(absmark);
+			System.out.println(transaction);
 			Log.log(Level.WARNING, "No suitable committed block found, proof not verified");
 			return false;
 		}

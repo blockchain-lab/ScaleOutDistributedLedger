@@ -164,6 +164,8 @@ public class RandomTransactionPattern implements ITransactionPattern {
 		}
 		
 		//Actually send the transactions in the blocks
+		// TODO: remove delay
+		Thread.sleep(5000);
 		sendTransactions(localStore, lastBlock, lastCommitted);
 	}
 	

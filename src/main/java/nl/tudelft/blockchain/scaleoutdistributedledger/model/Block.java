@@ -212,6 +212,9 @@ public class Block implements Cloneable {
 	 * @return - boolean identifying if this abstract is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
+		// TODO: remove hack?
+		if (this.number == 0) this.onMainChain = Optional.of(true);
+
 		if (!this.onMainChain.isPresent()) {
 			this.onMainChain = Optional.of(localStore.getMainChain().isPresent(this.getHash()));
 		}
