@@ -190,7 +190,9 @@ public class Block {
 			outputStream.write(Utils.intToByteArray(this.number));
 			byte[] prevBlockHash = (this.previousBlock != null) ? this.previousBlock.getHash().getBytes() : new byte[0];
 			outputStream.write(prevBlockHash);
-			outputStream.write(Utils.intToByteArray(this.owner.getId()));
+			if (this.owner != null) {
+				outputStream.write(Utils.intToByteArray(this.owner.getId()));
+			}
 			for (Transaction tx : this.transactions) {
 				outputStream.write(tx.getHash().getBytes());
 			}

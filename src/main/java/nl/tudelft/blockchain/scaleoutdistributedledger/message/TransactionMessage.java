@@ -53,7 +53,12 @@ public class TransactionMessage extends Message {
 			throw new RuntimeException("Block number not present");
 		}
 		this.number = transaction.getNumber();
-		this.senderId = transaction.getSender().getId();
+		// It's a genesis transaction
+		if (transaction.getSender() == null) {
+			this.senderId = Transaction.GENESIS_SENDER;
+		} else {
+			this.senderId = transaction.getSender().getId();
+		}
 		this.receiverId = transaction.getReceiver().getId();
 		this.amount = transaction.getAmount();
 		this.remainder = transaction.getRemainder();

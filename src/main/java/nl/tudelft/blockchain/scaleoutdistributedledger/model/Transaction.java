@@ -22,6 +22,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessag
  */
 public class Transaction {
 
+	// Represent the sender of a genesis transaction
+	public static final int GENESIS_SENDER = -1;
+	
 	@Getter
 	private final int number;
 
@@ -66,7 +69,12 @@ public class Transaction {
 	 */
 	public Transaction(TransactionMessage transactionMessage, LocalStore localStore)  {
 		this.number = transactionMessage.getNumber();
-		this.sender = localStore.getNode(transactionMessage.getSenderId());
+		// It's a genesis transaction
+		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
+			this.sender = null;
+		} else {
+			this.sender = localStore.getNode(transactionMessage.getSenderId());
+		}
 		this.receiver = localStore.getNode(transactionMessage.getReceiverId());
 		this.amount = transactionMessage.getAmount();
 		this.remainder = transactionMessage.getRemainder();
@@ -138,7 +146,9 @@ public class Transaction {
 		try {
 			// Important to keep the order of writings
 			outputStream.write(Utils.intToByteArray(this.number));
-			outputStream.write(Utils.intToByteArray(this.sender.getId()));
+			if (this.sender != null) {
+				outputStream.write(Utils.intToByteArray(this.sender.getId()));
+			}
 			outputStream.write(Utils.intToByteArray(this.receiver.getId()));
 			outputStream.write(Utils.longToByteArray(this.amount));
 			outputStream.write(Utils.longToByteArray(this.remainder));
