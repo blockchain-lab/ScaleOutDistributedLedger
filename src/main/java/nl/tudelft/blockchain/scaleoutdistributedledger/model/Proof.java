@@ -1,19 +1,15 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import java.io.IOException;
 import lombok.Getter;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.OptionalInt;
-import java.util.Set;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Level;
 
 /**
  * Proof class.
@@ -100,8 +96,8 @@ public class Proof {
 	 * Verifies this proof.
 	 * @return - boolean indicating if this proof is valid.
 	 */
-	public boolean verify() {
-		return verify(this.transaction);
+	public boolean verify(LocalStore localStore) {
+		return verify(this.transaction, localStore);
 	}
 
 	/**
@@ -109,35 +105,42 @@ public class Proof {
 	 * @param transaction - the transaction to verify
 	 * @return - boolean indicating if this transaction is valid.
 	 */
-	private boolean verify(Transaction transaction) {
+	private boolean verify(Transaction transaction, LocalStore localStore) {
+		// Check genesis transactions
+		if (transaction.getSender() == null && transaction.getBlockNumber().isPresent() && transaction.getBlockNumber().getAsInt() == 0) {
+			Log.log(Level.FINE, "Verfied genesis block");
+			return true;
+		}
+
 		int absmark = 0;
 		boolean seen = false;
 
 		ChainView chainView = new ChainView(transaction.getSender().getChain(), chainUpdates.get(transaction.getSender()));
-		if (!chainView.isValid()) return false;
+		if (!chainView.isValid()) {
+			Log.log(Level.WARNING, "Invalid ChainView found, proof not verified");
+			return false;
+		}
 
 		for (Block block : chainView) {
 			if (block.getTransactions().contains(transaction)) {
-				if (seen) return false;
+				if (seen) {
+					Log.log(Level.WARNING, "Duplicate transaction found, proof not verified");
+					return false;
+				}
 				seen = true;
 			}
-
-			// TODO: check if previousBlockHash is correct, might want to do this in chainview or when receiving messages
-			BlockAbstract blockAbstract = block.getBlockAbstract();
-			if (blockAbstract != null && blockAbstract.isOnMainChain()) {
-				absmark = blockAbstract.getBlockNumber();
-				//TODO: is this the correct public key?
-				byte[] baOwnerPublicKey = transaction.getSender().getPublicKey();
-				if (!blockAbstract.checkBlockHash(block) || !blockAbstract.checkSignature(baOwnerPublicKey)) return false;
-			}
+			if (localStore.getMainChain().isPresent(block)) absmark = block.getNumber();
 		}
 
 		OptionalInt blockNumber = transaction.getBlockNumber();
-		if (!blockNumber.isPresent() || absmark < blockNumber.getAsInt()) return false;
+		if (!blockNumber.isPresent() || absmark < blockNumber.getAsInt()) {
+			Log.log(Level.WARNING, "No suitable committed block found, proof not verified");
+			return false;
+		}
 
 		// Verify source transaction
 		for (Transaction sourceTransaction : transaction.getSource()) {
-			if (!verify(sourceTransaction)) return false;
+			if (!verify(sourceTransaction, localStore)) return false;
 		}
 		return true;
 	}

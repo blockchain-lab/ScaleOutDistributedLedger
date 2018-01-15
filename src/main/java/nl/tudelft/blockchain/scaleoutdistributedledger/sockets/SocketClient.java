@@ -71,7 +71,7 @@ public class SocketClient {
     public boolean sendMessage(Node node, Object msg) throws InterruptedException {
         Channel channel = connections.get(node);
         if (channel == null || !channel.isOpen()) {
-            Log.log(Level.INFO, "No open connection found, connecting...");
+            Log.log(Level.FINE, "No open connection found, connecting...");
             ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
             if (!future.await().isSuccess()) {
                 // Could not connect

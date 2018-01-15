@@ -42,7 +42,7 @@ public final class CommunicationHelper {
 			return false;
 		}
 		
-		if (!localStore.getVerification().isValid(proof.getTransaction(), proof)) return false;
+		if (!localStore.getVerification().isValid(proof.getTransaction(), proof, localStore)) return false;
 		
 		proof.applyUpdates();
 
