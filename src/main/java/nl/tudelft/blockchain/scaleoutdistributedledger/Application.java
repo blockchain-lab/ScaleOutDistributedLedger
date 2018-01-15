@@ -92,6 +92,9 @@ public class Application {
 	public void stop() {
 		if (serverThread.isAlive()) serverThread.interrupt();
 		if (socketClient != null) socketClient.shutdown();
+		
+		//TODO Stop socket client?
+		mainChain.stop();
 	}
 	
 	/**

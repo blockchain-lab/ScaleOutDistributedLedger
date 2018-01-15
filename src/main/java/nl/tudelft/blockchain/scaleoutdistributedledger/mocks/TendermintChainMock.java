@@ -41,4 +41,7 @@ public class TendermintChainMock implements MainChain {
 		return true;
 	}
 	
+	@Override
+	public void stop() {}
+	
 }

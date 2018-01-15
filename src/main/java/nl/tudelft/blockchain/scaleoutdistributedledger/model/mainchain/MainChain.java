@@ -22,4 +22,9 @@ public interface MainChain {
 	 * @return - true when present, false otherwise
 	 */
 	public boolean isPresent(BlockAbstract abs);
+	
+	/**
+	 * Stops the main chain.
+	 */
+	public void stop();
 }

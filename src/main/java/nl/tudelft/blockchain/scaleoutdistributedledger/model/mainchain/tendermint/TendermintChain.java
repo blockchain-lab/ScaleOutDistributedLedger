@@ -41,9 +41,9 @@ public final class TendermintChain implements MainChain {
 
 	/**
 	 * Stop the connection to Tendermint.
-	 * Used for testing.
 	 */
-	protected void stop() {
+	@Override
+	public void stop() {
 		socket.stop();
 	}
 
