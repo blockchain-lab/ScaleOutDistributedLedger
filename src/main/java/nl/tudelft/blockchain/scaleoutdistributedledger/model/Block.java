@@ -76,7 +76,12 @@ public class Block implements Cloneable {
 	 */
 	public Block(BlockMessage blockMessage, LocalStore localStore) throws IOException {
 		this.number = blockMessage.getNumber();
-		this.owner = localStore.getNode(blockMessage.getOwnerId());
+		// It's a genesis block
+		if (blockMessage.getOwnerId() == Transaction.GENESIS_SENDER) {
+			this.owner = null;
+		} else {
+			this.owner = localStore.getNode(blockMessage.getOwnerId());
+		}
 		
 		if (blockMessage.getPreviousBlock() != null) {
 			// Convert BlockMessage to Block

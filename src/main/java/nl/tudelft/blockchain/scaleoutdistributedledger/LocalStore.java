@@ -119,7 +119,7 @@ public class LocalStore {
 
 		if (transaction.getReceiver().getId() == ownNode.getId()) {
 			availableMoney += transaction.getAmount();
-			if(transaction.getReceiver() != ownNode) transaction.setReceiver(ownNode);
+			if (transaction.getReceiver() != ownNode) transaction.setReceiver(ownNode);
 		}
 		if (transaction.getSender() == ownNode) {
 			availableMoney += transaction.getRemainder();
