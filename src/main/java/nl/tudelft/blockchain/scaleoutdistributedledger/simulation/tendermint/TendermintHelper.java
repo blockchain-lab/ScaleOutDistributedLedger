@@ -293,9 +293,9 @@ public final class TendermintHelper {
 	 * @return the genesis block
 	 */
 	public static Block generateGenesisBlock(int numberOfNodes, long amount) {
-		Node magicNode = new Node(0);
+		Node magicNode = null;
 		List<Transaction> initialTransactions = new LinkedList<>();
-		for (int i = 1; i < numberOfNodes; i++) {
+		for (int i = 0; i < numberOfNodes; i++) {
 			//TODO: can I use it like that?
 			Node node = new Node(i);
 			initialTransactions.add(new Transaction(i, magicNode, node, amount, 0, new HashSet<>(0)));

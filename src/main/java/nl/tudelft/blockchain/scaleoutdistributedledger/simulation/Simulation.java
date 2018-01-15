@@ -29,7 +29,7 @@ import java.util.logging.Level;
  * Class for simulations.
  */
 public class Simulation {
-	public static final String TENDERMINT_BINARY = "D:\\tendermint\\tendermint.exe";
+	public static final String TENDERMINT_BINARY = "/home/karol/dev/delft/BlockchainEngineering/tendermint/tendermint";
 	
 	@Getter
 	private ITransactionPattern transactionPattern;
@@ -84,7 +84,7 @@ public class Simulation {
 		for (int i = 0; i < amount; i++) {
 			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
 			TendermintHelper.generateGenesisFile(nodeLoc, now, publicKeys, appHash);
-			addresses.add("localhost:" + (Application.NODE_PORT + 1 + 4 * i));
+			addresses.add("127.0.0.1:" + (Application.NODE_PORT + 1 + 4 * i));
 		}
 		
 		//Init the applications

@@ -61,6 +61,7 @@ public class LocalStore {
 		} else {
 			this.mainChain = new TendermintChainMock();
 		}
+		this.addUnspentTransaction(genesisBlock.getTransactions().get(ownNode.getId()));
 	}
 	
 	/**

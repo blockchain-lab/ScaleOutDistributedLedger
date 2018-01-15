@@ -119,7 +119,7 @@ public class RandomTransactionPattern implements ITransactionPattern {
 		//Select receiver and amount
 		long amount = selectAmount(localStore);
 		if (amount == -1) {
-			Log.log(Level.FINE, "Not enough money to make transaction!");
+			Log.log(Level.INFO, "Not enough money to make transaction!");
 			return;
 		}
 		
