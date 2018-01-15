@@ -1,22 +1,23 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
 import lombok.Getter;
-
-import java.util.List;
-import java.util.logging.Level;
+import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Block class.
  */
-public class Block {
+public class Block implements Cloneable {
 
 	@Getter
 	private final int number;
@@ -24,8 +25,8 @@ public class Block {
 	@Getter
 	private Block previousBlock;
 
-	@Getter
-	private final Node owner;
+	@Getter @Setter
+	private Node owner;
 
 	@Getter
 	private final List<Transaction> transactions;
@@ -204,4 +205,15 @@ public class Block {
 		return new Sha256Hash(blockInBytes);
 	}
 
+	/**
+	 * Clones the block.
+	 * @return - the clone
+	 */
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new IllegalStateException("Clone not supported");
+		}
+	}
 }

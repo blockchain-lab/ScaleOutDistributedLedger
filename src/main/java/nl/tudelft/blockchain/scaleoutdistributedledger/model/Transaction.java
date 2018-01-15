@@ -107,8 +107,6 @@ public class Transaction {
 					chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
 				} else if(t.getBlockNumber().isPresent() && t.getBlockNumber().getAsInt() != 0) {
 					throw new IllegalStateException("Transaction found with no sender in a not-genesis block");
-				} else {
-					chainUpdates.put(t.getSender(), new ArrayList<>());
 				}
 			}
 		}

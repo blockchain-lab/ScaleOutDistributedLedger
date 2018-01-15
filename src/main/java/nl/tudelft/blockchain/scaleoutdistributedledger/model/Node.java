@@ -57,6 +57,19 @@ public class Node {
 		this.port = port;
 		this.chain = new Chain(this);
 	}
+
+	/**
+	 * Add a genesis block to the chain.
+	 * @param block - the genesis block
+	 */
+	public void setGenesisBlock(Block block) {
+		if (!this.chain.getBlocks().isEmpty()) {
+			throw new IllegalStateException("Adding genesis block to non-empty chain");
+		}
+		this.chain.getBlocks().add(block);
+		this.chain.setLastCommittedBlock(block);
+		block.setOwner(this);
+	}
 	
 	/**
 	 * Verify the signature of a message made by this node.

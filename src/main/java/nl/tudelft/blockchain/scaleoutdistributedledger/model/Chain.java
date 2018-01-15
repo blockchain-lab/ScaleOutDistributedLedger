@@ -34,18 +34,6 @@ public class Chain {
 	}
 
 	/**
-	 * Add a genesis block to the chain.
-	 * @param block - the genesis block
-	 */
-	public void setGenesisBlock(Block block) {
-		if (!this.blocks.isEmpty()) {
-			throw new IllegalStateException("Adding genesis block to non-empty chain");
-		}
-		this.blocks.add(block);
-		this.lastCommittedBlock = block;
-	}
-
-	/**
 	 * Constructor.
 	 * @param owner - the owner of this chain.
 	 * @param blocks - list of blocks in this chain.
