@@ -1,20 +1,21 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import lombok.Getter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.io.IOException;
-import java.util.logging.Level;
+import lombok.Getter;
 
 /**
  * Class to run a node.
@@ -24,15 +25,13 @@ public class Application {
 	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final int NODE_PORT = 40000;
 	private static MainChain aMainChain;
-	
-	private MainChain mainChain;
-	// Check whether we are in testing or production environment (default: production)
-	public final boolean isProduction;
+	private static AtomicBoolean staticMainChainPresent = new AtomicBoolean(false);
 	
 	@Getter
 	private LocalStore localStore;
 	private Thread executor;
 	private CancellableInfiniteRunnable transactionExecutable;
+	private final boolean isProduction;
 
 	@Getter
 	private Thread serverThread;
@@ -52,36 +51,29 @@ public class Application {
 	/**
 	 * Initializes the application.
 	 * Registers to the tracker and creates the local store.
-	 * @param nodePort       - the port on which the node will accept connections.
-	 * @param tendermintPort - the port on which the tendermint server will run.
+	 * @param nodePort       - the port on which the node will accept connections. Note, also port+1,
+	 *                          port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
+	 * @param genesisBlock  - the genesis (initial) block for the entire system
 	 * @throws IOException   - error while registering node
 	 */
-	public void init(int nodePort, int tendermintPort) throws IOException {
+	public void init(int nodePort, Block genesisBlock) throws IOException {
 		Ed25519Key key = new Ed25519Key();
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		// Setup local store
-		localStore = new LocalStore(ownNode, this);
+		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction);
 		localStore.updateNodes();
+		localStore.initMainChain();
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
 		socketClient = new SocketClient();
 
-		// Setup Tendermint
-		if (this.isProduction) {
-			// Production environment
-			mainChain = new TendermintChain(tendermintPort);
-		} else {
-			// Testing environment - mock external resources
-			mainChain = new TendermintChainMock();
-		}
-		
-		//TODO Retrieve money from tendermint
+		if (!staticMainChainPresent.getAndSet(true)) {
+			aMainChain = localStore.getMainChain();
+			//TODO Retrieve money from tendermint
 
-		if (aMainChain == null) {
-			aMainChain = mainChain;
 		}
 	}
 	
@@ -94,7 +86,7 @@ public class Application {
 		if (socketClient != null) socketClient.shutdown();
 		
 		//TODO Stop socket client?
-		mainChain.stop();
+		localStore.getMainChain().stop();
 	}
 	
 	/**
@@ -152,7 +144,7 @@ public class Application {
 	 * @return - the main chain of this application
 	 */
 	public MainChain getMainChain() {
-		return mainChain;
+		return localStore.getMainChain();
 	}
 	
 	/**
@@ -161,5 +153,8 @@ public class Application {
 	 */
 	public static MainChain getAMainChain() {
 		return aMainChain;
+
 	}
+
+
 }

@@ -12,7 +12,11 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import lombok.Getter;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 
 /**
  * Class to store information related to our own node.
@@ -32,6 +36,9 @@ public class LocalStore {
 	
 	@Getter
 	private final Set<Transaction> unspent = new HashSet<>();
+
+	@Getter
+	private final MainChain mainChain;
 	
 	@Getter
 	private long availableMoney;
@@ -42,11 +49,18 @@ public class LocalStore {
 	 * Constructor.
 	 * @param ownNode - our own node.
 	 * @param application - the application
+	 * @param genesisBlock - the genesis (initial) block for the entire system
+	 * @param isProduction - if this is production or testing
 	 */
-	public LocalStore(OwnNode ownNode, Application application) {
+	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction) {
 		this.ownNode = ownNode;
 		this.application = application;
 		this.nodes.put(ownNode.getId(), ownNode);
+		if (isProduction) {
+			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock);
+		} else {
+			this.mainChain = new TendermintChainMock();
+		}
 	}
 	
 	/**
@@ -85,9 +99,8 @@ public class LocalStore {
 	 * @param nodeId - identifier of the node
 	 * @param transactionId - identifier of the transaction
 	 * @return transaction
-	 * @throws IOException - error while getting the node
 	 */
-	public Transaction getTransactionFromNode(int nodeId, int transactionId) throws IOException {
+	public Transaction getTransactionFromNode(int nodeId, int transactionId) {
 		Node node = getNode(nodeId);
 		for (Block block : node.getChain().getBlocks()) {
 			for (Transaction transaction : block.getTransactions()) {
@@ -134,5 +147,9 @@ public class LocalStore {
 	 */
 	public int getNewTransactionId() {
 		return ++transactionId;
+	}
+
+	public void initMainChain() {
+		this.mainChain.init();
 	}
 }

@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 
@@ -16,15 +17,29 @@ public interface MainChain {
 	public Sha256Hash commitAbstract(BlockAbstract abs);
 
 	/**
-	 * Query the main chain for the presence of an abstract.
+	 * Query the main chain for the presence of a block.
 	 *
-	 * @param abs - the abstract to query for
+	 * @param block - the block to query for
 	 * @return - true when present, false otherwise
 	 */
-	public boolean isPresent(BlockAbstract abs);
-	
+	public default boolean isPresent(Block block) {
+		return isPresent(block.getHash());
+	}
+
 	/**
-	 * Stops the main chain.
+	 * Check whether the block (from a local chain) is on the main chain (in a form of BlockAbstract).
+	 * @param blockHash the hash of the block
+	 * @return true if there is a block abstract of the given block, false otherwise.
+	 */
+	public boolean isPresent(Sha256Hash blockHash);
+
+	/**
+	 * Initializes the tendermint chain.
+	 */
+	public void init();
+
+	/**
+	 * Stop the main chain.
 	 */
 	public void stop();
 }

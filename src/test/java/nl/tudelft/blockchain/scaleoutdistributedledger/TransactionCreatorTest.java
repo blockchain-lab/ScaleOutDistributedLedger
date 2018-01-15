@@ -39,7 +39,7 @@ public class TransactionCreatorTest {
 		when(ownNodeMock.getMetaKnowledge()).thenReturn(new HashMap<>());
 		when(ownNodeMock.getChain()).thenReturn(new Chain(ownNodeMock));
 		
-		storeMock = spy(new LocalStore(ownNodeMock, null));
+		storeMock = spy(new LocalStore(ownNodeMock, null, null, false));
 		nodes = storeMock.getNodes();
 		when(storeMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
 		

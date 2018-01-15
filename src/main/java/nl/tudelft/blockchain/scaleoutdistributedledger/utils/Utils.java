@@ -1,5 +1,10 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.logging.Level;
+
 /**
  * Class for helper functions.
  */
@@ -92,5 +97,19 @@ public final class Utils {
 			return ch - 'a' + 10;
 		}
 		throw new IllegalArgumentException("'" + ch + "' is not a hexadecimal character!");
+	}
+
+	/**
+	 * Convert a base 64 string to a byte array.
+	 * @param data	- The base 64 string to convert
+	 * @return 		- The resulting byte array, or an empty one if the conversion fails
+	 */
+	public static byte[] base64StringToBytes(String data) {
+		try {
+			return Base64.getDecoder().decode(data.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			Log.log(Level.SEVERE, "This encoding should always be present", e);
+			return new byte[0];
+		}
 	}
 }

@@ -23,7 +23,7 @@ public final class Main {
 	 * @param args - command line arguments.
 	 * @throws IOException - error while registering nodes.
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 		// Start a new node
 		// TODO: Make an example transaction?
 		Application app = new Application(true);
@@ -34,7 +34,7 @@ public final class Main {
 	 */
 	private static void testSockets() {
 		try {
-			Thread t = new Thread(new SocketServer(8007, new LocalStore(new OwnNode(0), null)));
+			Thread t = new Thread(new SocketServer(8007, new LocalStore(new OwnNode(0), null, null, false)));
 			t.start();
 
 			Node node = new Node(1, null, "localhost", 8007);
@@ -49,7 +49,4 @@ public final class Main {
 			e.printStackTrace();
 		}
 	}
-
-
 }
-
