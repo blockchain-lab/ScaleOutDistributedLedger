@@ -1,10 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -97,18 +99,20 @@ public class TransactionCreator {
 	 * @return the best TransactionTuple or null if the sender doesn't have enough money
 	 */
 	protected TransactionTuple bestSources() {
-		//Step 1: Collect all unspent transactions
-		Set<TransactionTuple> candidates = localStore
-				.getUnspent()
-				.stream()
-				.map(t -> new TransactionTuple(this, t))
-				.collect(Collectors.toCollection(HashSet::new));
+		//Step 1: Group all unspent transactions that have the same chain requirements.
+		Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
+		for (Transaction transaction : localStore.getUnspent()) {
+			TransactionTuple tuple = new TransactionTuple(this, transaction);
+			candidateMap.merge(tuple.getChainsRequired(), tuple, TransactionTuple::mergeNonOverlappingSameChainsTuple);
+		}
+		
+		Collection<TransactionTuple> candidates = candidateMap.values();
 
-		//Step 2: Check if we can cover the transaction amount with a single transaction.
+		//Step 2: Check if we can cover the transaction amount with a single transaction (group).
 		firstRound(candidates);
 		cleanup(candidates, Integer.MAX_VALUE);
 
-		//If the single transaction we found is the best, then we return it.
+		//If the single transaction (group) we found is the best, then we return it.
 		if (candidates.size() <= 1) return currentBestTuple;
 
 		//Step 3: keep trying to improve for multiple rounds to get the best set of transactions
@@ -143,9 +147,9 @@ public class TransactionCreator {
 	}
 
 	/**
-	 * @param unspentTransactions - a set with all unspent transactions
+	 * @param unspentTransactions - a collection with all unspent transactions
 	 */
-	private void firstRound(Set<TransactionTuple> unspentTransactions) {
+	private void firstRound(Collection<TransactionTuple> unspentTransactions) {
 		Iterator<TransactionTuple> it = unspentTransactions.iterator();
 		while (it.hasNext()) {
 			TransactionTuple tuple = it.next();
@@ -156,7 +160,7 @@ public class TransactionCreator {
 			}
 
 			if (tuple.getAmount() >= amount) {
-				//Single transaction able to cover the whole transaction
+				//Single tuple able to cover the whole transaction
 				currentBest = chainsRequired;
 				currentBestTuple = tuple;
 				it.remove();
@@ -165,14 +169,22 @@ public class TransactionCreator {
 	}
 
 	/**
-	 * @param singleElements - a set with individual transactions
-	 * @param currentRound   - a set with tuples of the current round
-	 * @param nextRound      - a set to which tuples for the next round are added
+	 * @param baseElements - a collection with individual transactions / grouped transactions
+	 * @param currentRound - a set with tuples of the current round
+	 * @param nextRound    - a set to which tuples for the next round are added
 	 */
-	private void doOneRound(Set<TransactionTuple> singleElements, Set<TransactionTuple> currentRound, Set<TransactionTuple> nextRound) {
-		for (TransactionTuple t1 : singleElements) {
+	private void doOneRound(Collection<TransactionTuple> baseElements, Set<TransactionTuple> currentRound, Set<TransactionTuple> nextRound) {
+		//Choose the best collection to iterate over.
+		//If we choose to use currentRound, we can skip the containment check since it is a set and thus no two tuples will be equal.
+		boolean skipContainsCheck = false;
+		if (currentRound.size() < baseElements.size()) {
+			baseElements = currentRound;
+			skipContainsCheck = true;
+		}
+		
+		for (TransactionTuple t1 : baseElements) {
 			for (TransactionTuple t2 : currentRound) {
-				if (t2.contains(t1)) continue;
+				if (!skipContainsCheck && t2.containsAll(t1)) continue;
 
 				BitSet r3 = combineBitSets(t1.getChainsRequired(), t2.getChainsRequired());
 
@@ -180,7 +192,7 @@ public class TransactionCreator {
 				int chainsRequired = r3.cardinality();
 				if (chainsRequired >= currentBest) continue;
 
-				TransactionTuple t3 = new TransactionTuple(t1, t2);
+				TransactionTuple t3 = new TransactionTuple(t1, t2, r3);
 				if (t3.getAmount() >= amount) {
 					//This combination is a good candidate
 					currentBest = chainsRequired;
@@ -198,7 +210,7 @@ public class TransactionCreator {
 	 * @param tuples       - the tuples to clean up
 	 * @param previousBest - the previous best
 	 */
-	private void cleanup(Set<TransactionTuple> tuples, int previousBest) {
+	private void cleanup(Collection<TransactionTuple> tuples, int previousBest) {
 		//If there were no changes to the best, then tuples will only contain tuples that are better than the current best.
 		if (currentBest != previousBest) {
 			Iterator<TransactionTuple> it = tuples.iterator();

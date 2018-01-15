@@ -36,45 +36,22 @@ public class TransactionTuple {
 	}
 	
 	/**
-	 * Creates a new tuple containing the given transactions.
-	 * @param creator      - the TransactionCreator
-	 * @param transaction1 - the first transaction
-	 * @param transaction2 - the second transaction
+	 * Creates a new tuple consisting of the given tuples.
+	 * @param tuple1         - the first tuple
+	 * @param tuple2         - the second tuple
+	 * @param chainsRequired - the bitset of required chains
 	 */
-	public TransactionTuple(TransactionCreator creator, Transaction transaction1, Transaction transaction2) {
-		this.creator = creator;
-		addTransaction(transaction1);
-		addTransaction(transaction2);
-	}
-	
-	/**
-	 * Creates a new tuple containing the given tuple and the given transaction.
-	 * @param transaction - the transaction
-	 * @param tuple       - the tuple
-	 */
-	public TransactionTuple(Transaction transaction, TransactionTuple tuple) {
-		this(tuple, transaction);
-	}
-	
-	/**
-	 * Creates a new tuple containing the given tuple and the given transaction.
-	 * @param tuple       - the tuple
-	 * @param transaction - the transaction
-	 */
-	public TransactionTuple(TransactionTuple tuple, Transaction transaction) {
-		this.creator = tuple.creator;
-		addTuple(tuple);
-		addTransaction(transaction);
-	}
-	
-	/**
-	 * @param tuple1 - the first tuple
-	 * @param tuple2 - the second tuple
-	 */
-	public TransactionTuple(TransactionTuple tuple1, TransactionTuple tuple2) {
+	public TransactionTuple(TransactionTuple tuple1, TransactionTuple tuple2, BitSet chainsRequired) {
 		this.creator = tuple1.creator;
-		addTuple(tuple1);
-		addTuple(tuple2);
+		this.chainsRequired = chainsRequired;
+		
+		for (Transaction transaction : tuple1.transactions) {
+			addTransactionAndAmount(transaction);
+		}
+		
+		for (Transaction transaction : tuple2.transactions) {
+			addTransactionAndAmount(transaction);
+		}
 	}
 	
 	/**
@@ -82,12 +59,28 @@ public class TransactionTuple {
 	 * @param transaction - the transaction
 	 */
 	public void addTransaction(Transaction transaction) {
+		if (!addTransactionAndAmount(transaction)) return;
+		
+		BitSet newChainsRequired = creator.chainsRequired(transaction);
+		if (this.chainsRequired == null) {
+			this.chainsRequired = newChainsRequired;
+		} else {
+			this.chainsRequired.or(newChainsRequired);
+		}
+	}
+	
+	/**
+	 * Adds the given transaction and the correct amount to this tuple.
+	 * @param transaction - the transaction to add
+	 * @return              true if the transaction was added, false if it was already in this tuple
+	 */
+	private boolean addTransactionAndAmount(Transaction transaction) {
 		Node ownNode = creator.getSender();
 		if (ownNode != transaction.getSender() && ownNode != transaction.getReceiver()) {
 			throw new IllegalArgumentException("The given transaction does not involve us, so we cannot use it as a source!");
 		}
 		
-		this.transactions.add(transaction);
+		if (!this.transactions.add(transaction)) return false;
 		
 		if (ownNode == transaction.getSender()) {
 			//A transaction we sent, so use the remainder
@@ -99,33 +92,28 @@ public class TransactionTuple {
 			this.amount += transaction.getAmount();
 		}
 		
-		BitSet newChainsRequired = creator.chainsRequired(transaction);
-		if (this.chainsRequired == null) {
-			this.chainsRequired = newChainsRequired;
-		} else {
-			this.chainsRequired.or(newChainsRequired);
-		}
+		return true;
 	}
 	
 	/**
-	 * Adds the given transaction tuple to this tuple.
-	 * @param tuple - the tuple
+	 * Merges the given tuple into this tuple.
+	 * 
+	 * The given tuple must not share any transactions with this tuple and must have the same
+	 * chain requirements.
+	 * @param tuple - the tuple to merge
+	 * @return        this transaction tuple
 	 */
-	public void addTuple(TransactionTuple tuple) {
+	public TransactionTuple mergeNonOverlappingSameChainsTuple(TransactionTuple tuple) {
 		this.transactions.addAll(tuple.transactions);
 		this.amount += tuple.amount;
-		if (this.chainsRequired == null) {
-			this.chainsRequired = (BitSet) tuple.chainsRequired.clone();
-		} else {
-			this.chainsRequired.or(tuple.chainsRequired);
-		}
+		return this;
 	}
 	
 	/**
 	 * @param tuple - the tuple
 	 * @return        if this tuple contains all the transactions in the given tuple
 	 */
-	public boolean contains(TransactionTuple tuple) {
+	public boolean containsAll(TransactionTuple tuple) {
 		return transactions.containsAll(tuple.transactions);
 	}
 	
