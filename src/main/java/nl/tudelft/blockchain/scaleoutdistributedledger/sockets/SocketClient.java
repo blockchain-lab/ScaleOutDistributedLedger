@@ -23,6 +23,8 @@ public class SocketClient {
 
     private Bootstrap bootstrap;
 
+    private EventLoopGroup group;
+
     /**
      * Constructor.
      */
@@ -36,7 +38,7 @@ public class SocketClient {
      * Note: one client can be used to send to multiple servers, this just sets the settings and pipeline.
      */
     private void initSocketClient() {
-        EventLoopGroup group = new NioEventLoopGroup();
+        group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
@@ -49,6 +51,14 @@ public class SocketClient {
                                 new SocketClientHandler());
                     }
                 });
+    }
+
+    /**
+     * Shuts down the client server.
+     */
+    public void shutdown() {
+        Log.log(Level.INFO, "Shutting down socket client...");
+        group.shutdownGracefully();
     }
 
     /**

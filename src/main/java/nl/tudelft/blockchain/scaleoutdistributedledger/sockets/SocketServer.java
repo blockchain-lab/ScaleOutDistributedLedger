@@ -65,7 +65,7 @@ public class SocketServer implements Runnable {
             Log.log(Level.INFO, "Starting socket server on port " + this.port);
             b.bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            Log.log(Level.WARNING, "Socket server was interrupted", e);
+            Log.log(Level.INFO, "Socket server was interrupted, shutting down...");
         } catch (Exception ex) {
         	Log.log(Level.SEVERE, "Exception in socket server", ex);
         } finally {

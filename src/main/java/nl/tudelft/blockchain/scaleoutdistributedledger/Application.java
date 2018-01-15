@@ -1,21 +1,20 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.io.IOException;
 import java.util.logging.Level;
-import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
-
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 
 /**
  * Class to run a node.
@@ -91,10 +90,8 @@ public class Application {
 	 * connections and that all existing connections are closed.
 	 */
 	public void stop() {
-		if (serverThread.isAlive()) {
-			serverThread.interrupt();
-		}
-		//TODO Stop socket client?
+		if (serverThread.isAlive()) serverThread.interrupt();
+		if (socketClient != null) socketClient.shutdown();
 	}
 	
 	/**

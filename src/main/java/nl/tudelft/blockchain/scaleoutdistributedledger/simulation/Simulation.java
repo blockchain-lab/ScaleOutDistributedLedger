@@ -1,9 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-
+import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TrackerHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
@@ -15,7 +12,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import lombok.Getter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Class for simulations.
@@ -153,7 +152,6 @@ public class Simulation {
 		if (state == SimulationState.RUNNING) throw new IllegalStateException("Cannot cleanup while still running!");
 		
 		this.nodes = null;
-		//TODO Close socketClient?
 		state = SimulationState.STOPPED;
 	}
 	
