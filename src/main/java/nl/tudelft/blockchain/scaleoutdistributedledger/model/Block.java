@@ -2,6 +2,8 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 import lombok.Setter;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
@@ -12,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -35,10 +38,8 @@ public class Block implements Cloneable {
 
 	// Custom getter
 	private Sha256Hash hash;
-
-	// Custom getter
-	private transient BlockAbstract blockAbstract;
-	private transient Boolean hasAbstract;
+	
+	private transient Optional<Boolean> onMainChain;
 
 	/**
 	 * Constructor.
@@ -51,6 +52,7 @@ public class Block implements Cloneable {
 		this.owner = owner;
 		this.transactions = transactions;
 		this.previousBlock = null;
+		this.onMainChain = Optional.empty();
 	}
 
 	/**
@@ -65,6 +67,7 @@ public class Block implements Cloneable {
 		this.previousBlock = previousBlock;
 		this.owner = owner;
 		this.transactions = transactions;
+		this.onMainChain = Optional.empty();
 	}
 
 	/**
@@ -94,6 +97,7 @@ public class Block implements Cloneable {
 			this.transactions.add(new Transaction(transactionMessage, localStore));
 		}
 		this.hash = blockMessage.getHash();
+		this.onMainChain = Optional.empty();
 	}
 	
 	/**
@@ -108,50 +112,34 @@ public class Block implements Cloneable {
 	}
 
 	/**
-	 * Gets the blockAbstract if available.
-	 * If the owner of this block is not ourselves, this method will try to retrieve the abstract from the main chain.
-	 * Otherwise, this method will create an abstract and return it.
-	 * Caching is used to prevent unnecessary retrievals and duplicate creations.
-	 * @return - the block abstract, or null if it is not available
-	 */
-	public BlockAbstract getBlockAbstract() {
-		if (this.hasAbstract == null) {
-			// TODO: change to more legit check if we own this block
-			if (this.owner instanceof OwnNode) {
-				try {
-					this.blockAbstract = this.calculateBlockAbstract();
-					this.hasAbstract = true;
-					return this.blockAbstract;
-				} catch (Exception e) {
-					return null;
-				}
-			}
-			// TODO: get from Tendermint (and verify)
-		} else if (!this.hasAbstract) return null;
-		return this.blockAbstract;
-	}
-
-	/**
 	 * Calculate the abstract of the block.
 	 * @return abstract of the block
-	 * @throws Exception - something went wrong while signing the block
+	 * @throws IllegalStateException - something went wrong while signing the block
 	 */
-	protected BlockAbstract calculateBlockAbstract() throws Exception {
+	public BlockAbstract calculateBlockAbstract() {
 		if (!(this.owner instanceof OwnNode)) {
 			throw new UnsupportedOperationException("You cannot calculate the block abstract of a block you do not own!");
 		}
 		
 		// Convert attributes of abstract into an array of bytes, for the signature
 		// Important to keep the order of writings
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		outputStream.write(Utils.intToByteArray(this.owner.getId()));
-		outputStream.write(Utils.intToByteArray(this.number));
-		outputStream.write(this.getHash().getBytes());
-		byte[] attrInBytes = outputStream.toByteArray();
+		byte[] attrInBytes;
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			outputStream.write(Utils.intToByteArray(this.owner.getId()));
+			outputStream.write(Utils.intToByteArray(this.number));
+			outputStream.write(this.getHash().getBytes());
+			attrInBytes = outputStream.toByteArray();
+		} catch (IOException ex) {
+			throw new IllegalStateException("Unable to write to outputstream", ex);
+		}
 
 		// Sign the attributes
-		byte[] signature = ((OwnNode) this.owner).sign(attrInBytes);
-		return new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
+		try {
+			byte[] signature = ((OwnNode) this.owner).sign(attrInBytes);
+			return new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
+		} catch (Exception ex) {
+			throw new IllegalStateException("Unable to sign block abstract", ex);
+		}
 	}
 
 	@Override
@@ -211,11 +199,24 @@ public class Block implements Cloneable {
 	 * Clones the block.
 	 * @return - the clone
 	 */
-	public Object clone() {
+	@Override
+	public Block clone() {
 		try {
-			return super.clone();
+			return (Block) super.clone();
 		} catch (CloneNotSupportedException e) {
 			throw new IllegalStateException("Clone not supported");
 		}
+	}
+	
+	/**
+	 * Returns the boolean onMainChain, and gets it if it is not present.
+	 *
+	 * @return - boolean identifying if this abstract is on the main chain.
+	 */
+	public boolean isOnMainChain() {
+		if (!this.onMainChain.isPresent()) {
+			this.onMainChain = Optional.of(Application.getAMainChain().isPresent(this.getHash()));
+		}
+		return this.onMainChain.get();
 	}
 }

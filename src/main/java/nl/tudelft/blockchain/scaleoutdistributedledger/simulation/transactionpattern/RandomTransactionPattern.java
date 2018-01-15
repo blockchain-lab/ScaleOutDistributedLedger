@@ -158,7 +158,7 @@ public class RandomTransactionPattern implements ITransactionPattern {
 			if (!shouldCommitBlocks(lastBlock.getNumber() - lastCommitted.getNumber())) return;
 			
 			//Commit to main chain
-			BlockAbstract blockAbstract = lastBlock.getBlockAbstract();
+			BlockAbstract blockAbstract = lastBlock.calculateBlockAbstract();
 			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
 			ownChain.setLastCommittedBlock(lastBlock);
 		}
