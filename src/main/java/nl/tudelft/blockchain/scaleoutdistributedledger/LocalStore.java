@@ -52,7 +52,7 @@ public class LocalStore {
 		this.nodes = nodeList;
 		this.nodes.put(ownNode.getId(), ownNode);
 		if (isProduction) {
-			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock);
+			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock, application);
 		} else {
 			this.mainChain = new TendermintChainMock();
 		}

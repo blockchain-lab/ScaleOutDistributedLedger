@@ -48,6 +48,9 @@ public class Verification {
 	 * @return              true if the transaction is valid, false otherwise
 	 */
 	private boolean validate(Transaction transaction, Proof proof, LocalStore localStore) {
+		// Genesis transaction is always valid, TODO: something?
+		if (transaction.getSender() == null) return true;
+
 		//Verify the proof
 		if (!proof.verify(localStore)) return false;
 		
@@ -55,10 +58,11 @@ public class Verification {
 		long expectedSum = transaction.getAmount() + transaction.getRemainder();
 		long sum = 0L;
 		for (Transaction txj : transaction.getSource()) {
-			sum += txj.getRemainder();
+			if(txj.getSender() != null && txj.getSender() == transaction.getSender()) sum += txj.getRemainder();
+			else sum += txj.getAmount();
 			if (sum > expectedSum) return false;
 		}
-		
+
 		if (sum != expectedSum) return false;
 
 		//Double spending check
@@ -70,13 +74,13 @@ public class Verification {
 					found = true;
 					continue;
 				}
-				
+
 				if (!intersectEmpty(transaction.getSource(), txj.getSource())) return false;
 			}
-			
+
 			if (found) break;
 		}
-		
+
 		//Validate sources
 		for (Transaction txj : transaction.getSource()) {
 			Boolean cached = validationCache.get(txj);

@@ -23,15 +23,15 @@ public final class SimulationMain {
 		ITransactionPattern itp = new RandomTransactionPattern(10, 20, 1000, 2000, 1);
 		simulation.setTransactionPattern(itp);
 		
-		simulation.runNodesLocally(4);
+		simulation.runNodesLocally(5);
 		
 		Thread.sleep(5000);
 		simulation.initialize();
 		
-		Thread.sleep(10000);
+		Thread.sleep(5000);
 		simulation.start();
 		
-		Thread.sleep(20000);
+		Thread.sleep(60 * 1000);
 		simulation.stop();
 		
 		simulation.stopLocalNodes();
