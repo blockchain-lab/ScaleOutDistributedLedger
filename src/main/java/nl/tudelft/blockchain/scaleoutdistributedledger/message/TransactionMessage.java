@@ -69,7 +69,7 @@ public class TransactionMessage extends Message {
 			Node transactionAuxOwner = transactionAux.getSender();
 			Node receiver = transaction.getReceiver();
 			Integer lastBlockNumber = receiver.getMetaKnowledge().get(transactionAuxOwner);
-			if (transactionAux.getBlockNumber().getAsInt() <= lastBlockNumber) {
+			if (lastBlockNumber != null && transactionAux.getBlockNumber().getAsInt() <= lastBlockNumber) {
 				this.knownSource.add(new SimpleEntry<>(transactionAuxOwner.getId(), transactionAux.getNumber()));
 			} else {
 				this.newSource.add(new TransactionMessage(transactionAux));

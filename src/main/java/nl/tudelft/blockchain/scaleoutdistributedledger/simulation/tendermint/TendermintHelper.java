@@ -288,8 +288,10 @@ public final class TendermintHelper {
 		List<Transaction> initialTransactions = new LinkedList<>();
 		for (int i = 0; i < numberOfNodes; i++) {
 			//TODO: can I use it like that?
-			initialTransactions.add(new Transaction(i, magicNode, nodeList.get(i), amount, 0, new HashSet<>(0)));
+			Transaction t = new Transaction(i, magicNode, nodeList.get(i), amount, 0, new HashSet<>(0));
+			t.setBlockNumber(OptionalInt.of(0));
+			initialTransactions.add(t);
 		}
-		return new Block(1, magicNode, initialTransactions);
+		return new Block(0, magicNode, initialTransactions);
 	}
 }

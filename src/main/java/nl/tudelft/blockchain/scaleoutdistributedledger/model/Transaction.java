@@ -41,6 +41,7 @@ public class Transaction {
 	private Sha256Hash hash;
 	
 	// Custom getter
+	@Setter
 	private OptionalInt blockNumber;
 
 	/**
@@ -101,8 +102,15 @@ public class Transaction {
 
 		Map<Node, List<Block>> chainUpdates = new HashMap<>();
 		for (Transaction t : source) {
-			if (!chainUpdates.containsKey(t.getSender()))
-				chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
+			if (!chainUpdates.containsKey(t.getSender())) {
+				if(t.getSender() != null) {
+					chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
+				} else if(t.getBlockNumber().isPresent() && t.getBlockNumber().getAsInt() != 0) {
+					throw new IllegalStateException("Transaction found with no sender in a not-genesis block");
+				} else {
+					chainUpdates.put(t.getSender(), new ArrayList<>());
+				}
+			}
 		}
 
 		return new Proof(this, chainUpdates);
