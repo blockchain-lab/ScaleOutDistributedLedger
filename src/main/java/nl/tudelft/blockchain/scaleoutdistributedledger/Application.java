@@ -101,7 +101,7 @@ public class Application {
 	public synchronized void setTransactionPattern(ITransactionPattern pattern) {
 		if (isTransacting()) throw new IllegalStateException("There is already a transaction pattern running!");
 		this.transactionExecutable = pattern.getRunnable(localStore);
-		Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + ": Set transaction pattern " + pattern.getName());
+		Log.log(Level.FINE, "Node " + localStore.getOwnNode().getId() + ": Set transaction pattern " + pattern.getName());
 	}
 	
 	/**

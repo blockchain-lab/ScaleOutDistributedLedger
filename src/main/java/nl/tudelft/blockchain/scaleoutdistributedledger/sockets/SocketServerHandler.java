@@ -27,7 +27,7 @@ public class SocketServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + " Server: received message: " + msg);
+        Log.log(Level.FINE, "Node " + localStore.getOwnNode().getId() + " Server: received message: " + msg);
         if(msg instanceof Message) {
             ((Message) msg).handle(localStore);
         } else {
@@ -46,7 +46,7 @@ public class SocketServerHandler extends ChannelInboundHandlerAdapter {
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent e = (IdleStateEvent) evt;
             if (e.state() == IdleState.ALL_IDLE) {
-                Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + " Server: detected idle channel, closing connection!");
+                Log.log(Level.FINE, "Node " + localStore.getOwnNode().getId() + " Server: detected idle channel, closing connection!");
                 ctx.close();
             }
         }

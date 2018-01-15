@@ -1,5 +1,11 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.SimulationMode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -7,17 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
-
-import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.SimulationMode;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Random transaction pattern that uses a uniform distribution.
@@ -126,7 +121,7 @@ public class RandomTransactionPattern implements ITransactionPattern {
 		Node receiver = selectNode(localStore);
 		
 		OwnNode ownNode = localStore.getOwnNode();
-		Log.log(Level.INFO, "Going to make transaction: $ " + amount + " from " + ownNode.getId() + " -> " + receiver.getId());
+		Log.log(Level.FINE, "Going to make transaction: $ " + amount + " from " + ownNode.getId() + " -> " + receiver.getId());
 		synchronized (ownNode.getChain()) {
 			//Create the transaction
 			TransactionCreator creator = new TransactionCreator(localStore, receiver, amount);

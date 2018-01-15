@@ -1,13 +1,13 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.logging.Level;
-
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
+import java.util.logging.Level;
 
 /**
  * Helper class for communication.
@@ -45,6 +45,8 @@ public final class CommunicationHelper {
 		if (!localStore.getVerification().isValid(proof.getTransaction(), proof)) return false;
 		
 		proof.applyUpdates();
+
+		Log.log(Level.INFO, "Received and validated transaction: " + proof.getTransaction());
 
 		//TODO: Update metaKnowledge based on what we received?
 

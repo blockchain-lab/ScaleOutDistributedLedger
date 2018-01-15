@@ -80,12 +80,12 @@ public class SocketClient {
             }
             assert future.isDone();
             channel = future.channel();
-            future.channel().closeFuture().addListener((ChannelFutureListener) channelFuture -> Log.log(Level.INFO, "Client detected channel close"));
-            Log.log(Level.INFO, "Client connected to server!");
+            future.channel().closeFuture().addListener((ChannelFutureListener) channelFuture -> Log.log(Level.FINE, "Client detected channel close"));
+            Log.log(Level.FINE, "Client connected to server!");
         }
 
         ChannelFuture future = channel.writeAndFlush(msg);
-        Log.log(Level.INFO, "Message sent by client");
+        Log.log(Level.FINE, "Message sent by client");
 
         this.connections.put(node, future.channel());
 
