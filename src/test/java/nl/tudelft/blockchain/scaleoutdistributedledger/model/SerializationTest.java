@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,6 +21,10 @@ import static org.junit.Assert.assertTrue;
  * Test class for serialization of classes.
  */
 public class SerializationTest {
+	
+	private HashMap<Integer, Node> nodeList;
+	
+	private Block genesisBlock;
 	
 	private OwnNode sender;
 	
@@ -44,17 +49,25 @@ public class SerializationTest {
 	 */
 	@Before
 	public void setUp() {
+		// Initialize node list
+		this.nodeList = new HashMap<>();
+		this.nodeList.put(0, new OwnNode(0));
+		for (int i = 1; i < 10; i++) {
+			this.nodeList.put(i, new Node(i));
+		}
 		// Encode: transactions, proofs and blocks
 		// Setup sender and block
-		this.sender = new OwnNode(1);
+		this.sender = (OwnNode) this.nodeList.get(0);
 		this.block = new Block(1234, sender, new ArrayList<>());
 		List<Block> blockList = new ArrayList<>();
 		blockList.add(this.block);
 		blockList.add(new Block(1235, this.sender, new ArrayList<>()));
 		this.sender.getChain().update(blockList);
-		this.receiver = new Node(2);
+		this.receiver = this.nodeList.get(1);
+		// Generate genesis block (10 nodes, 1000 coins)
+		this.genesisBlock = TendermintHelper.generateGenesisBlock(10, 1000, nodeList);
 		// Setup LocalStore
-		this.localStore = new LocalStore(this.sender, null, null, false, new HashMap<>());
+		this.localStore = new LocalStore(this.sender, null, genesisBlock, false, new HashMap<>());
 		this.localStore.getNodes().put(this.receiver.getId(), this.receiver);
 		// Add Transaction
 		this.transaction = new Transaction(44, this.sender, this.receiver, 100, 20, new HashSet<>());
@@ -67,6 +80,20 @@ public class SerializationTest {
 		this.proof = new Proof(this.transaction);
 		// Encode Proof into ProofMessage
 		this.proofMessage = new ProofMessage(this.proof);
+	}
+	
+	/**
+	 * Test the serialization of a genesis {@link Block}.
+	 * @throws IOException - error while getting nodes from tracker
+	 */
+	@Test
+	public void testBlockGenesis_Valid() throws IOException {
+		// Encode genesis block
+		BlockMessage newBlockMessage = new BlockMessage(this.genesisBlock);
+		// Check
+		assertTrue(newBlockMessage.getNumber() == this.genesisBlock.getNumber());
+		assertTrue(newBlockMessage.getOwnerId() == Transaction.GENESIS_SENDER);
+		assertTrue(newBlockMessage.getTransactions().size() == this.nodeList.size());
 	}
 	
 	/**
@@ -104,7 +131,7 @@ public class SerializationTest {
 	}
 	
 	/**
-	 * Test the serialization of {@link Block}.
+	 * Test the serialization of NOT genesis {@link Block}.
 	 * @throws IOException - error while getting nodes from tracker
 	 */
 	@Test
@@ -130,7 +157,7 @@ public class SerializationTest {
 	@Test
 	public void testTransaction_WithMetaknowledge() throws IOException {
 		// Setup new receiver
-		Node newReceiver = new Node(3);
+		Node newReceiver = this.nodeList.get(2);
 		newReceiver.getMetaKnowledge().put(this.sender, 1234);
 		this.localStore.getNodes().put(newReceiver.getId(), newReceiver);
 		

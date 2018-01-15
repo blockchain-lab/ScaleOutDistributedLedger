@@ -19,6 +19,8 @@ import java.util.logging.Level;
  */
 public class Block implements Cloneable {
 
+	public static final int GENESIS_BLOCK_NUMBER = 1;
+	
 	@Getter
 	private final int number;
 

@@ -1,7 +1,15 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import lombok.Getter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
@@ -9,10 +17,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
+import lombok.Getter;
 
 /**
  * Class to run a node.
@@ -155,6 +160,4 @@ public class Application {
 		return aMainChain;
 
 	}
-
-
 }

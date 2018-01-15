@@ -121,10 +121,15 @@ public class Transaction {
 	 */
 	public OptionalInt getBlockNumber() {
 		if (!this.blockNumber.isPresent()) {
-			for (Block block : sender.getChain().getBlocks()) {
-				if (block.getTransactions().contains(this)) {
-					this.blockNumber = OptionalInt.of(block.getNumber());
-					return this.blockNumber;
+			// It's a genesis transaction
+			if (this.sender == null) {
+				this.blockNumber = OptionalInt.of(Block.GENESIS_BLOCK_NUMBER);
+			} else {
+				for (Block block : sender.getChain().getBlocks()) {
+					if (block.getTransactions().contains(this)) {
+						this.blockNumber = OptionalInt.of(block.getNumber());
+						break;
+					}
 				}
 			}
 		}
