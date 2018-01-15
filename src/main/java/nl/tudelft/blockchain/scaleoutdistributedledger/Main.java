@@ -25,6 +25,14 @@ public final class Main {
 	 * @throws IOException - error while registering nodes.
 	 */
 	public static void main(String[] args) {
+		if (args[0].equalsIgnoreCase("s")) {
+			try {
+				SimulationMain.main(args);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			return;
+		}
 		// Start a new node
 		// TODO: Make an example transaction?
 		Application app = new Application(true);

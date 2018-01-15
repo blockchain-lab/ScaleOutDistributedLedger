@@ -1,29 +1,38 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.OptionalInt;
+import java.util.logging.Level;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.google.protobuf.ByteString;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.logging.Level;
 
 /**
  * A class to help with using tendermint.
  */
 public final class TendermintHelper {
-
-	static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 
 	/* do not initialize this */
 	private TendermintHelper() {}
@@ -138,6 +147,7 @@ public final class TendermintHelper {
 	 */
 	public static boolean generateGenesisFile(String nodeFilesLocation, Date genesisTime, List<String> publicKeys, byte[] appHash) {
 		JSONObject genesis = new JSONObject();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 		genesis.put("genesis_time", dateFormat.format(genesisTime));
 		//TODO: does this matter at all?
 		genesis.put("chain_id", "simulation-chain");
@@ -189,7 +199,7 @@ public final class TendermintHelper {
 	public static void runTendermintNode(String tendermintBinaryPath, String nodeFilesLocation,
 										 int nodeBasePort, List<String> peerAddresses) throws IOException {
 
-		StringBuilder script = new StringBuilder();
+		StringBuilder script = new StringBuilder(256);
 
 		//add binary to execute
 		script.append(tendermintBinaryPath).append(" node --consensus.create_empty_blocks=false ");
@@ -288,8 +298,10 @@ public final class TendermintHelper {
 		List<Transaction> initialTransactions = new LinkedList<>();
 		for (int i = 0; i < numberOfNodes; i++) {
 			//TODO: can I use it like that?
-			initialTransactions.add(new Transaction(i, magicNode, nodeList.get(i), amount, 0, new HashSet<>(0)));
+			Transaction t = new Transaction(i, magicNode, nodeList.get(i), amount, 0, new HashSet<>(0));
+			t.setBlockNumber(OptionalInt.of(0));
+			initialTransactions.add(t);
 		}
-		return new Block(1, magicNode, initialTransactions);
+		return new Block(0, magicNode, initialTransactions);
 	}
 }
