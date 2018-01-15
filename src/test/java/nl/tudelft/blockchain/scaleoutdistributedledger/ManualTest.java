@@ -52,18 +52,18 @@ public class ManualTest {
 			addresses.add("192.168.1.107:" + (Application.NODE_PORT + 1 + 4 * (i - 1)));
 		}
 		Application[] apps = new Application[numberOfNodes];
-		for (int i = 1; i<= numberOfNodes; i++) {
+		for (int i = 1; i <= numberOfNodes; i++) {
 			String nodeFilesLocation = nodeFilesBaseLocation + i;
 			int nodeBasePort = Application.NODE_PORT + 4 * (i - 1);
 			List<String> addressesForThisNode = new ArrayList<>(addresses);
 			final int currentNumber = i;
-			addressesForThisNode.remove(i-1);
+			addressesForThisNode.remove(i - 1);
 			Thread nodeThread = new Thread(() -> {
 				try {
 					TendermintHelper.runTendermintNode(tendermintBinary, nodeFilesLocation, nodeBasePort, addressesForThisNode);
 					Application node = new Application(false);
 					node.init(nodeBasePort, genesisBlock);
-					apps[currentNumber-1] = node;
+					apps[currentNumber - 1] = node;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

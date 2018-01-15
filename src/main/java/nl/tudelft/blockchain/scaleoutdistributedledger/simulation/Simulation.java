@@ -8,13 +8,20 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingM
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionPatternMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -22,6 +29,8 @@ import java.util.logging.Level;
  * Class for simulations.
  */
 public class Simulation {
+	public static final String TENDERMINT_BINARY = "D:\\tendermint\\tendermint.exe";
+	
 	@Getter
 	private ITransactionPattern transactionPattern;
 	
@@ -58,12 +67,36 @@ public class Simulation {
 	 */
 	public void runNodesLocally(int amount) {
 		checkState(SimulationState.STOPPED, "start local nodes");
+		
+		//Generate keys
+		List<String> publicKeys = new LinkedList<>();
+		for (int i = 0; i < amount; i++) {
+			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
+			Ed25519Key nodeKey = TendermintHelper.generatePrivValidatorFile(TENDERMINT_BINARY, nodeLoc);
+			publicKeys.add(Utils.bytesToHexString(nodeKey.getPublicKey()).toUpperCase());
+		}
+
+		//
+		Date now = new Date();
+		List<String> addresses = new ArrayList<>();
 		final Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, 1000);
+		byte[] appHash = genesisBlock.getHash().getBytes();
+		for (int i = 0; i < amount; i++) {
+			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
+			TendermintHelper.generateGenesisFile(nodeLoc, now, publicKeys, appHash);
+			addresses.add("localhost:" + (Application.NODE_PORT + 1 + 4 * i));
+		}
+		
+		//Init the applications
 		localApplications = new Application[amount];
 		for (int i = 0; i < amount; i++) {
 			int basePort = Application.NODE_PORT + i * 4;
 			Application app = new Application(true);
+			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
+			List<String> addressesForThisNode = new ArrayList<>(addresses);
+			addressesForThisNode.remove(i);
 			try {
+				TendermintHelper.runTendermintNode(TENDERMINT_BINARY, nodeLoc, basePort, addressesForThisNode);
 				app.init(basePort, genesisBlock);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
