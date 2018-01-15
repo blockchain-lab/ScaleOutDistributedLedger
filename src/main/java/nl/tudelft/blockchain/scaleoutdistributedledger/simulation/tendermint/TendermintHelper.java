@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -30,6 +31,8 @@ import java.util.logging.Level;
  * A class to help with using tendermint.
  */
 public final class TendermintHelper {
+
+	static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 
 	/* do not initialize this */
 	private TendermintHelper() {}
@@ -103,11 +106,13 @@ public final class TendermintHelper {
 			keyPair = new Ed25519Key(privateKey, publicKey);
 		}
 
-		try {
+		try (
+				BufferedWriter writer = Files.newBufferedWriter(Paths.get(nodeFilesLocation, "priv_validator.json"))
+		) {
 			if (!ensureDirectoryExists(nodeFilesLocation)) {
 				return null;
 			}
-			BufferedWriter writer = new BufferedWriter(new FileWriter(Paths.get(nodeFilesLocation, "priv_validator.json").toString()));
+
 			writer.write(privValidator.toString());
 			writer.close();
 		} catch (IOException e) {
@@ -142,7 +147,6 @@ public final class TendermintHelper {
 	 */
 	public static boolean generateGenesisFile(String nodeFilesLocation, Date genesisTime, List<String> publicKeys, byte[] appHash) {
 		JSONObject genesis = new JSONObject();
-		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 		genesis.put("genesis_time", dateFormat.format(genesisTime));
 		//TODO: does this matter at all?
 		genesis.put("chain_id", "simulation-chain");
@@ -161,11 +165,13 @@ public final class TendermintHelper {
 		}
 		genesis.put("validators", validators);
 
-		try {
+		try (
+				BufferedWriter writer = Files.newBufferedWriter(Paths.get(nodeFilesLocation, "genesis.json"))
+		) {
 			if (!ensureDirectoryExists(nodeFilesLocation)) {
 				return false;
 			}
-			BufferedWriter writer = new BufferedWriter(new FileWriter(Paths.get(nodeFilesLocation, "genesis.json").toString()));
+
 			writer.write(genesis.toString());
 			writer.close();
 		} catch (IOException e) {
@@ -247,9 +253,10 @@ public final class TendermintHelper {
 	 */
 	private static void enableLogging(Process ps, String logPrefix) {
 		Thread stdOutThread = new Thread(() -> {
-			try {
-				BufferedReader stdInput = new BufferedReader(new
-						InputStreamReader(ps.getInputStream()));
+			try (
+					BufferedReader stdInput = new BufferedReader(new
+							InputStreamReader(ps.getInputStream()))
+			) {
 				// read the output from the command
 				String s;
 				while ((s = stdInput.readLine()) != null) {
@@ -261,10 +268,10 @@ public final class TendermintHelper {
 			}
 		});
 		Thread stdErrThread = new Thread(() -> {
-			try {
-				BufferedReader stdError = new BufferedReader(new
-						InputStreamReader(ps.getErrorStream()));
-
+			try (
+					BufferedReader stdError = new BufferedReader(new
+							InputStreamReader(ps.getErrorStream()))
+			) {
 				// read any errors from the attempted command
 				String s;
 				while ((s = stdError.readLine()) != null) {
@@ -291,7 +298,7 @@ public final class TendermintHelper {
 		for (int i = 1; i < numberOfNodes; i++) {
 			//TODO: can I use it like that?
 			Node node = new Node(i);
-			initialTransactions.add(new Transaction(1, magicNode, node, amount, 0, new HashSet<>(0)));
+			initialTransactions.add(new Transaction(i, magicNode, node, amount, 0, new HashSet<>(0)));
 		}
 		return new Block(1, magicNode, initialTransactions);
 	}
