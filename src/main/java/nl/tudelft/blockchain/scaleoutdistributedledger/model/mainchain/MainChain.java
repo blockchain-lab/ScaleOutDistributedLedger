@@ -26,7 +26,14 @@ public interface MainChain {
 		return isPresent(block.getHash());
 	}
 
+	/**
+	 * Check whether the block (from a local chain) is on the main chain (in a form of BlockAbstract).
+	 * @param blockHash the hash of the block
+	 * @return true if there is a block abstract of the given block, false otherwise.
+	 */
 	public boolean isPresent(Sha256Hash blockHash);
 
 	public void init();
+
+	public void stop();
 }

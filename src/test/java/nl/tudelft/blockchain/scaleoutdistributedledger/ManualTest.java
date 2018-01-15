@@ -1,6 +1,10 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 import lombok.SneakyThrows;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;

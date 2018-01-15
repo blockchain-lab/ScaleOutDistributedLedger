@@ -70,6 +70,7 @@ public final class TendermintHelper {
 			stdInput.close();
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
+			return null;
 		} catch (IOException e) {
 			Log.log(Level.WARNING, "Could not generate priv_validator.json due to IO Exception", e);
 			return null;

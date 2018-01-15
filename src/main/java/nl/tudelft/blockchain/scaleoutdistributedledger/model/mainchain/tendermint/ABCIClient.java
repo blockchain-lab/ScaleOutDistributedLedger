@@ -10,7 +10,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -58,11 +62,10 @@ public class ABCIClient {
 	/**
 	 * Query Tendermint for the presence of a transaction (main chain block).
 	 *
-	 * @param hash - the hash of the transaction (main chain block)
+	 * @param hash - the hash of the block in the local chain, ie transaction in one of the main chain's blocks.
 	 * @return - true when the block is present, false otherwise
 	 */
 	public boolean query(Sha256Hash hash) {
-		//TODO: Verify that the abstractHash of the abstract is the correct hash
 		JSONObject result = sendQuery(hash.getBytes());
 		return result != null && result.has("result");
 	}
@@ -74,7 +77,6 @@ public class ABCIClient {
 	 * @return - A list of blocks at the given height, or an empty list if the height was invalid
 	 */
 	public List<BlockAbstract> query(long height) {
-		List<BlockAbstract> abstracts = new ArrayList<>();
 
 		JSONObject result = getBlockAt(height);
 		if (result == null) {
@@ -88,6 +90,7 @@ public class ABCIClient {
 			return null;
 		}
 
+		List<BlockAbstract> abstracts = new ArrayList<>();
 		try {
 			JSONArray bytes = result.getJSONObject("result").getJSONObject("block").getJSONObject("data").getJSONArray("txs");
 			for (Object obj : bytes) {

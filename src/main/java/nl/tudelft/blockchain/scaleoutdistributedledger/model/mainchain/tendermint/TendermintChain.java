@@ -12,6 +12,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
 /**
@@ -26,7 +28,7 @@ public final class TendermintChain implements MainChain {
 	private ABCIServer handler;
 	private ABCIClient client;
 	private TSocket socket;
-
+	private ExecutorService threadPool;
 	private Set<Sha256Hash> cache;
 	@Getter
 	private long currentHeight = 0;
@@ -53,13 +55,13 @@ public final class TendermintChain implements MainChain {
 		this.handler = new ABCIServer(this, genesisBlock);
 
 		this.socket.registerListener(handler);
-
-		}
+	}
 
 	/**
-	 * Initializes the tendermint chain
+	 * Initializes the tendermint chain.
 	 */
 	public void init() {
+		this.threadPool = Executors.newSingleThreadExecutor();
 		Thread t = new Thread(() -> socket.start(abciServerPort));
 		t.setName("Main Chain Socket");
 		t.start();
@@ -103,9 +105,12 @@ public final class TendermintChain implements MainChain {
 	 */
 	protected void updateCache(long height) {
 		if (client == null) return; // If in startup
-		new Thread(() -> {
-			updateCacheBlocking(height);
-		}).start();
+		this.threadPool.submit(new Runnable() {
+			@Override
+			public void run() {
+				updateCacheBlocking(height);
+			}
+		});
 	}
 
 	/**
@@ -139,9 +144,8 @@ public final class TendermintChain implements MainChain {
 
 	/**
 	 * Stop the connection to Tendermint.
-	 * Used for testing.
 	 */
-	protected void stop() {
+	public void stop() {
 		socket.stop();
 	}
 
