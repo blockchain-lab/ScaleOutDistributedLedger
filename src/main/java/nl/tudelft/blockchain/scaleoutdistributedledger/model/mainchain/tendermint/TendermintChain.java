@@ -149,6 +149,7 @@ public final class TendermintChain implements MainChain {
 	@Override
 	public void stop() {
 		socket.stop();
+		Thread.interrupted();
 	}
 
 	@Override
