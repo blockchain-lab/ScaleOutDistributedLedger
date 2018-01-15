@@ -90,7 +90,7 @@ The steps are usually:
 1. Generate priv_validator.json file for each node.
 2. Generate genesis block, which is then passed to calculate the initial application hash.
 3. Generate genesis.json file for each node.
-4. Run tendermint process for each of the nodes (this means there is n tendermint processes running at the same time, one for each node).
+4. Run tendermint process for each of the nodes (this means there is a tendermint processes running at the same time, one for each node).
 
 Alternatively, running tendermint can also be done with the following command: (the use of which is discouraged though)
 `./tendermint node --consensus.create_empty_blocks=false` (Note that Tendermint creates empty blocks by default)
