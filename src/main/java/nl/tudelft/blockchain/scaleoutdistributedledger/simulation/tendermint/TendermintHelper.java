@@ -28,12 +28,15 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import org.apache.commons.io.FileUtils;
 
 /**
  * A class to help with using tendermint.
  */
 public final class TendermintHelper {
 
+	public static final String TENDERMINT_NODES_FOLDER = "tendermint-nodes";
+	
 	/* do not initialize this */
 	private TendermintHelper() {}
 
@@ -304,4 +307,16 @@ public final class TendermintHelper {
 		}
 		return new Block(0, magicNode, initialTransactions);
 	}
+	
+	/**
+	 * Remove "tendermint-nodes" folder.
+	 */
+	public static void cleanTendermintFiles() {
+		try {
+			FileUtils.deleteDirectory(new File(TENDERMINT_NODES_FOLDER));
+		} catch (IOException ex) {
+			Log.log(Level.WARNING, "Could not delete Tendermint folder");
+		}
+	}
+	
 }

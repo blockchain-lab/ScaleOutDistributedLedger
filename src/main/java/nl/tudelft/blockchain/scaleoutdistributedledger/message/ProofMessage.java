@@ -40,7 +40,7 @@ public class ProofMessage extends Message {
 		for (Map.Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
 			Node node = entry.getKey();
 			List<Block> blockList = entry.getValue();
-			if(!blockList.isEmpty()) {
+			if (!blockList.isEmpty()) {
 				// Convert Block to BlockMessage
 				List<BlockMessage> blockMessageList = new ArrayList<>();
 				// Don't use "previousBlock" pointer in the first block

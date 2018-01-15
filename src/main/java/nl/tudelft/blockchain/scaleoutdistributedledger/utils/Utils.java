@@ -1,7 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.logging.Level;
 
