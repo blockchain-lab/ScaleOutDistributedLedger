@@ -121,8 +121,6 @@ public class LocalStore {
 		if (transaction.getSender() == ownNode) {
 			availableMoney += transaction.getRemainder();
 		}
-
-        System.out.println(this.getAvailableMoney());
 	}
 	
 	/**
