@@ -62,7 +62,7 @@ public class Application {
 		Ed25519Key key = new Ed25519Key();
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 
-		ownNode.setGenesisBlock((Block)genesisBlock.clone());
+		ownNode.setGenesisBlock(genesisBlock.clone());
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 

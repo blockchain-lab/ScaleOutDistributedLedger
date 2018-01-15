@@ -72,7 +72,7 @@ public class Simulation {
 		List<String> publicKeys = new LinkedList<>();
 		HashMap<Integer, Node> nodelist = new HashMap<>();
 		for (int i = 0; i < amount; i++) {
-			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
+			String nodeLoc = new File(TendermintHelper.TENDERMINT_NODES_FOLDER, "node" + i).toString();
 			Ed25519Key nodeKey = TendermintHelper.generatePrivValidatorFile(TENDERMINT_BINARY, nodeLoc);
 			publicKeys.add(Utils.bytesToHexString(nodeKey.getPublicKey()).toUpperCase());
 			nodelist.put(i, new Node(i));
@@ -84,7 +84,7 @@ public class Simulation {
 		final Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, 1000, nodelist);
 		byte[] appHash = genesisBlock.getHash().getBytes();
 		for (int i = 0; i < amount; i++) {
-			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
+			String nodeLoc = new File(TendermintHelper.TENDERMINT_NODES_FOLDER, "node" + i).toString();
 			TendermintHelper.generateGenesisFile(nodeLoc, now, publicKeys, appHash);
 			addresses.add("127.0.0.1:" + (Application.NODE_PORT + 1 + 4 * i));
 		}
@@ -94,7 +94,7 @@ public class Simulation {
 		for (int i = 0; i < amount; i++) {
 			int basePort = Application.NODE_PORT + i * 4;
 			Application app = new Application(true);
-			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
+			String nodeLoc = new File(TendermintHelper.TENDERMINT_NODES_FOLDER, "node" + i).toString();
 			List<String> addressesForThisNode = new ArrayList<>(addresses);
 			addressesForThisNode.remove(i);
 			try {

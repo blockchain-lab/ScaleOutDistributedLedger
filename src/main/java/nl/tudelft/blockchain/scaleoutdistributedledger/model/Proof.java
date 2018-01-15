@@ -129,7 +129,7 @@ public class Proof {
 				}
 				seen = true;
 			}
-			if (localStore.getMainChain().isPresent(block)) absmark = block.getNumber();
+			if (block.isOnMainChain(localStore)) absmark = block.getNumber();
 		}
 
 		OptionalInt blockNumber = transaction.getBlockNumber();
