@@ -10,6 +10,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.io.IOException;
 import java.util.logging.Level;
+import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
@@ -26,20 +27,28 @@ public class Application {
 	private static MainChain aMainChain;
 	
 	private MainChain mainChain;
+	// Check whether we are in testing or production environment (default: production)
+	public final boolean isProduction;
+	
+	@Getter
 	private LocalStore localStore;
 	private Thread executor;
 	private CancellableInfiniteRunnable transactionExecutable;
 
 	@Getter
 	private Thread serverThread;
+	
 	@Getter
 	private SocketClient socketClient;
 
 	/**
 	 * Creates a new application.
 	 * The application must be initialized with {@link #init(int, int)} before it can be used.
+	 * @param isProduction - if this is production or testing
 	 */
-	public Application() {}
+	public Application(boolean isProduction) {
+		this.isProduction = isProduction;
+	}
 	
 	/**
 	 * Initializes the application.
@@ -61,7 +70,15 @@ public class Application {
 		serverThread.start();
 		socketClient = new SocketClient();
 
-		mainChain = new TendermintChain(tendermintPort);
+		// Setup Tendermint
+		if (this.isProduction) {
+			// Production environment
+			mainChain = new TendermintChain(tendermintPort);
+		} else {
+			// Testing environment - mock external resources
+			mainChain = new TendermintChainMock();
+		}
+		
 		//TODO Retrieve money from tendermint
 
 		if (aMainChain == null) {

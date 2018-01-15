@@ -27,7 +27,7 @@ public class TransactionMessage extends Message {
 
 	/**
 	 * Transactions known by the receiver.
-	 * Entry: node id, last block number
+	 * Entry: node id, transaction number
 	 */
 	@Getter
 	private final Set<Entry<Integer, Integer>> knownSource;

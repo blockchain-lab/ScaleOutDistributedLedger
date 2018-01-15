@@ -26,7 +26,7 @@ public final class Main {
 	public static void main(String[] args) throws IOException {
 		// Start a new node
 		// TODO: Make an example transaction?
-		Application app = new Application();
+		Application app = new Application(true);
 	}
 
 	/**

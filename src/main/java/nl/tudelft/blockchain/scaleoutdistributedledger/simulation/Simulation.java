@@ -61,7 +61,7 @@ public class Simulation {
 		localApplications = new Application[amount];
 		for (int i = 0; i < amount; i++) {
 			int basePort = Application.NODE_PORT + i * 4;
-			Application app = new Application();
+			Application app = new Application(true);
 			try {
 				app.init(basePort, basePort + 3);
 			} catch (Exception ex) {

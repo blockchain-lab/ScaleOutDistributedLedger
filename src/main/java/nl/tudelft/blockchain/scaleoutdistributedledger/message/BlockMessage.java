@@ -38,7 +38,7 @@ public class BlockMessage extends Message {
 	/**
 	 * Constructor.
 	 * @param block - original block
-	 * @param usePreviousBlockNumber - check whether to use or not the previous block number instead of a reference to the object
+	 * @param usePreviousBlockNumber - option to use or not the previous block number instead of a reference to the object
 	 */
 	public BlockMessage(Block block, boolean usePreviousBlockNumber) {
 		this.number = block.getNumber();
@@ -52,6 +52,7 @@ public class BlockMessage extends Message {
 				this.previousBlock = new BlockMessage(prevBlock);
 			}
 		} else {
+			// It's a genesis block
 			this.previousBlockNumber = -1;
 			this.previousBlock = null;
 		}
