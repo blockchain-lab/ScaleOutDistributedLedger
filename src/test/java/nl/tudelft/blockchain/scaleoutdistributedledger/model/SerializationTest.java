@@ -133,7 +133,7 @@ public class SerializationTest {
 		this.localStore.getNodes().put(newReceiver.getId(), newReceiver);
 		
 		// Create new transaction
-		HashSet listSources = new HashSet<>();
+		HashSet<Transaction> listSources = new HashSet<>();
 		listSources.add(this.transaction);
 		Transaction newTransaction = new Transaction(88, this.sender, newReceiver, 200, 40, listSources);
 		this.sender.getChain().getBlocks().get(1).getTransactions().add(newTransaction);
