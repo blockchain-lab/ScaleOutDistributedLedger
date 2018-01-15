@@ -129,7 +129,7 @@ public class BlockAbstract implements Serializable {
 			outputStream.write(this.blockHash.getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
 
-			return RSAKey.verify(attrInBytes, this.signature, signatureKey);
+			return Ed25519Key.verify(attrInBytes, this.signature, signatureKey);
 		} catch (IOException | SignatureException e) {
 			return false;
 		}
