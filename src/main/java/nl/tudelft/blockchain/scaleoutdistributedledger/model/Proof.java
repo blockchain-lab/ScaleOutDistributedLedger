@@ -130,9 +130,6 @@ public class Proof {
 
 		OptionalInt blockNumber = transaction.getBlockNumber();
 		if (!blockNumber.isPresent() || absmark < blockNumber.getAsInt()) {
-			System.out.println(blockNumber);
-			System.out.println(absmark);
-			System.out.println(transaction);
 			Log.log(Level.WARNING, "No suitable committed block found, proof not verified");
 			return false;
 		}
