@@ -61,7 +61,7 @@ public class Application {
 	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList, Ed25519Key key) throws IOException {
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 
-		ownNode.setGenesisBlock((Block)genesisBlock.clone());
+		ownNode.setGenesisBlock(genesisBlock.clone());
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 

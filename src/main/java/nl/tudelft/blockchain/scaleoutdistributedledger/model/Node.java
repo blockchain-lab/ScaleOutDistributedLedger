@@ -68,7 +68,6 @@ public class Node {
 		}
 		this.chain.getBlocks().add(block);
 		this.chain.setLastCommittedBlock(block);
-		block.setOwner(this);
 	}
 	
 	/**

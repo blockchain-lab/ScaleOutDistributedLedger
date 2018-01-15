@@ -49,10 +49,10 @@ public class BlockTest {
 	}
 
 	/**
-	 * Test for {@link Block#getBlockAbstract()}.
+	 * Test for {@link Block#calculateBlockAbstract()}.
 	 */
 	@Test
-	public void testGetAbstract_Valid() {
+	public void testCalculateBlockAbstract_Valid() {
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			outputStream.write(Utils.intToByteArray(this.block.getOwner().getId()));
@@ -60,17 +60,17 @@ public class BlockTest {
 			outputStream.write(this.block.getHash().getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
 			
-			assertTrue(this.block.getOwner().verify(attrInBytes, this.block.getBlockAbstract().getSignature()));
+			assertTrue(this.block.getOwner().verify(attrInBytes, this.block.calculateBlockAbstract().getSignature()));
 		} catch (Exception ex) {
 			fail();
 		}
 	}
 	
 	/**
-	 * Test for {@link Block#getBlockAbstract()}.
+	 * Test for {@link Block#calculateBlockAbstract()}.
 	 */
 	@Test
-	public void testGetAbstract_Invalid() {
+	public void testCalculateBlockAbstract_Invalid() {
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			outputStream.write(Utils.intToByteArray(this.block.getOwner().getId() + 1));
@@ -78,7 +78,7 @@ public class BlockTest {
 			outputStream.write(this.block.getHash().getBytes());
 			byte[] attrInBytes = outputStream.toByteArray();
 
-			assertFalse(this.block.getOwner().verify(attrInBytes, this.block.getBlockAbstract().getSignature()));
+			assertFalse(this.block.getOwner().verify(attrInBytes, this.block.calculateBlockAbstract().getSignature()));
 		} catch (Exception ex) {
 			fail();
 		}

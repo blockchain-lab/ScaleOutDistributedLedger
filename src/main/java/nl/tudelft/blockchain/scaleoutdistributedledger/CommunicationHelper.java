@@ -41,9 +41,10 @@ public final class CommunicationHelper {
 			Log.log(Level.WARNING, "Received a transaction we already received before!");
 			return false;
 		}
-		
-		if (!localStore.getVerification().isValid(proof.getTransaction(), proof)) {
-			Log.log(Level.WARNING, "Received an invalid transaction " + proof.getTransaction());
+
+
+		if (!localStore.getVerification().isValid(proof.getTransaction(), proof, localStore)) {
+			Log.log(Level.WARNING, "Received an invalid transaction/proof: " + proof.getTransaction());
 			return false;
 		}
 		
