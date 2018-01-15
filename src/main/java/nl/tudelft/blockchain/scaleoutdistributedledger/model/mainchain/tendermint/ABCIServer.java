@@ -31,9 +31,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -44,7 +41,6 @@ import java.util.logging.Level;
 public class ABCIServer implements ABCIAPI {
 	private final TendermintChain chain;
 	private final Block genesisBlock;
-	private Map<Integer, String> validatorToPublicKey;
 	/**
 	 * @param chain - the main chain this server is part of
 	 * @param genesisBlock - the genesis (initial) block for the entire system
@@ -69,13 +65,12 @@ public class ABCIServer implements ABCIAPI {
 
 		// Comment the next line when using a mock chain
 		BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
-		String hexPublicKey = validatorToPublicKey.get(abs.getOwnerNodeId());
-		byte[] publicKey = Utils.hexStringToBytes(hexPublicKey);
+		byte[] publicKey = chain.getApp().getLocalStore().getNode(abs.getOwnerNodeId()).getPublicKey();
 		boolean valid = abs.checkSignature(publicKey);
 		if (valid) {
 			return ResponseCheckTx.newBuilder().setCode(CodeType.OK).build();
 		} else {
-			String log = "signature on the abstract was invalid. Public key used:" + hexPublicKey;
+			String log = "signature on the abstract was invalid. Public key used:" + Utils.bytesToHexString(publicKey);
 			Log.log(Level.INFO, "[TENDERMINT] Proposed block rejected because " + log);
 			return ResponseCheckTx.newBuilder().setCode(CodeType.BadNonce).setLog(log).build();
 		}
@@ -132,12 +127,6 @@ public class ABCIServer implements ABCIAPI {
 	@Override
 	public ResponseInitChain requestInitChain(RequestInitChain requestInitChain) {
 		Log.log(Level.FINER, "[TENDERMINT] requestInitChain " + requestInitChain.toString());
-		List<Types.Validator> validatorList = requestInitChain.getValidatorsList();
-		this.validatorToPublicKey = new HashMap<>(validatorList.size());
-		//TODO: we're just assuming the order is the same, but not sure whether it actually is
-		for (int i = 0; i < validatorList.size(); i++) {
-			this.validatorToPublicKey.put(i, Utils.bytesToHexString(validatorList.get(i).getPubKey().toByteArray()));
-		}
 		return ResponseInitChain.newBuilder().build();
 	}
 

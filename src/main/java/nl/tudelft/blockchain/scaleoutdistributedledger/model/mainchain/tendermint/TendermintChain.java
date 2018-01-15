@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermi
 
 import com.github.jtendermint.jabci.socket.TSocket;
 import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
@@ -32,14 +33,16 @@ public final class TendermintChain implements MainChain {
 	private Set<Sha256Hash> cache;
 	@Getter
 	private long currentHeight;
+	@Getter
+	private Application app;
 
 	/**
 	 * Create and start the ABCI app (server) to connect with Tendermint on the default port (46658).
 	 * Also uses (port - 1), which Tendermint should listen on for RPC (rpc.laddr)
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 */
-	public TendermintChain(Block genesisBlock) {
-		this(DEFAULT_ABCI_SERVER_PORT, genesisBlock);
+	public TendermintChain(Block genesisBlock, Application app) {
+		this(DEFAULT_ABCI_SERVER_PORT, genesisBlock, app);
 	}
 	/**
 	 * Create and start the ABCI app (server) to connect with Tendermint on the given port.
@@ -47,9 +50,10 @@ public final class TendermintChain implements MainChain {
 	 * @param port - the port on which we run the server
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 */
-	public TendermintChain(final int port, Block genesisBlock) {
+	public TendermintChain(final int port, Block genesisBlock, Application app) {
 		this.abciServerPort = port;
 		this.cache = new HashSet<>();
+		this.app = app;
 
 		this.socket = new TSocket();
 		this.handler = new ABCIServer(this, genesisBlock);

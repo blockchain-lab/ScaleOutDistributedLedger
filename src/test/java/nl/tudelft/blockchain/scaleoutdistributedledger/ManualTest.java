@@ -36,39 +36,38 @@ public class ManualTest {
 	public static void testRunningTendermint() {
 
 		int numberOfNodes = 3;
-		List<String> publicKeys = new LinkedList<>();
-		for (int i = 1; i <= numberOfNodes; i++) {
+		List<Ed25519Key> keyPairs = new LinkedList<>();
+		for (int i = 0; i < numberOfNodes; i++) {
 			String nodeLoc = nodeFilesBaseLocation + i;
 			Ed25519Key nodeKey = TendermintHelper.generatePrivValidatorFile(tendermintBinary, nodeLoc);
-			publicKeys.add(Utils.bytesToHexString(nodeKey.getPublicKey()).toUpperCase());
+			keyPairs.add(nodeKey);
 		}
 
 		Date now = new Date();
 		List<String> addresses = new ArrayList<>();
 		final Block genesisBlock = TendermintHelper.generateGenesisBlock(numberOfNodes, 1000, new HashMap<>());
 		byte[] appHash = genesisBlock.getHash().getBytes();
-		for (int i = 1; i <= numberOfNodes; i++) {
+
+		Map<Integer, String> publicKeys = new HashMap<>();
+		for (int i = 0; i < numberOfNodes; i++) {
+			publicKeys.put(i, Utils.bytesToHexString(keyPairs.get(i).getPublicKey()));
+		}
+		for (int i = 0; i < numberOfNodes; i++) {
 			TendermintHelper.generateGenesisFile(nodeFilesBaseLocation + i, now, publicKeys, appHash);
 			addresses.add("192.168.1.107:" + (Application.NODE_PORT + 1 + 4 * (i - 1)));
 		}
 		Application[] apps = new Application[numberOfNodes];
-		for (int i = 1; i <= numberOfNodes; i++) {
+		for (int i = 0; i < numberOfNodes; i++) {
 			String nodeFilesLocation = nodeFilesBaseLocation + i;
 			int nodeBasePort = Application.NODE_PORT + 4 * (i - 1);
 			List<String> addressesForThisNode = new ArrayList<>(addresses);
 			final int currentNumber = i;
 			addressesForThisNode.remove(i - 1);
-			Thread nodeThread = new Thread(() -> {
-				try {
-					TendermintHelper.runTendermintNode(tendermintBinary, nodeFilesLocation, nodeBasePort, addressesForThisNode);
-					Application node = new Application(false);
-					node.init(nodeBasePort, genesisBlock, new HashMap<>());
-					apps[currentNumber - 1] = node;
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			});
-			nodeThread.start();
+			TendermintHelper.runTendermintNode(tendermintBinary, nodeFilesLocation, nodeBasePort, addressesForThisNode);
+			Application node = new Application(false);
+			node.init(nodeBasePort, genesisBlock, new HashMap<>(), keyPairs.get(currentNumber));
+			apps[currentNumber - 1] = node;
+
 		}
 		Thread.sleep(10000);
 		Random random = new Random();
@@ -97,12 +96,13 @@ public class ManualTest {
 	 */
 	@SneakyThrows
 	private static void testTendermintCommitQuery() {
+		//TODO: this is outdated and no loger works; fix it
 		Application app = new Application(false);
 
 		TendermintHelper.runTendermintNode(tendermintBinary,
 				nodeFilesBaseLocation, Application.NODE_PORT, new LinkedList<>());
 		final Block genesisBlock = TendermintHelper.generateGenesisBlock(1, 1000, new HashMap<>());
-		app.init(Application.NODE_PORT, genesisBlock, new HashMap<>());
+//		app.init(Application.NODE_PORT, genesisBlock, new HashMap<>());
 		Random random = new Random();
 		int randomBlockNumber = random.nextInt();
 		byte[] randomBlockHashBytes = new byte[20];
