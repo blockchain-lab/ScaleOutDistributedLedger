@@ -2,14 +2,20 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
 
+import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
-
-import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 
 /**
  * Transaction class.
@@ -53,6 +59,48 @@ public class Transaction {
 		this.blockNumber = OptionalInt.empty();
 	}
 
+	/**
+	 * Constructor to decode a transaction message.
+	 * @param transactionMessage - the message received from a transaction.
+	 * @param localStore - local store, to get each Node object
+	 * @throws IOException - error while getting a Node object
+	 */
+	public Transaction(TransactionMessage transactionMessage, LocalStore localStore) throws IOException {
+		this.number = transactionMessage.getNumber();
+		this.sender = localStore.getNode(transactionMessage.getSenderId());
+		this.receiver = localStore.getNode(transactionMessage.getReceiverId());
+		this.amount = transactionMessage.getAmount();
+		this.remainder = transactionMessage.getRemainder();
+		// Decode transaction messages to normal transactions
+		this.source = new HashSet<>();
+		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
+			Integer nodeId = knownSourceEntry.getKey();
+			Integer transactionId = knownSourceEntry.getValue();
+			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
+		}
+		for (TransactionMessage transactionMessageAux : transactionMessage.getNewSource()) {
+			this.source.add(new Transaction(transactionMessageAux, localStore));
+		}
+		this.hash = transactionMessage.getHash();
+		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
+	}
+	
+	/**
+	 * Creates a proof for this transaction.
+	 * @return - the proof
+	 */
+	public Proof getProof() {
+		// TODO: do a smart include of chainUpdates
+
+		Map<Node, List<Block>> chainUpdates = new HashMap<>();
+		for (Transaction t : source) {
+			if (!chainUpdates.containsKey(t.getSender()))
+				chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
+		}
+
+		return new Proof(this, chainUpdates);
+	}
+	
 	/**
 	 * Returns the number of the block (if it is in a block).
 	 * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)
