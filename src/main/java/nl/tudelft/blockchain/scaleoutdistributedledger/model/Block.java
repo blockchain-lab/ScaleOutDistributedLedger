@@ -208,7 +208,7 @@ public class Block implements Cloneable {
 	
 	/**
 	 * Returns the boolean onMainChain, and gets it if it is not present.
-	 *
+	 * @param localStore - the local store
 	 * @return - boolean identifying if this abstract is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {

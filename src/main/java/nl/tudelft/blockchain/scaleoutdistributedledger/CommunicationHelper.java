@@ -42,6 +42,7 @@ public final class CommunicationHelper {
 			return false;
 		}
 
+
 		if (!localStore.getVerification().isValid(proof.getTransaction(), proof, localStore)) {
 			Log.log(Level.WARNING, "Received an invalid transaction/proof: " + proof.getTransaction());
 			return false;

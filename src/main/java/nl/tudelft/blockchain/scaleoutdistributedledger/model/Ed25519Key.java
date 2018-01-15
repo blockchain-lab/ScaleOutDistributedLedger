@@ -1,10 +1,13 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.util.Arrays;
 import lombok.Getter;
 import net.i2p.crypto.eddsa.EdDSAEngine;
@@ -68,15 +71,19 @@ public class Ed25519Key {
 	 * @param signature - signature of the message
 	 * @param publicKey - public ED25519 key
 	 * @return whether is correct or not
-	 * @throws Exception - exception while verifying
+	 * @throws SignatureException - exception while verifying
 	 */
-	public static boolean verify(byte[] message, byte[] signature, byte[] publicKey) throws Exception {
-		EdDSAPublicKeySpec publicKeySpec = new EdDSAPublicKeySpec(publicKey, specification);
-		PublicKey publicKeyObject = new EdDSAPublicKey(publicKeySpec);
-		Signature publicSignature = new EdDSAEngine(MessageDigest.getInstance(specification.getHashAlgorithm()));
-		publicSignature.initVerify(publicKeyObject);
-		publicSignature.update(message);
-		return publicSignature.verify(signature);
+	public static boolean verify(byte[] message, byte[] signature, byte[] publicKey) throws SignatureException  {
+		try {
+			EdDSAPublicKeySpec publicKeySpec = new EdDSAPublicKeySpec(publicKey, specification);
+			PublicKey publicKeyObject = new EdDSAPublicKey(publicKeySpec);
+			Signature publicSignature = new EdDSAEngine(MessageDigest.getInstance(specification.getHashAlgorithm()));
+			publicSignature.initVerify(publicKeyObject);
+			publicSignature.update(message);
+			return publicSignature.verify(signature);
+		} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException ex) {
+			throw new SignatureException(ex);
+		}
 	}
 	
 	/**
@@ -84,9 +91,9 @@ public class Ed25519Key {
 	 * @param message - array of bytes of the message
 	 * @param signature - signature of the message
 	 * @return whether is correct or not
-	 * @throws Exception - exception while verifying
+	 * @throws SignatureException - exception while verifying
 	 */
-	public boolean verify(byte[] message, byte[] signature) throws Exception {
+	public boolean verify(byte[] message, byte[] signature) throws SignatureException {
 		return verify(message, signature, this.publicKey);
 	}
 	
