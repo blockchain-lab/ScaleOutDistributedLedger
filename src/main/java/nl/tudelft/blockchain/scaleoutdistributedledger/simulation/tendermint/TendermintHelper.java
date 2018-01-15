@@ -10,21 +10,12 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -292,13 +283,12 @@ public final class TendermintHelper {
 	 * @param amount the amount to give each of the nodes
 	 * @return the genesis block
 	 */
-	public static Block generateGenesisBlock(int numberOfNodes, long amount) {
+	public static Block generateGenesisBlock(int numberOfNodes, long amount, Map<Integer, Node> nodeList) {
 		Node magicNode = null;
 		List<Transaction> initialTransactions = new LinkedList<>();
 		for (int i = 0; i < numberOfNodes; i++) {
 			//TODO: can I use it like that?
-			Node node = new Node(i);
-			initialTransactions.add(new Transaction(i, magicNode, node, amount, 0, new HashSet<>(0)));
+			initialTransactions.add(new Transaction(i, magicNode, nodeList.get(i), amount, 0, new HashSet<>(0)));
 		}
 		return new Block(1, magicNode, initialTransactions);
 	}

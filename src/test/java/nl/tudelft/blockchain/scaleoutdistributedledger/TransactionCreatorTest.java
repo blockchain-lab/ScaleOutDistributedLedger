@@ -1,22 +1,16 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.Before;
-import org.junit.Test;
-
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class for TransactionCreator.
@@ -39,7 +33,7 @@ public class TransactionCreatorTest {
 		when(ownNodeMock.getMetaKnowledge()).thenReturn(new HashMap<>());
 		when(ownNodeMock.getChain()).thenReturn(new Chain(ownNodeMock));
 		
-		storeMock = spy(new LocalStore(ownNodeMock, null, null, false));
+		storeMock = spy(new LocalStore(ownNodeMock, null, null, false, new HashMap<>()));
 		nodes = storeMock.getNodes();
 		when(storeMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
 		

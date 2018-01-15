@@ -1,13 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
@@ -15,7 +9,10 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import lombok.Getter;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 
 /**
  * Class to run a node.
@@ -56,13 +53,13 @@ public class Application {
 	 * @param genesisBlock  - the genesis (initial) block for the entire system
 	 * @throws IOException   - error while registering node
 	 */
-	public void init(int nodePort, Block genesisBlock) throws IOException {
+	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList) throws IOException {
 		Ed25519Key key = new Ed25519Key();
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		// Setup local store
-		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction);
+		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction, nodeList);
 		localStore.updateNodes();
 		localStore.initMainChain();
 

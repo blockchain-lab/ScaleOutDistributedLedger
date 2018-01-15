@@ -29,7 +29,7 @@ import java.util.logging.Level;
  * Class for simulations.
  */
 public class Simulation {
-	public static final String TENDERMINT_BINARY = "/home/alex/Tendermint/tendermint";
+	public static final String TENDERMINT_BINARY = "D:/tendermint/tendermint.exe";
 	
 	@Getter
 	private ITransactionPattern transactionPattern;
@@ -68,25 +68,27 @@ public class Simulation {
 	public void runNodesLocally(int amount) {
 		checkState(SimulationState.STOPPED, "start local nodes");
 		
-		//Generate keys
+		//Generate keys and nodes
 		List<String> publicKeys = new LinkedList<>();
+		HashMap<Integer, Node> nodelist = new HashMap<>();
 		for (int i = 0; i < amount; i++) {
 			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
 			Ed25519Key nodeKey = TendermintHelper.generatePrivValidatorFile(TENDERMINT_BINARY, nodeLoc);
 			publicKeys.add(Utils.bytesToHexString(nodeKey.getPublicKey()).toUpperCase());
+			nodelist.put(i, new Node(i));
 		}
 
 		//
 		Date now = new Date();
 		List<String> addresses = new ArrayList<>();
-		final Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, 1000);
+		final Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, 1000, nodelist);
 		byte[] appHash = genesisBlock.getHash().getBytes();
 		for (int i = 0; i < amount; i++) {
 			String nodeLoc = new File("tendermint-nodes", "node" + i).toString();
 			TendermintHelper.generateGenesisFile(nodeLoc, now, publicKeys, appHash);
 			addresses.add("127.0.0.1:" + (Application.NODE_PORT + 1 + 4 * i));
 		}
-		
+
 		//Init the applications
 		localApplications = new Application[amount];
 		for (int i = 0; i < amount; i++) {
@@ -97,7 +99,7 @@ public class Simulation {
 			addressesForThisNode.remove(i);
 			try {
 				TendermintHelper.runTendermintNode(TENDERMINT_BINARY, nodeLoc, basePort, addressesForThisNode);
-				app.init(basePort, genesisBlock);
+				app.init(basePort, genesisBlock, nodelist);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
 			}

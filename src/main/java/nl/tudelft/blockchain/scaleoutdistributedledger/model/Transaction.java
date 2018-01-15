@@ -1,21 +1,17 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.logging.Level;
-
 import lombok.Getter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Level;
 
 /**
  * Transaction class.
@@ -29,7 +25,11 @@ public class Transaction {
 	private final int number;
 
 	@Getter
-	private final Node sender, receiver;
+	private final Node sender;
+
+	// TODO: change back to final somehow
+	@Getter @Setter
+	private Node receiver;
 
 	@Getter
 	private final long amount, remainder;

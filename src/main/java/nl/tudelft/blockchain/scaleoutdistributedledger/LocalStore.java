@@ -1,22 +1,16 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import lombok.Getter;
+import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
-
-import lombok.Getter;
-
-import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  * Class to store information related to our own node.
@@ -29,7 +23,7 @@ public class LocalStore {
 	private final OwnNode ownNode;
 	
 	@Getter
-	private final Map<Integer, Node> nodes = new HashMap<>();
+	private final Map<Integer, Node> nodes;
 	
 	@Getter
 	private final Verification verification = new Verification();
@@ -52,16 +46,17 @@ public class LocalStore {
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 * @param isProduction - if this is production or testing
 	 */
-	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction) {
+	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction, Map<Integer, Node> nodeList) {
 		this.ownNode = ownNode;
 		this.application = application;
+		this.nodes = nodeList;
 		this.nodes.put(ownNode.getId(), ownNode);
 		if (isProduction) {
 			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock);
 		} else {
 			this.mainChain = new TendermintChainMock();
 		}
-		this.addUnspentTransaction(genesisBlock.getTransactions().get(ownNode.getId()));
+        this.addUnspentTransaction(genesisBlock.getTransactions().get(ownNode.getId()));
 	}
 	
 	/**
@@ -119,12 +114,15 @@ public class LocalStore {
 	public void addUnspentTransaction(Transaction transaction) {
 		if (!unspent.add(transaction)) return;
 
-		if (transaction.getReceiver() == ownNode) {
+		if (transaction.getReceiver().getId() == ownNode.getId()) {
 			availableMoney += transaction.getAmount();
+			if(transaction.getReceiver() != ownNode) transaction.setReceiver(ownNode);
 		}
 		if (transaction.getSender() == ownNode) {
 			availableMoney += transaction.getRemainder();
 		}
+
+        System.out.println(this.getAvailableMoney());
 	}
 	
 	/**

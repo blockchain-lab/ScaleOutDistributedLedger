@@ -1,17 +1,20 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for serialization of classes.
@@ -51,7 +54,7 @@ public class SerializationTest {
 		this.sender.getChain().update(blockList);
 		this.receiver = new Node(2);
 		// Setup LocalStore
-		this.localStore = new LocalStore(this.sender, null, null, false);
+		this.localStore = new LocalStore(this.sender, null, null, false, new HashMap<>());
 		this.localStore.getNodes().put(this.receiver.getId(), this.receiver);
 		// Add Transaction
 		this.transaction = new Transaction(44, this.sender, this.receiver, 100, 20, new HashSet<>());

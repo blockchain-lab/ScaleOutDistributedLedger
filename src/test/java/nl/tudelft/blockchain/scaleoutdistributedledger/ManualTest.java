@@ -45,7 +45,7 @@ public class ManualTest {
 
 		Date now = new Date();
 		List<String> addresses = new ArrayList<>();
-		final Block genesisBlock = TendermintHelper.generateGenesisBlock(numberOfNodes, 1000);
+		final Block genesisBlock = TendermintHelper.generateGenesisBlock(numberOfNodes, 1000, new HashMap<>());
 		byte[] appHash = genesisBlock.getHash().getBytes();
 		for (int i = 1; i <= numberOfNodes; i++) {
 			TendermintHelper.generateGenesisFile(nodeFilesBaseLocation + i, now, publicKeys, appHash);
@@ -62,7 +62,7 @@ public class ManualTest {
 				try {
 					TendermintHelper.runTendermintNode(tendermintBinary, nodeFilesLocation, nodeBasePort, addressesForThisNode);
 					Application node = new Application(false);
-					node.init(nodeBasePort, genesisBlock);
+					node.init(nodeBasePort, genesisBlock, new HashMap<>());
 					apps[currentNumber - 1] = node;
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -101,8 +101,8 @@ public class ManualTest {
 
 		TendermintHelper.runTendermintNode(tendermintBinary,
 				nodeFilesBaseLocation, Application.NODE_PORT, new LinkedList<>());
-		final Block genesisBlock = TendermintHelper.generateGenesisBlock(1, 1000);
-		app.init(Application.NODE_PORT, genesisBlock);
+		final Block genesisBlock = TendermintHelper.generateGenesisBlock(1, 1000, new HashMap<>());
+		app.init(Application.NODE_PORT, genesisBlock, new HashMap<>());
 		Random random = new Random();
 		int randomBlockNumber = random.nextInt();
 		byte[] randomBlockHashBytes = new byte[20];
