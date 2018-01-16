@@ -72,7 +72,9 @@ public final class TendermintChain implements MainChain {
 		t.start();
 		this.initClient();
 		this.initialUpdateCache();
-		Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort);
+		if (this.app.getLocalStore().getOwnNode().getId() == 0) {
+			Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort);
+		}
 	}
 	/**
 	 * Called on start of the instance.
