@@ -72,9 +72,8 @@ public final class TendermintChain implements MainChain {
 		t.start();
 		this.initClient();
 		this.initialUpdateCache();
-		if (this.app.getLocalStore().getOwnNode().getId() == 0) {
-			Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort);
-		}
+
+		Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort);
 	}
 	/**
 	 * Called on start of the instance.
@@ -142,7 +141,7 @@ public final class TendermintChain implements MainChain {
 				cache.add(abs.getBlockHash());
 			}
 		}
-		if (currentHeight < height) {
+		if (currentHeight < height && this.app.getLocalStore().getOwnNode().getId() == 0) {
 			Log.log(Level.INFO, "Successfully updated the Tendermint cache from height " + currentHeight + " -> " + height
 					+ ", number of cached hashes of abstracts on main chain is now " + cache.size());
 		}
