@@ -1,7 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.Simulation;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
 
@@ -17,7 +16,6 @@ public final class SimulationMain {
 	 */
 	public static void main(String[] args) throws Exception {
 		// Clean Tendermint folder
-		TendermintHelper.cleanTendermintFiles();
 		//NOTE: The tracker should be started first, manually
 		Simulation simulation = new Simulation();
 		ITransactionPattern itp = new RandomTransactionPattern(10, 20, 1000, 2000, 1);
@@ -33,6 +31,8 @@ public final class SimulationMain {
 		
 		Thread.sleep(60 * 1000);
 		simulation.stop();
+
+		Thread.sleep(10 * 1000);
 		
 		simulation.stopLocalNodes();
 		simulation.cleanup();

@@ -17,12 +17,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -118,10 +113,15 @@ public class Simulation {
 	public void stopLocalNodes() {
 		checkState(SimulationState.STOPPED, "stop local nodes");
 		if (localApplications == null) return;
-		
+
+		int sum = 0;
 		for (Application app : localApplications) {
 			app.stop();
+			Log.log(Level.INFO, String.format("Node %d has a final amount of %d moneyz.",
+					app.getLocalStore().getOwnNode().getId(), app.getLocalStore().getAvailableMoney()));
+			sum += app.getLocalStore().getAvailableMoney();
 		}
+		Log.log(Level.INFO, String.format("Total amount of moneyz left in the system is %d.", sum));
 	}
 	
 	/**
