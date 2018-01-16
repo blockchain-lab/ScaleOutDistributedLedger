@@ -18,19 +18,6 @@ public final class CommunicationHelper {
 	}
 	
 	/**
-	 * Sends the given transaction to the receiver of the transaction.
-	 * Can block up to 60 seconds.
-	 * @param transaction - the transaction to send
-	 * @param socketClient - the socketClient to send the transaction with.
-	 * @throws InterruptedException - when the sending is interrupted.
-	 */
-	public static void sendTransaction(Transaction transaction, SocketClient socketClient) throws InterruptedException {
-		Node to = transaction.getReceiver();
-		Proof proof = transaction.getProof();
-		socketClient.sendMessage(to, new ProofMessage(proof));
-	}
-	
-	/**
 	 * @param proof         - the proof provided with the transaction
 	 * @param localStore	- the localstore of the node
 	 * @return               true if the transaction was accepted, false otherwise

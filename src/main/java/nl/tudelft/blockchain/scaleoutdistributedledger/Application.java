@@ -9,11 +9,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
-import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
@@ -39,7 +37,7 @@ public class Application {
 	private Thread serverThread;
 	
 	@Getter
-	private SocketClient socketClient;
+	private TransactionSender transactionSender;
 
 	/**
 	 * Creates a new application.
@@ -73,7 +71,7 @@ public class Application {
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
-		socketClient = new SocketClient();
+		transactionSender = new TransactionSender(localStore);
 
 		if (!staticMainChainPresent.getAndSet(true)) {
 			aMainChain = localStore.getMainChain();
@@ -88,9 +86,8 @@ public class Application {
 	 */
 	public void stop() {
 		if (serverThread.isAlive()) serverThread.interrupt();
-		if (socketClient != null) socketClient.shutdown();
+		if (transactionSender != null) transactionSender.shutdownNow();
 		
-		//TODO Stop socket client?
 		localStore.getMainChain().stop();
 	}
 	
@@ -132,17 +129,6 @@ public class Application {
 	 */
 	public synchronized boolean isTransacting() {
 		return this.executor != null && this.executor.isAlive();
-	}
-	
-	/**
-	 * Send a transaction to the receiver of the transaction.
-	 * An abstract of the block containing the transaction (or a block after it) must already be
-	 * committed to the main chain.
-	 * @param transaction - the transaction to send
-	 * @throws InterruptedException - when sending is interrupted
-	 */
-	public void sendTransaction(Transaction transaction) throws InterruptedException {
-		CommunicationHelper.sendTransaction(transaction, socketClient);
 	}
 
 	/**

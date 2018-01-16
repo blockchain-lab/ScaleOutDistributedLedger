@@ -20,7 +20,7 @@ import java.util.logging.Level;
  */
 public class Block implements Cloneable {
 
-	public static final int GENESIS_BLOCK_NUMBER = 1;
+	public static final int GENESIS_BLOCK_NUMBER = 0;
 	
 	@Getter
 	private final int number;
@@ -38,9 +38,10 @@ public class Block implements Cloneable {
 	private Sha256Hash hash;
 	
 	private transient Optional<Boolean> onMainChain;
+	private transient boolean hasNoAbstract;
 
 	/**
-	 * Constructor.
+	 * Constructor for a (genesis) block.
 	 * @param number - the number of this block.
 	 * @param owner - the owner of this block.
 	 * @param transactions - a list of transactions of this block.
@@ -55,17 +56,20 @@ public class Block implements Cloneable {
 
 	/**
 	 * Constructor.
-	 * @param number - the number of this block.
 	 * @param previousBlock - reference to the previous block in the chain of this block.
-	 * @param owner - the owner of this block.
 	 * @param transactions - a list of transactions of this block.
 	 */
-	public Block(int number, Block previousBlock, Node owner, List<Transaction> transactions) {
-		this.number = number;
+	public Block(Block previousBlock, List<Transaction> transactions) {
+		this.number = previousBlock.getNumber() + 1;
 		this.previousBlock = previousBlock;
-		this.owner = owner;
+		this.owner = previousBlock.getOwner();
 		this.transactions = transactions;
 		this.onMainChain = Optional.empty();
+		
+		//Our own blocks are guaranteed to have no abstract until we create the abstract.
+		if (this.owner instanceof OwnNode) {
+			this.hasNoAbstract = true;
+		}
 	}
 
 	/**
@@ -134,7 +138,9 @@ public class Block implements Cloneable {
 		// Sign the attributes
 		try {
 			byte[] signature = ((OwnNode) this.owner).sign(attrInBytes);
-			return new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
+			BlockAbstract blockAbstract = new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
+			this.hasNoAbstract = false;
+			return blockAbstract;
 		} catch (Exception ex) {
 			throw new IllegalStateException("Unable to sign block abstract", ex);
 		}
@@ -207,13 +213,15 @@ public class Block implements Cloneable {
 	}
 	
 	/**
-	 * Returns the boolean onMainChain, and gets it if it is not present.
+	 * Returns if an abstract of this block is present on the main chain.
 	 * @param localStore - the local store
-	 * @return - boolean identifying if this abstract is on the main chain.
+	 * @return - boolean identifying if an abstract of this block is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
-		if (!this.onMainChain.isPresent()) {
-			this.onMainChain = Optional.of(localStore.getMainChain().isPresent(this.getHash()));
+		if (hasNoAbstract) return false;
+		
+		if (!this.onMainChain.isPresent() && localStore.getMainChain().isPresent(this.getHash())) {
+			this.onMainChain = Optional.of(true);
 		}
 		return this.onMainChain.get();
 	}

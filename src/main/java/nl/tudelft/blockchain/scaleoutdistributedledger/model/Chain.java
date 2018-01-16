@@ -45,9 +45,13 @@ public class Chain {
 	
 	/**
 	 * Updates this chain with the given updates.
+	 * This method is used for updating a chain belonging to a different node.
 	 * @param updates - the new blocks to append
+	 * @throws UnsupportedOperationException - If this chain is owned by us.
 	 */
-	public void update(List<Block> updates) {
+	public synchronized void update(List<Block> updates) {
+		if (owner instanceof OwnNode) throw new UnsupportedOperationException("You cannot use update to update your own chain");
+		
 		if (updates.isEmpty()) return;
 		
 		if (blocks.isEmpty()) {
@@ -56,6 +60,7 @@ public class Chain {
 			Block lastBlock = blocks.get(blocks.size() - 1);
 			int nextNr = lastBlock.getNumber() + 1;
 			for (Block block : updates) {
+				//Skip any overlap
 				if (block.getNumber() != nextNr) continue;
 				blocks.add(block);
 				nextNr++;
@@ -66,9 +71,27 @@ public class Chain {
 	/**
 	 * @return the last block in this chain
 	 */
-	public Block getLastBlock() {
+	public synchronized Block getLastBlock() {
 		if (blocks.isEmpty()) return null;
 
 		return blocks.get(blocks.size() - 1);
+	}
+	
+	/**
+	 * Creates a new block with the given transactions and appends it to this chain.
+	 * @param transactions - the transactions to put in the block
+	 * @return             - the newly appended block
+	 * @throws UnsupportedOperationException - If this chain is not owned by us.
+	 * @throws IllegalStateException         - If there is no genesis block in this chain.
+	 */
+	public synchronized Block appendNewBlock(List<Transaction> transactions) {
+		if (!(owner instanceof OwnNode)) throw new UnsupportedOperationException("You cannot append blocks to a chain that is not yours!");
+		
+		Block last = getLastBlock();
+		if (last == null) throw new IllegalStateException("There is no genesis block!");
+		
+		Block newBlock = new Block(last, transactions);
+		blocks.add(newBlock);
+		return newBlock;
 	}
 }

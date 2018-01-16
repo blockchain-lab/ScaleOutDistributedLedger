@@ -121,6 +121,7 @@ public class RandomTransactionPattern implements ITransactionPattern {
 		Node receiver = selectNode(localStore);
 		
 		OwnNode ownNode = localStore.getOwnNode();
+		Block newBlock;
 		Log.log(Level.FINE, "Going to make transaction: $ " + amount + " from " + ownNode.getId() + " -> " + receiver.getId());
 		synchronized (ownNode.getChain()) {
 			//Create the transaction
@@ -133,10 +134,11 @@ public class RandomTransactionPattern implements ITransactionPattern {
 			transactions.add(transaction);
 			
 			//Add block to local chain
-			Block oldLastBlock = ownNode.getChain().getLastBlock();
-			Block newBlock = new Block(oldLastBlock.getNumber() + 1, oldLastBlock, ownNode, transactions);
-			ownNode.getChain().getBlocks().add(newBlock);
+			newBlock = ownNode.getChain().appendNewBlock(transactions);
 		}
+		
+		//Ensure that the block is sent at some point
+		localStore.getApplication().getTransactionSender().scheduleBlockSending(newBlock);
 		
 		//Check if we want to commit the new block, and commit it if we do.
 		commitBlocks(localStore);
@@ -161,28 +163,6 @@ public class RandomTransactionPattern implements ITransactionPattern {
 			BlockAbstract blockAbstract = lastBlock.calculateBlockAbstract();
 			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
 			ownChain.setLastCommittedBlock(lastBlock);
-		}
-		
-		//Actually send the transactions in the blocks
-		sendTransactions(localStore, lastBlock, lastCommitted);
-	}
-	
-	/**
-	 * Sends transactions of the blocks from {@code from} to {@code to} (exclusive).
-	 * Sending of transactions happens in backwards order.
-	 * The block number of {@code from} has to be larger than or equal to the block number of {@code to}.
-	 * @param localStore - the local store
-	 * @param from       - the (latest) block to send transactions of
-	 * @param to         - the (last commited) block
-	 * @throws InterruptedException - if sending transactions is interrupted
-	 */
-	public void sendTransactions(LocalStore localStore, Block from, Block to) throws InterruptedException {
-		while (from != to) {
-			for (Transaction transaction : from.getTransactions()) {
-				localStore.getApplication().sendTransaction(transaction);
-			}
-			
-			from = from.getPreviousBlock();
 		}
 	}
 	
