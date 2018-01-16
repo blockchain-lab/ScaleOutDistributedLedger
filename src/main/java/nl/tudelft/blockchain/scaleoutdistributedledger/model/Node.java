@@ -21,13 +21,6 @@ public class Node {
 
 	@Getter @Setter
 	private byte[] publicKey;
-
-	/**
-	 * Only used by the node himself.
-	 * @return private key
-	 */
-	@Getter @Setter
-	private transient byte[] privateKey;
 	
 	@Getter @Setter
 	private String address;
@@ -66,12 +59,15 @@ public class Node {
 	}
 
 	/**
-	 * @param message - the message to sign
-	 * @return - the signed message
-	 * @throws Exception - See {@link Ed25519Key#sign(byte[], byte[])}
+	 * Add a genesis block to the chain.
+	 * @param block - the genesis block
 	 */
-	public byte[] sign(byte[] message) throws Exception {
-		return Ed25519Key.sign(message, this.privateKey);
+	public void setGenesisBlock(Block block) {
+		if (!this.chain.getBlocks().isEmpty()) {
+			throw new IllegalStateException("Adding genesis block to non-empty chain");
+		}
+		this.chain.getBlocks().add(block);
+		this.chain.setLastCommittedBlock(block);
 	}
 	
 	/**

@@ -70,11 +70,12 @@ public class TransactionCreator {
 	 * 
 	 * The sources used for the transaction are marked as spent.
 	 * If the transaction has a remainder, it is marked as unspent.
-	 * @param number - the number to assign to the transaction
 	 * @return         a new transaction
 	 * @throws NotEnoughMoneyException If the sender doesn't have enough money.
 	 */
-	public Transaction createTransaction(int number) {
+	public Transaction createTransaction() {
+		if (localStore.getAvailableMoney() < amount) throw new NotEnoughMoneyException();
+		
 		TransactionTuple sources = bestSources();
 		if (sources == null) throw new NotEnoughMoneyException();
 		
@@ -82,11 +83,13 @@ public class TransactionCreator {
 		long remainder = sources.getAmount() - amount;
 
 		//Mark sources as spent.
-		localStore.getUnspent().removeAll(sourceSet);
+		localStore.removeUnspentTransactions(sourceSet);
 		
+		int number = localStore.getNewTransactionId();
 		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, sourceSet);
-		if (remainder > 0) {
-			localStore.getUnspent().add(transaction);
+		//If there is a remainder, or if we send money to ourselves, then add that the transaction is unspent.
+		if (remainder > 0 || receiver == sender) {
+			localStore.addUnspentTransaction(transaction);
 		}
 		
 		return transaction;

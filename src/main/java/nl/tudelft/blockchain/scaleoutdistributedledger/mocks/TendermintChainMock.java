@@ -3,7 +3,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.mocks;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
@@ -16,6 +15,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
  * Mock for TendermintChain.
  */
 public class TendermintChainMock implements MainChain {
+	@Override
+	public void init() {}
 	
 	@Override
 	public Sha256Hash commitAbstract(BlockAbstract abs) {
@@ -37,8 +38,10 @@ public class TendermintChainMock implements MainChain {
 	}
 
 	@Override
-	public boolean isPresent(BlockAbstract abs) {
+	public boolean isPresent(Sha256Hash blockHash) {
 		return true;
 	}
 	
+	@Override
+	public void stop() {}
 }

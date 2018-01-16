@@ -1,12 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.HashMap;
-import java.util.Set;
-
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Verification and validation algorithms.
@@ -21,9 +21,9 @@ public class Verification {
 	 * @param proof       - the proof to validate with
 	 * @return              true if the transaction is valid, false otherwise
 	 */
-	public boolean isValid(Transaction transaction, Proof proof) {
-		boolean valid = validate(transaction, proof);
-		
+	public boolean isValid(Transaction transaction, Proof proof, LocalStore localStore) {
+		boolean valid = validate(transaction, proof, localStore);
+
 		//Store in the cache
 		Boolean old = validationCache.put(transaction, valid);
 		if (old != null && old.booleanValue() != valid) {
@@ -47,18 +47,22 @@ public class Verification {
 	 * @param proof       - the proof to validate with
 	 * @return              true if the transaction is valid, false otherwise
 	 */
-	private boolean validate(Transaction transaction, Proof proof) {
+	private boolean validate(Transaction transaction, Proof proof, LocalStore localStore) {
+		// Genesis transaction is always valid, TODO: something?
+		if (transaction.getSender() == null) return true;
+
 		//Verify the proof
-		if (!proof.verify()) return false;
+		if (!proof.verify(localStore)) return false;
 		
 		//Equality check: Check if the counts match up
 		long expectedSum = transaction.getAmount() + transaction.getRemainder();
 		long sum = 0L;
 		for (Transaction txj : transaction.getSource()) {
-			sum += txj.getRemainder();
+			if(txj.getSender() != null && txj.getSender() == transaction.getSender()) sum += txj.getRemainder();
+			else sum += txj.getAmount();
 			if (sum > expectedSum) return false;
 		}
-		
+
 		if (sum != expectedSum) return false;
 
 		//Double spending check
@@ -70,19 +74,19 @@ public class Verification {
 					found = true;
 					continue;
 				}
-				
+
 				if (!intersectEmpty(transaction.getSource(), txj.getSource())) return false;
 			}
-			
+
 			if (found) break;
 		}
-		
+
 		//Validate sources
 		for (Transaction txj : transaction.getSource()) {
 			Boolean cached = validationCache.get(txj);
 			if (cached == null) {
 				//We didn't see this transaction before, so we need to validate it.
-				if (!isValid(txj, proof)) return false;
+				if (!isValid(txj, proof, localStore)) return false;
 			} else if (!cached) {
 				//We already invalidated this transaction
 				return false;

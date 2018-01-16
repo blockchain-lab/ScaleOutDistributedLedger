@@ -23,6 +23,8 @@ public class SocketClient {
 
     private Bootstrap bootstrap;
 
+    private EventLoopGroup group;
+
     /**
      * Constructor.
      */
@@ -36,7 +38,7 @@ public class SocketClient {
      * Note: one client can be used to send to multiple servers, this just sets the settings and pipeline.
      */
     private void initSocketClient() {
-        EventLoopGroup group = new NioEventLoopGroup();
+        group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
@@ -52,6 +54,14 @@ public class SocketClient {
     }
 
     /**
+     * Shuts down the client server.
+     */
+    public void shutdown() {
+        Log.log(Level.INFO, "Shutting down socket client...");
+        group.shutdownGracefully();
+    }
+
+    /**
      * Send object to specified host.
      * Is blocking until message is actually sent, or failed (up to 60 seconds)
      * @param node - the node to send the message to.
@@ -61,23 +71,31 @@ public class SocketClient {
     public boolean sendMessage(Node node, Object msg) throws InterruptedException {
         Channel channel = connections.get(node);
         if (channel == null || !channel.isOpen()) {
-            Log.log(Level.INFO, "No open connection found, connecting...");
+            Log.log(Level.FINE, "No open connection found, connecting...");
             ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
             if (!future.await().isSuccess()) {
                 // Could not connect
+            	Log.log(Level.SEVERE, "Unable to connect to " + node.getAddress() + ":" + node.getPort(), future.cause());
                 return false;
             }
             assert future.isDone();
             channel = future.channel();
-            future.channel().closeFuture().addListener((ChannelFutureListener) channelFuture -> Log.log(Level.INFO, "Client detected channel close"));
-            Log.log(Level.INFO, "Client connected to server!");
+            future.channel().closeFuture().addListener((ChannelFutureListener) channelFuture -> Log.log(Level.FINE, "Client detected channel close"));
+            Log.log(Level.FINE, "Client connected to server!");
         }
 
         ChannelFuture future = channel.writeAndFlush(msg);
-        Log.log(Level.INFO, "Message sent by client");
+        Log.log(Level.FINE, "Message sent by client");
 
         this.connections.put(node, future.channel());
 
-        return future.await().isSuccess();
+        future.await();
+        
+        if (!future.isSuccess()) {
+        	Log.log(Level.SEVERE, "Failed to send message", future.cause());
+        	return false;
+        }
+        
+        return true;
     }
 }

@@ -29,3 +29,7 @@ nb-configuration.xml
 
 # Ignore log files
 *.log
+
+# Tendermint
+tendermint-nodes/
+tendermint.exe

@@ -1,32 +1,39 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import lombok.Getter;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.io.IOException;
-import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
-
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
+import lombok.Getter;
 
 /**
  * Class to run a node.
  */
 public class Application {
-	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final String TRACKER_SERVER_ADDRESS = "localhost";
-	public static final int NODE_PORT = 8007;
-	private static MainChain mainChain;
-	
-	// Check whether we are in testing or production environment (default: production)
-	public final boolean isProduction;
+	public static final int TRACKER_SERVER_PORT = 3000;
+	public static final int NODE_PORT = 40000;
+	private static MainChain aMainChain;
+	private static AtomicBoolean staticMainChainPresent = new AtomicBoolean(false);
 	
 	@Getter
 	private LocalStore localStore;
+	private Thread executor;
+	private CancellableInfiniteRunnable transactionExecutable;
+	private final boolean isProduction;
 
 	@Getter
 	private Thread serverThread;
@@ -36,22 +43,94 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * @param tendermintPort - the port on which the Tendermint server will run.
-	 * @throws IOException - error while registering nodes
+	 * The application must be initialized with {@link #init(int, int)} before it can be used.
+	 * @param isProduction - if this is production or testing
 	 */
-	public Application(int tendermintPort) throws IOException {
-		this(tendermintPort, true);
-	}
-
-	/**
-	 * Creates a new application.
-	 * @param tendermintPort - the port on which the Tendermint server will run.
-	 * @param isProduction - is production environment or not
-	 * @throws IOException - error while registering nodes
-	 */
-	public Application(int tendermintPort, boolean isProduction) throws IOException {
+	public Application(boolean isProduction) {
 		this.isProduction = isProduction;
-		this.setupNode(tendermintPort);
+	}
+	
+	/**
+	 * Initializes the application.
+	 * Registers to the tracker and creates the local store.
+	 * @param nodePort       - the port on which the node will accept connections. Note, also port+1,
+	 *                          port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
+	 * @param genesisBlock  - the genesis (initial) block for the entire system
+	 * @throws IOException   - error while registering node
+	 */
+	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList, Ed25519Key key) throws IOException {
+		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
+
+		ownNode.setGenesisBlock(genesisBlock.clone());
+
+		ownNode.setPrivateKey(key.getPrivateKey());
+
+		// Setup local store
+		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction, nodeList);
+		localStore.updateNodes();
+		localStore.initMainChain();
+
+		serverThread = new Thread(new SocketServer(nodePort, localStore));
+		serverThread.start();
+		socketClient = new SocketClient();
+
+		if (!staticMainChainPresent.getAndSet(true)) {
+			aMainChain = localStore.getMainChain();
+			//TODO Retrieve money from tendermint
+
+		}
+	}
+	
+	/**
+	 * Stops this application. This means that this application no longer accepts any new
+	 * connections and that all existing connections are closed.
+	 */
+	public void stop() {
+		if (serverThread.isAlive()) serverThread.interrupt();
+		if (socketClient != null) socketClient.shutdown();
+		
+		//TODO Stop socket client?
+		localStore.getMainChain().stop();
+	}
+	
+	/**
+	 * @param pattern - the transaction pattern
+	 * @throws IllegalStateException - If there is already a transaction pattern running.
+	 */
+	public synchronized void setTransactionPattern(ITransactionPattern pattern) {
+		if (isTransacting()) throw new IllegalStateException("There is already a transaction pattern running!");
+		this.transactionExecutable = pattern.getRunnable(localStore);
+		Log.log(Level.FINE, "Node " + localStore.getOwnNode().getId() + ": Set transaction pattern " + pattern.getName());
+	}
+	
+	/**
+	 * Starts making transactions by executing the transaction pattern.
+	 * @throws IllegalStateException - If there is already a transaction pattern running.
+	 */
+	public synchronized void startTransacting() {
+		if (isTransacting()) throw new IllegalStateException("There is already a transaction pattern running!");
+		this.executor = new Thread(this.transactionExecutable);
+		this.executor.setUncaughtExceptionHandler((t, ex) -> 
+			Log.log(Level.SEVERE, "Node " + localStore.getOwnNode().getId() + ": Uncaught exception in transaction pattern executor!", ex)
+		);
+		this.executor.start();
+		Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + ": Started transacting with transaction pattern.");
+	}
+	
+	/**
+	 * Stops making transactions.
+	 */
+	public synchronized void stopTransacting() {
+		if (!isTransacting()) return;
+		this.transactionExecutable.cancel();
+		Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + ": Stopped transacting with transaction pattern.");
+	}
+	
+	/**
+	 * @return if a transaction pattern is running
+	 */
+	public synchronized boolean isTransacting() {
+		return this.executor != null && this.executor.isAlive();
 	}
 	
 	/**
@@ -66,39 +145,18 @@ public class Application {
 	}
 
 	/**
-	 * Setup your own node.
-	 * Register to the tracker and setup the local store.
-	 * @param tmPort - the port on which to run the Tendermint server
-	 * @throws java.io.IOException - error while registering node
+	 * @return - the main chain of this application
 	 */
-	private void setupNode(int tmPort) throws IOException {
-		// Create and register node
-		Ed25519Key key = new Ed25519Key();
-		Node ownNode = TrackerHelper.registerNode(key.getPublicKey());
-		ownNode.setPrivateKey(key.getPrivateKey());
-
-		// Setup local store
-		this.localStore = new LocalStore(ownNode);
-
-		this.serverThread = new Thread(new SocketServer(NODE_PORT, this.localStore));
-		this.serverThread.start();
-		this.socketClient = new SocketClient();
-		
-		// Setup Tendermint
-		if (this.isProduction) {
-			// Production environment
-			mainChain = new TendermintChain(tmPort);
-		} else {
-			// Testing environment - mock external resources
-			mainChain = new TendermintChainMock();
-		}
+	public MainChain getMainChain() {
+		return localStore.getMainChain();
 	}
-
+	
 	/**
-	 * Returns the singleton main chain.
-	 * @return -
+	 * Only use the returned instance for checking if BlockAbstracts are on the main chain.
+	 * @return - a MainChain instance
 	 */
-	public static MainChain getMainChain() {
-		return mainChain;
+	public static MainChain getAMainChain() {
+		return aMainChain;
+
 	}
 }

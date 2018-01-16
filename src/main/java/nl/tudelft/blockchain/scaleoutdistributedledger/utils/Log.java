@@ -9,7 +9,7 @@ import java.util.logging.Logger;
  * Class for logging functions.
  */
 public final class Log {
-	public static final Level LEVEL = Level.FINEST;
+	public static final Level LEVEL = Level.INFO;
 	public static final String FORMAT = "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$-6s %3$s %5$s%6$s%n";
 	public static final Logger PARENT_LOGGER = Logger.getLogger(Log.class.getName()).getParent();
 
@@ -25,6 +25,7 @@ public final class Log {
 		for (Handler handler : PARENT_LOGGER.getHandlers()) {
 			if (handler instanceof ConsoleHandler) {
 				handler.setFormatter(formatter);
+				handler.setLevel(LEVEL);
 			}
 		}
 	}

@@ -1,32 +1,35 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.logging.Level;
-
 import lombok.Getter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Level;
 
 /**
  * Transaction class.
  */
 public class Transaction {
 
+	// Represent the sender of a genesis transaction
+	public static final int GENESIS_SENDER = -1;
+	
 	@Getter
 	private final int number;
 
 	@Getter
-	private final Node sender, receiver;
+	private final Node sender;
+
+	// TODO: change back to final somehow
+	@Getter @Setter
+	private Node receiver;
 
 	@Getter
 	private final long amount, remainder;
@@ -38,6 +41,7 @@ public class Transaction {
 	private Sha256Hash hash;
 	
 	// Custom getter
+	@Setter
 	private OptionalInt blockNumber;
 
 	/**
@@ -47,7 +51,7 @@ public class Transaction {
 	 * @param receiver - the receiver of this transaction.
 	 * @param amount - the amount to be transferred.
 	 * @param remainder - the remaining amount.
-	 * @param source - set of transactions that are used as sourc for this transaction.
+	 * @param source - set of transactions that are used as source for this transaction.
 	 */
 	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, Set<Transaction> source) {
 		this.sender = sender;
@@ -63,11 +67,15 @@ public class Transaction {
 	 * Constructor to decode a transaction message.
 	 * @param transactionMessage - the message received from a transaction.
 	 * @param localStore - local store, to get each Node object
-	 * @throws IOException - error while getting a Node object
 	 */
-	public Transaction(TransactionMessage transactionMessage, LocalStore localStore) throws IOException {
+	public Transaction(TransactionMessage transactionMessage, LocalStore localStore)  {
 		this.number = transactionMessage.getNumber();
-		this.sender = localStore.getNode(transactionMessage.getSenderId());
+		// It's a genesis transaction
+		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
+			this.sender = null;
+		} else {
+			this.sender = localStore.getNode(transactionMessage.getSenderId());
+		}
 		this.receiver = localStore.getNode(transactionMessage.getReceiverId());
 		this.amount = transactionMessage.getAmount();
 		this.remainder = transactionMessage.getRemainder();
@@ -94,8 +102,13 @@ public class Transaction {
 
 		Map<Node, List<Block>> chainUpdates = new HashMap<>();
 		for (Transaction t : source) {
-			if (!chainUpdates.containsKey(t.getSender()))
-				chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
+			if (!chainUpdates.containsKey(t.getSender())) {
+				if(t.getSender() != null) {
+					chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
+				} else if(t.getBlockNumber().isPresent() && t.getBlockNumber().getAsInt() != 0) {
+					throw new IllegalStateException("Transaction found with no sender in a not-genesis block");
+				}
+			}
 		}
 
 		return new Proof(this, chainUpdates);
@@ -108,10 +121,15 @@ public class Transaction {
 	 */
 	public OptionalInt getBlockNumber() {
 		if (!this.blockNumber.isPresent()) {
-			for (Block block : sender.getChain().getBlocks()) {
-				if (block.getTransactions().contains(this)) {
-					this.blockNumber = OptionalInt.of(block.getNumber());
-					return this.blockNumber;
+			// It's a genesis transaction
+			if (this.sender == null) {
+				this.blockNumber = OptionalInt.of(Block.GENESIS_BLOCK_NUMBER);
+			} else {
+				for (Block block : sender.getChain().getBlocks()) {
+					if (block.getTransactions().contains(this)) {
+						this.blockNumber = OptionalInt.of(block.getNumber());
+						break;
+					}
 				}
 			}
 		}
@@ -139,7 +157,9 @@ public class Transaction {
 		try {
 			// Important to keep the order of writings
 			outputStream.write(Utils.intToByteArray(this.number));
-			outputStream.write(Utils.intToByteArray(this.sender.getId()));
+			if (this.sender != null) {
+				outputStream.write(Utils.intToByteArray(this.sender.getId()));
+			}
 			outputStream.write(Utils.intToByteArray(this.receiver.getId()));
 			outputStream.write(Utils.longToByteArray(this.amount));
 			outputStream.write(Utils.longToByteArray(this.remainder));

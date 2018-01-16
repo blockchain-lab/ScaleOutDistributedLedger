@@ -40,15 +40,17 @@ public class ProofMessage extends Message {
 		for (Map.Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
 			Node node = entry.getKey();
 			List<Block> blockList = entry.getValue();
-			// Convert Block to BlockMessage
-			List<BlockMessage> blockMessageList = new ArrayList<>();
-			// Don't use "previousBlock" pointer in the first block
-			blockMessageList.add(new BlockMessage(blockList.get(0), true));
-			for (int i = 1; i < blockList.size(); i++) {
-				Block block = blockList.get(i);
-				blockMessageList.add(new BlockMessage(block));
+			if (!blockList.isEmpty()) {
+				// Convert Block to BlockMessage
+				List<BlockMessage> blockMessageList = new ArrayList<>();
+				// Don't use "previousBlock" pointer in the first block
+				blockMessageList.add(new BlockMessage(blockList.get(0), true));
+				for (int i = 1; i < blockList.size(); i++) {
+					Block block = blockList.get(i);
+					blockMessageList.add(new BlockMessage(block));
+				}
+				this.chainUpdates.put(node.getId(), blockMessageList);
 			}
-			this.chainUpdates.put(node.getId(), blockMessageList);
 		}
 	}
 
