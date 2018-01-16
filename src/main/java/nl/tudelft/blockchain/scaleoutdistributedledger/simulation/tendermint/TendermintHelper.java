@@ -148,13 +148,12 @@ public final class TendermintHelper {
 	 * @param appHash the hash of the application (ie. genesis block) at the beginning
 	 * @return true if succeeded; false otherwise
 	 */
-	public static boolean generateGenesisFile(String nodeFilesLocation, Date genesisTime, List<String> publicKeys, byte[] appHash) {
+	public static boolean generateGenesisFile(String nodeFilesLocation, Date genesisTime, Map<Integer, String> publicKeys, byte[] appHash) {
 		JSONObject genesis = new JSONObject();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 		genesis.put("genesis_time", dateFormat.format(genesisTime));
 		//TODO: does this matter at all?
 		genesis.put("chain_id", "simulation-chain");
-		//TODO: does this matter at all? Looks like it has to be a valid hex hash
 		genesis.put("app_hash", Utils.bytesToHexString(ByteString.copyFrom(appHash).toByteArray()));
 		JSONArray validators = new JSONArray();
 		for (int i = 0; i < publicKeys.size(); i++) {
@@ -164,7 +163,7 @@ public final class TendermintHelper {
 			pubKey.put("type", "ed25519");
 			validator.put("pub_key", pubKey);
 			validator.put("power", 1);
-			validator.put("name", "" + (i + 1));
+			validator.put("name", "" + i);
 			validators.put(validator);
 		}
 		genesis.put("validators", validators);

@@ -56,8 +56,7 @@ public class Application {
 	 * @param genesisBlock  - the genesis (initial) block for the entire system
 	 * @throws IOException   - error while registering node
 	 */
-	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList) throws IOException {
-		Ed25519Key key = new Ed25519Key();
+	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList, Ed25519Key key) throws IOException {
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
 
 		ownNode.setGenesisBlock(genesisBlock.clone());

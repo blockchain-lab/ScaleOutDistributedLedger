@@ -17,12 +17,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -69,13 +64,13 @@ public class Simulation {
 		checkState(SimulationState.STOPPED, "start local nodes");
 		
 		//Generate keys and nodes
-		List<String> publicKeys = new LinkedList<>();
 		HashMap<Integer, Node> nodelist = new HashMap<>();
+		Map<Integer, Ed25519Key> nodeKeyPair = new HashMap<>();
 		for (int i = 0; i < amount; i++) {
 			String nodeLoc = new File(TendermintHelper.TENDERMINT_NODES_FOLDER, "node" + i).toString();
 			Ed25519Key nodeKey = TendermintHelper.generatePrivValidatorFile(TENDERMINT_BINARY, nodeLoc);
-			publicKeys.add(Utils.bytesToHexString(nodeKey.getPublicKey()).toUpperCase());
 			nodelist.put(i, new Node(i));
+			nodeKeyPair.put(i, nodeKey);
 		}
 
 		//
@@ -83,6 +78,10 @@ public class Simulation {
 		List<String> addresses = new ArrayList<>();
 		final Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, 1000, nodelist);
 		byte[] appHash = genesisBlock.getHash().getBytes();
+		Map<Integer, String> publicKeys = new HashMap<>(nodeKeyPair.size());
+		for (Map.Entry<Integer, Ed25519Key> e : nodeKeyPair.entrySet()) {
+			publicKeys.put(e.getKey(), Utils.bytesToHexString(e.getValue().getPublicKey()));
+		}
 		for (int i = 0; i < amount; i++) {
 			String nodeLoc = new File(TendermintHelper.TENDERMINT_NODES_FOLDER, "node" + i).toString();
 			TendermintHelper.generateGenesisFile(nodeLoc, now, publicKeys, appHash);
@@ -99,7 +98,7 @@ public class Simulation {
 			addressesForThisNode.remove(i);
 			try {
 				TendermintHelper.runTendermintNode(TENDERMINT_BINARY, nodeLoc, basePort, addressesForThisNode);
-				app.init(basePort, genesisBlock, nodelist);
+				app.init(basePort, genesisBlock, nodelist, nodeKeyPair.get(i));
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
 			}
@@ -114,10 +113,15 @@ public class Simulation {
 	public void stopLocalNodes() {
 		checkState(SimulationState.STOPPED, "stop local nodes");
 		if (localApplications == null) return;
-		
+
+		int sum = 0;
 		for (Application app : localApplications) {
 			app.stop();
+			Log.log(Level.INFO, String.format("Node %d has a final amount of %d moneyz.",
+					app.getLocalStore().getOwnNode().getId(), app.getLocalStore().getAvailableMoney()));
+			sum += app.getLocalStore().getAvailableMoney();
 		}
+		Log.log(Level.INFO, String.format("Total amount of moneyz left in the system is %d.", sum));
 	}
 	
 	/**

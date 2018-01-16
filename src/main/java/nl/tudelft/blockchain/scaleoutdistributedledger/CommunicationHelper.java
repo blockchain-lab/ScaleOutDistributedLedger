@@ -24,10 +24,11 @@ public final class CommunicationHelper {
 	 */
 	public static boolean receiveTransaction(Proof proof, LocalStore localStore) {
 		//If we have seen this transaction before, reject it
-		if (localStore.getVerification().isCached(proof.getTransaction())) {
-			Log.log(Level.WARNING, "Received a transaction we already received before!");
-			return false;
-		}
+//		if (localStore.getVerification().isCached(proof.getTransaction())) {
+//			Log.log(Level.WARNING, "Received a transaction we already received before!");
+//			return false;
+//		}
+
 
 		if (!localStore.getVerification().isValid(proof.getTransaction(), proof, localStore)) {
 			Log.log(Level.WARNING, "Received an invalid transaction/proof: " + proof.getTransaction());

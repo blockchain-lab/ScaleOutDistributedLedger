@@ -52,7 +52,7 @@ public class LocalStore {
 		this.nodes = nodeList;
 		this.nodes.put(ownNode.getId(), ownNode);
 		if (isProduction) {
-			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock);
+			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock, application);
 		} else {
 			this.mainChain = new TendermintChainMock();
 		}
@@ -119,7 +119,7 @@ public class LocalStore {
 
 		if (transaction.getReceiver().getId() == ownNode.getId()) {
 			availableMoney += transaction.getAmount();
-			if(transaction.getReceiver() != ownNode) transaction.setReceiver(ownNode);
+			if (transaction.getReceiver() != ownNode) transaction.setReceiver(ownNode);
 		}
 		if (transaction.getSender() == ownNode) {
 			availableMoney += transaction.getRemainder();
