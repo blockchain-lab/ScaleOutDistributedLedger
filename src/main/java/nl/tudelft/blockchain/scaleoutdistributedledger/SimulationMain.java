@@ -5,8 +5,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.Ten
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
 
-import javax.sound.midi.Track;
-
 /**
  * Main class for running a simulation.
  */
