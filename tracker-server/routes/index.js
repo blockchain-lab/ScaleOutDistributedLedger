@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import app from '../app';
+import NodeList from '../model/NodeList';
 
 /**
  * Gets all nodes.
@@ -57,6 +58,14 @@ router.get('/node', (req, res) => {
 			res.json({success: true, node: node});
 		}
 	}
+});
+
+/**
+ * Reset the nodelist on the tracker server.
+ */
+router.post('/reset', (req, res) => {
+	app.nodeList = new NodeList();
+	res.json({success: true});
 });
 
 function isPresent(arg) {

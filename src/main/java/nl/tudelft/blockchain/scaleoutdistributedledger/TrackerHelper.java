@@ -27,6 +27,24 @@ public final class TrackerHelper {
 	}
 
 	/**
+	 * Reset the tracker server with a new empty nodelist.
+	 * @return - boolean identifying if the reset was successful
+	 * @throws IOException - exception while resetting tracker server
+	 */
+	public static boolean resetTrackerServer() throws IOException {
+		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+			HttpPost request = new HttpPost(String.format("http://%s:%d/reset", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+			if (response.getBoolean("success")) {
+				Log.log(Level.INFO, "Successfully resetted the tracker server");
+				return true;
+			}
+			Log.log(Level.SEVERE, "Error while resetting the tracker server");
+			return false;
+		}
+	}
+
+	/**
 	 * Registers this node with the given public key.
 	 * @param nodePort  - the port of the node
 	 * @param publicKey - the publicKey of the new node
