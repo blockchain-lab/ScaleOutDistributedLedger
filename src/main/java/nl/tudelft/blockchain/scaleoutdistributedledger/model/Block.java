@@ -156,7 +156,7 @@ public class Block implements Cloneable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + number;
-		result = prime * result + owner.hashCode();
+		result = prime * result + (owner == null ? 0 : owner.hashCode());
 		return result;
 	}
 
@@ -176,6 +176,11 @@ public class Block implements Cloneable {
 		if (!this.getHash().equals(other.getHash())) return false;
 
 		return this.transactions.equals(other.transactions);
+	}
+	
+	@Override
+	public String toString() {
+		return "Block<" + number + ", " + owner + ">";
 	}
 
 	/**
@@ -223,14 +228,22 @@ public class Block implements Cloneable {
 	 * @return - boolean identifying if an abstract of this block is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
-		if (hasNoAbstract) return false;
-		
 		//TODO Remove hack?
 		if (this.number == GENESIS_BLOCK_NUMBER) return true;
 		
-		if (!this.onMainChain.isPresent() && localStore.getMainChain().isPresent(this.getHash())) {
+		//Definitely has no abstract
+		if (hasNoAbstract) return false;
+		
+		//We already determined before what the result should be
+		if (this.onMainChain.isPresent()) return this.onMainChain.get();
+		
+		//It is present, so store it and return
+		if (localStore.getMainChain().isPresent(this.getHash())) {
 			this.onMainChain = Optional.of(true);
+			return true;
 		}
-		return this.onMainChain.get();
+		
+		//Not present (yet)
+		return false;
 	}
 }

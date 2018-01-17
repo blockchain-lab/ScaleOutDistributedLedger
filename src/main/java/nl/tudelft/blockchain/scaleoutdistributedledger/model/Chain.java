@@ -78,6 +78,15 @@ public class Chain {
 	}
 	
 	/**
+	 * @return - the genesis block
+	 */
+	public synchronized Block getGenesisBlock() {
+		if (blocks.isEmpty()) return null;
+
+		return blocks.get(0);
+	}
+	
+	/**
 	 * Creates a new block with the given transactions and appends it to this chain.
 	 * @param transactions - the transactions to put in the block
 	 * @return             - the newly appended block
@@ -91,6 +100,7 @@ public class Chain {
 		if (last == null) throw new IllegalStateException("There is no genesis block!");
 		
 		Block newBlock = new Block(last, transactions);
+		newBlock.setOwner(this.owner);
 		blocks.add(newBlock);
 		return newBlock;
 	}

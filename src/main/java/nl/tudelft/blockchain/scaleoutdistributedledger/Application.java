@@ -2,7 +2,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
@@ -24,8 +23,6 @@ public class Application {
 	public static final String TRACKER_SERVER_ADDRESS = "localhost";
 	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final int NODE_PORT = 40000;
-	private static MainChain aMainChain;
-	private static AtomicBoolean staticMainChainPresent = new AtomicBoolean(false);
 	
 	@Getter
 	private LocalStore localStore;
@@ -71,12 +68,6 @@ public class Application {
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
 		transactionSender = new TransactionSender(localStore);
-
-		if (!staticMainChainPresent.getAndSet(true)) {
-			aMainChain = localStore.getMainChain();
-			//TODO Retrieve money from tendermint
-
-		}
 	}
 	
 	/**
@@ -135,14 +126,5 @@ public class Application {
 	 */
 	public MainChain getMainChain() {
 		return localStore.getMainChain();
-	}
-	
-	/**
-	 * Only use the returned instance for checking if BlockAbstracts are on the main chain.
-	 * @return - a MainChain instance
-	 */
-	public static MainChain getAMainChain() {
-		return aMainChain;
-
 	}
 }

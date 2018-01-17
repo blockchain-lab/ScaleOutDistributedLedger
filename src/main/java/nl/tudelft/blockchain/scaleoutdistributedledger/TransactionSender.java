@@ -133,7 +133,7 @@ public class TransactionSender {
 	 */
 	private boolean sendTransaction(Transaction transaction) throws InterruptedException {
 		Node to = transaction.getReceiver();
-		Proof proof = transaction.getProof();
+		Proof proof = Proof.createProof(transaction);
 		return socketClient.sendMessage(to, new ProofMessage(proof));
 	}
 	

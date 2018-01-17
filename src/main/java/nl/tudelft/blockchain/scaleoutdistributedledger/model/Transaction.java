@@ -94,27 +94,6 @@ public class Transaction {
 	}
 	
 	/**
-	 * Creates a proof for this transaction.
-	 * @return - the proof
-	 */
-	public Proof getProof() {
-		// TODO: do a smart include of chainUpdates
-
-		Map<Node, List<Block>> chainUpdates = new HashMap<>();
-		for (Transaction t : source) {
-			if (!chainUpdates.containsKey(t.getSender())) {
-				if(t.getSender() != null) {
-					chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
-				} else if(t.getBlockNumber().isPresent() && t.getBlockNumber().getAsInt() != 0) {
-					throw new IllegalStateException("Transaction found with no sender in a not-genesis block");
-				}
-			}
-		}
-
-		return new Proof(this, chainUpdates);
-	}
-	
-	/**
 	 * Returns the number of the block (if it is in a block).
 	 * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)
 	 * @return - optional that is empty if the transaction is not in a block, and filled with the number of the block otherwise.
@@ -193,8 +172,10 @@ public class Transaction {
 		
 		Transaction other = (Transaction) obj;
 		if (number != other.number) return false;
-		if (receiver != other.receiver) return false;
-		if (sender != other.sender) return false;
+		if (receiver.getId() != other.receiver.getId()) return false;
+		if (sender == null) {
+			if (other.sender != null) return false;
+		} else if (other.sender == null || sender.getId() != other.sender.getId()) return false;
 		return true;
 	}
 

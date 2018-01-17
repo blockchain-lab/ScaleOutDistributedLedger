@@ -169,6 +169,8 @@ public class Proof {
 		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
 		for (Chain chain : chains) {
 			Node owner = chain.getOwner();
+			if (owner == receiver) continue;
+			
 			int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
 			int requiredKnown = chain.getLastCommittedBlock().getNumber();
 			
@@ -193,5 +195,16 @@ public class Proof {
 		for (Transaction source : transaction.getSource()) {
 			appendChains(source, receiver, chains);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Proof: ").append(transaction);
+		
+		for (Entry<Node, List<Block>> entry : this.chainUpdates.entrySet()) {
+			sb.append('\n').append(entry.getKey().getId()).append(": ").append(entry.getValue());
+		}
+		return sb.toString();
 	}
 }
