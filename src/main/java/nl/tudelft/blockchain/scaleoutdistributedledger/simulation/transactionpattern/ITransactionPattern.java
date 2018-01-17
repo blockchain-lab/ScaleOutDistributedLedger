@@ -32,16 +32,24 @@ public interface ITransactionPattern extends Serializable {
 	 * @return             the time until the next action
 	 */
 	public long timeUntilNextAction(LocalStore localStore);
+	
+	/**
+	 * Called once whenever we stop running.
+	 * @param localStore - the local store
+	 */
+	public void onStop(LocalStore localStore);
 
 	/**
 	 * Creates a CancellableInfiniteRunnable for executing this transaction pattern.
 	 * @param localStore - the local store
 	 * @return           - the runnable
 	 */
-	public default CancellableInfiniteRunnable getRunnable(LocalStore localStore) {
-		return new CancellableInfiniteRunnable(() -> {
-			doAction(localStore);
-			Thread.sleep(timeUntilNextAction(localStore));
-		});
+	public default CancellableInfiniteRunnable<LocalStore> getRunnable(LocalStore localStore) {
+		return new CancellableInfiniteRunnable<LocalStore>(
+				localStore,
+				this::doAction,
+				this::timeUntilNextAction,
+				this::onStop
+		);
 	}
 }

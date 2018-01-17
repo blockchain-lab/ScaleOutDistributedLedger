@@ -141,15 +141,16 @@ public class RandomTransactionPattern implements ITransactionPattern {
 		localStore.getApplication().getTransactionSender().scheduleBlockSending(newBlock);
 		
 		//Check if we want to commit the new block, and commit it if we do.
-		commitBlocks(localStore);
+		commitBlocks(localStore, false);
 	}
 	
 	/**
 	 * Commits blocks to the main chain if necessary.
 	 * @param localStore - the local store
+	 * @param force      - if true, then committing is forced
 	 * @throws InterruptedException - if sending transactions is interrupted
 	 */
-	public void commitBlocks(LocalStore localStore) throws InterruptedException {
+	public void commitBlocks(LocalStore localStore, boolean force) throws InterruptedException {
 		Block lastBlock, lastCommitted;
 		Chain ownChain = localStore.getOwnNode().getChain();
 		synchronized (ownChain) {
@@ -157,12 +158,26 @@ public class RandomTransactionPattern implements ITransactionPattern {
 			lastCommitted = ownChain.getLastCommittedBlock();
 			//TODO The last committed block should never be null (should be at least the genesis block)
 			
-			if (!shouldCommitBlocks(lastBlock.getNumber() - lastCommitted.getNumber())) return;
+			//Don't commit if we don't have anything to commit
+			if (lastBlock == lastCommitted) return;
+			
+			if (!force && !shouldCommitBlocks(lastBlock.getNumber() - lastCommitted.getNumber())) return;
 			
 			//Commit to main chain
 			BlockAbstract blockAbstract = lastBlock.calculateBlockAbstract();
 			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
 			ownChain.setLastCommittedBlock(lastBlock);
+		}
+	}
+	
+	@Override
+	public void onStop(LocalStore localStore) {
+		try {
+			commitBlocks(localStore, true);
+		} catch (InterruptedException ex) {
+			Log.log(Level.SEVERE, "Interrupted while committing blocks!");
+		} catch (Exception ex) {
+			Log.log(Level.SEVERE, "Unable to commit blocks onStop: ", ex);
 		}
 	}
 	
