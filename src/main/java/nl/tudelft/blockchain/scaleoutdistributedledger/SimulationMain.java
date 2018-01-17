@@ -2,7 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.Simulation;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.UniformRandomTransactionPattern;
 
 /**
  * Main class for running a simulation.
@@ -18,7 +18,7 @@ public final class SimulationMain {
 		// Clean Tendermint folder
 		//NOTE: The tracker should be started first, manually
 		Simulation simulation = new Simulation();
-		ITransactionPattern itp = new RandomTransactionPattern(10, 20, 1000, 2000, 1);
+		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 1);
 		simulation.setTransactionPattern(itp);
 		
 		simulation.runNodesLocally(5);
