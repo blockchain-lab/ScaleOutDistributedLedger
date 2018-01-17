@@ -65,7 +65,7 @@ public class ManualTest {
 			addressesForThisNode.remove(i - 1);
 			TendermintHelper.runTendermintNode(tendermintBinary, nodeFilesLocation, nodeBasePort, addressesForThisNode);
 			Application node = new Application(false);
-			node.init(nodeBasePort, genesisBlock, new HashMap<>(), keyPairs.get(currentNumber));
+			node.init(nodeBasePort, genesisBlock, keyPairs.get(currentNumber));
 			apps[currentNumber - 1] = node;
 
 		}

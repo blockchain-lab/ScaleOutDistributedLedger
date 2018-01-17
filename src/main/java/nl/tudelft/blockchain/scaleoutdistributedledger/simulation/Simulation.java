@@ -98,7 +98,7 @@ public class Simulation {
 			addressesForThisNode.remove(i);
 			try {
 				TendermintHelper.runTendermintNode(TENDERMINT_BINARY, nodeLoc, basePort, addressesForThisNode);
-				app.init(basePort, genesisBlock, nodelist, nodeKeyPair.get(i));
+				app.init(basePort, genesisBlock, nodeKeyPair.get(i));
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + i + " on port " + basePort + "!", ex);
 			}
@@ -214,7 +214,7 @@ public class Simulation {
 	protected void getNodeListFromTracker() {
 		nodes = new HashMap<>();
 		try {
-			TrackerHelper.updateNodes(nodes);
+			TrackerHelper.updateNodes(nodes, null);
 		} catch (Exception ex) {
 			Log.log(Level.SEVERE, "[Simulation] Unable to get list of nodes from tracker!", ex);
 		}

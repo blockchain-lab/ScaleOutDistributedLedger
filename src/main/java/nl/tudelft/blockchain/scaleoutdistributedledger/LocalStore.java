@@ -46,10 +46,22 @@ public class LocalStore {
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 * @param isProduction - if this is production or testing
 	 */
-	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction, Map<Integer, Node> nodeList) {
+	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction) {
+		this(ownNode, application, genesisBlock, isProduction, new HashMap<>());
+	}
+	
+	/**
+	 * Constructor.
+	 * @param ownNode - our own node.
+	 * @param application - the application
+	 * @param genesisBlock - the genesis (initial) block for the entire system
+	 * @param isProduction - if this is production or testing
+	 * @param nodeMap - the map of nodes to use
+	 */
+	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction, Map<Integer, Node> nodeMap) {
+		this.nodes = nodeMap;
 		this.ownNode = ownNode;
 		this.application = application;
-		this.nodes = nodeList;
 		this.nodes.put(ownNode.getId(), ownNode);
 		if (isProduction) {
 			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock, application);
@@ -73,7 +85,7 @@ public class LocalStore {
 		Node node = nodes.get(id);
 		if (node == null) {
 			try {
-				TrackerHelper.updateNodes(nodes);
+				TrackerHelper.updateNodes(nodes, ownNode);
 			} catch (IOException ex) {
 				throw new IllegalStateException("Node " + id + " was not found locally and the tracker update failed!", ex);
 			}
@@ -87,7 +99,7 @@ public class LocalStore {
 	 */
 	public void updateNodes() {
 		try {
-			TrackerHelper.updateNodes(nodes);
+			TrackerHelper.updateNodes(nodes, ownNode);
 		} catch (IOException ex) {
 			throw new IllegalStateException("Tracker update failed!", ex);
 		}

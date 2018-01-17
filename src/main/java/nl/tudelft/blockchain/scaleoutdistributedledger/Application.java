@@ -53,15 +53,15 @@ public class Application {
 	 * @param genesisBlock  - the genesis (initial) block for the entire system
 	 * @throws IOException   - error while registering node
 	 */
-	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList, Ed25519Key key) throws IOException {
+	public void init(int nodePort, Block genesisBlock, Ed25519Key key) throws IOException {
 		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
-
+		
 		ownNode.setGenesisBlock(genesisBlock.clone());
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		// Setup local store
-		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction, nodeList);
+		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction);
 		localStore.updateNodes();
 		localStore.initMainChain();
 

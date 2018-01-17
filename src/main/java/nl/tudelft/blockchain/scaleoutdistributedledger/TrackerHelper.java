@@ -61,7 +61,7 @@ public final class TrackerHelper {
 	 * @param nodes - the map of nodes
 	 * @throws IOException - exception while updating nodes
 	 */
-	public static void updateNodes(Map<Integer, Node> nodes) throws IOException {
+	public static void updateNodes(Map<Integer, Node> nodes, OwnNode ownNode) throws IOException {
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
 			HttpGet request = new HttpGet(String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
 			JSONArray nodesArray = (JSONArray) new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).get("nodes");
@@ -77,6 +77,11 @@ public final class TrackerHelper {
 					node.setPort(port);
 				} else {
 					Node node = new Node(i, publicKey, address, port);
+					
+					if (ownNode != null) {
+						node.setGenesisBlock(ownNode.getChain().getGenesisBlock());
+					}
+					
 					nodes.put(i, node);
 				}
 			}
