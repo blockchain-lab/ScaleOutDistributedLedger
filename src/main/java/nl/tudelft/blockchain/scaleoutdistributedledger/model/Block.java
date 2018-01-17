@@ -103,6 +103,7 @@ public class Block implements Cloneable {
 		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
 			this.transactions.add(new Transaction(transactionMessage, localStore));
 		}
+		//TODO Do we want to send the hash along?
 		this.hash = blockMessage.getHash();
 		this.onMainChain = Optional.empty();
 	}
