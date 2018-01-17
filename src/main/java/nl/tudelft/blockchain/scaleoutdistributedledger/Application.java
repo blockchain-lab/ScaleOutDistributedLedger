@@ -43,7 +43,7 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int, int)} before it can be used.
+	 * The application must be initialized with {@link #init(int, Block, Map, Ed25519Key, OwnNode)} before it can be used.
 	 * @param isProduction - if this is production or testing
 	 */
 	public Application(boolean isProduction) {

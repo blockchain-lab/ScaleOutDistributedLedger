@@ -10,8 +10,10 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
-import javax.sound.midi.Track;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -101,7 +103,7 @@ public final class SimulationMain {
 		simulation.cleanup();
 	}
 
-	private static Map<Integer,String> generatePublicKeysMap(Map<Integer, Node> nodes) {
+	private static Map<Integer, String> generatePublicKeysMap(Map<Integer, Node> nodes) {
 		Map<Integer, String> ret = new HashMap<>(nodes.size());
 		for (Integer i: nodes.keySet()) {
 			ret.put(i, Utils.bytesToHexString(nodes.get(i).getPublicKey()));
@@ -109,7 +111,7 @@ public final class SimulationMain {
 		return ret;
 	}
 
-	private static Map<Integer, byte[]> convertToPublicKeys(Map<Integer, Ed25519Key> nodeToKeyPairMap){
+	private static Map<Integer, byte[]> convertToPublicKeys(Map<Integer, Ed25519Key> nodeToKeyPairMap) {
 		Map<Integer, byte[]> publicKeys = new HashMap<>(nodeToKeyPairMap.size());
 		for (Map.Entry<Integer, Ed25519Key> e : nodeToKeyPairMap.entrySet()) {
 			publicKeys.put(e.getKey(), e.getValue().getPublicKey());

@@ -15,7 +15,10 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -63,9 +66,11 @@ public class Simulation {
 	 * @param ownNodes - the list of own nodes registered to tracker server on this instance
 	 * @param genesisBlock - the genesis block of the main chain
 	 * @param nodeToKeyPair - the map of own nodes numbers to their private keys
+	 * @param nodeFilesDirectory - the directory of files for the nodes
 	 * @throws IllegalStateException - if the state is not STOPPED.
 	 */
-	public void runNodesLocally(List<Integer> nodeNumbers, Map<Integer, Node> nodes, Map<Integer, OwnNode> ownNodes, Block genesisBlock, String nodeFilesDirectory, Map<Integer, Ed25519Key> nodeToKeyPair) {
+	public void runNodesLocally(List<Integer> nodeNumbers, Map<Integer, Node> nodes, Map<Integer, OwnNode> ownNodes,
+								Block genesisBlock, String nodeFilesDirectory, Map<Integer, Ed25519Key> nodeToKeyPair) {
 		checkState(SimulationState.STOPPED, "start local nodes");
 
 		this.nodes = nodes;
@@ -98,7 +103,7 @@ public class Simulation {
 			StringBuilder addressWithPort = new StringBuilder(21);
 			int curNodeNumber = e.getKey();
 			if (curNodeNumber != i) {
-				addressWithPort.append(nodeAddresses.get(curNodeNumber)).append(":").append(nodePorts.get(curNodeNumber)+1);
+				addressWithPort.append(nodeAddresses.get(curNodeNumber)).append(":").append(nodePorts.get(curNodeNumber) + 1);
 			}
 			ret.add(addressWithPort.toString());
 		}
