@@ -134,7 +134,12 @@ public class TransactionSender {
 	private boolean sendTransaction(Transaction transaction) throws InterruptedException {
 		Node to = transaction.getReceiver();
 		Proof proof = Proof.createProof(transaction);
-		return socketClient.sendMessage(to, new ProofMessage(proof));
+		if (socketClient.sendMessage(to, new ProofMessage(proof))) {
+			to.updateMetaKnowledge(proof);
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**
