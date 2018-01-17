@@ -61,6 +61,17 @@ class NodeList {
 	getNodes() {
 		return this.nodes;
 	}
+
+	/** Get the number of registered nodes.
+	 * @returns {integer} - the number of registered nodes on the server
+	 */
+	getSize() {
+		if (this.nodes) {
+			return this.nodes.length;
+		} else {
+			return 0;
+		}
+	}
 }
 
 module.exports = NodeList;

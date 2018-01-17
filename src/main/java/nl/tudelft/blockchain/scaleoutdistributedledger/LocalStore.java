@@ -10,7 +10,11 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Class to store information related to our own node.
@@ -41,8 +45,8 @@ public class LocalStore {
 	
 	/**
 	 * Constructor.
-	 * @param ownNode - our own node.
-	 * @param application - the application
+	 * @param ownNode      - our own node.
+	 * @param application  - the application
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 * @param isProduction - if this is production or testing
 	 */
@@ -52,11 +56,11 @@ public class LocalStore {
 	
 	/**
 	 * Constructor.
-	 * @param ownNode - our own node.
-	 * @param application - the application
+	 * @param ownNode      - our own node.
+	 * @param application  - the application
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 * @param isProduction - if this is production or testing
-	 * @param nodeMap - the map of nodes to use
+	 * @param nodeMap      - the map of nodes to use
 	 */
 	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction, Map<Integer, Node> nodeMap) {
 		this.nodes = nodeMap;
@@ -83,6 +87,7 @@ public class LocalStore {
 	 */
 	public Node getNode(int id) {
 		Node node = nodes.get(id);
+		//TODO: this should no longer be needed
 		if (node == null) {
 			try {
 				TrackerHelper.updateNodes(nodes, ownNode);

@@ -38,7 +38,7 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int, int)} before it can be used.
+	 * The application must be initialized with {@link #init(int, Block, Map, Ed25519Key, OwnNode)} before it can be used.
 	 * @param isProduction - if this is production or testing
 	 */
 	public Application(boolean isProduction) {
@@ -48,15 +48,15 @@ public class Application {
 	/**
 	 * Initializes the application.
 	 * Registers to the tracker and creates the local store.
-	 * @param nodePort       - the port on which the node will accept connections. Note, also port+1,
-	 *                          port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
-	 * @param genesisBlock  - the genesis (initial) block for the entire system
-	 * @throws IOException   - error while registering node
+	 * @param nodePort     - the port on which the node will accept connections. Note, also port+1,
+	 *                       port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
+	 * @param genesisBlock - the genesis (initial) block for the entire system
+	 * @param key          - the key
+	 * @param ownNode      - the own node
+	 * @throws IOException - error while registering node
 	 */
-	public void init(int nodePort, Block genesisBlock, Ed25519Key key) throws IOException {
-		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
-		
-		ownNode.setGenesisBlock(genesisBlock.clone());
+	public void init(int nodePort, Block genesisBlock, Ed25519Key key, OwnNode ownNode) throws IOException {
+		ownNode.setGenesisBlock(genesisBlock);
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 
