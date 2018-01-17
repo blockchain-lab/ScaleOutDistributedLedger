@@ -71,6 +71,7 @@ public class LocalStore {
 	 */
 	public Node getNode(int id) {
 		Node node = nodes.get(id);
+		//TODO: this should no longer be needed
 		if (node == null) {
 			try {
 				TrackerHelper.updateNodes(nodes);

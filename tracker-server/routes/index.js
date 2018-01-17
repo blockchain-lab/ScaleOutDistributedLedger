@@ -68,6 +68,12 @@ router.post('/reset', (req, res) => {
 	res.json({success: true});
 });
 
+/**
+ * Get the number of currently registered nodes on the tracker server
+ */
+router.get('/registered', (req, res) => {
+	res.json({success: true, registered: app.nodeList.getSize()});
+});
 function isPresent(arg) {
 	return !!(arg || arg === 0 || arg === "" || arg === false);
 }
