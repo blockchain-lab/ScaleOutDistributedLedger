@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.simulation;
 
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
+import nl.tudelft.blockchain.scaleoutdistributedledger.TrackerHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
@@ -85,6 +86,7 @@ public class Simulation {
 			try {
 				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
 				app.init(port, genesisBlock.clone(), nodesForThisNode, nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
+				TrackerHelper.setInitialized(nodeNumber);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + port + "!", ex);
 			}

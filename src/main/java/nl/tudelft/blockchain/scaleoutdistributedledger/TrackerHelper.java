@@ -75,6 +75,31 @@ public final class TrackerHelper {
 	}
 
 	/**
+	 * Mark a node with the given id as initialized on the tracker.
+	 * @param id - the id of the node to mark
+	 * @throws IOException - IOException while registering node
+	 * @throws NodeRegisterFailedException - Server side exception while registering node
+	 */
+	public static void setInitialized(int id) throws IOException {
+		JSONObject json = new JSONObject();
+		json.put("id", id);
+
+		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+			HttpPost request = new HttpPost(String.format("http://%s:%d/initialized-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			request.setEntity(requestEntity);
+			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+			if (response.getBoolean("success")) {
+				Log.log(Level.INFO, "Successfully marked node as initialized");
+				return;
+			}
+			Log.log(Level.SEVERE, "Error while marking node as initialized");
+			//TODO: Create new excepton for this
+			throw new NodeRegisterFailedException();
+		}
+	}
+
+	/**
 	 * Tries to resolve the IP(v4) address of this machine.
 	 * When it fails to do so it uses the local IP.
 	 *
@@ -139,6 +164,17 @@ public final class TrackerHelper {
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
 			HttpGet request = new HttpGet(String.format("http://%s:%d/registered", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
 			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).getInt("registered");
+		}
+	}
+
+	/** Get the number of initialized nodes in tracker.
+	 * @return the number of nodes already registered in tracker
+	 * @throws IOException when problems with creating/closing http client
+	 */
+	public static int getInitialized() throws IOException {
+		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+			HttpGet request = new HttpGet(String.format("http://%s:%d/initialized", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).getInt("initialized");
 		}
 	}
 

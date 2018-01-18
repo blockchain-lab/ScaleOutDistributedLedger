@@ -8,12 +8,14 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.Simulation;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -25,9 +27,9 @@ public final class SimulationMain {
 
 	//SETTINGS
 	//number of local nodes to generate
-	public static final int LOCAL_NODES_NUMBER = 4;
+	public static final int LOCAL_NODES_NUMBER = 3;
 	//number of total nodes in the system
-	public static final int TOTAL_NODES_NUMBER = 4;
+	public static final int TOTAL_NODES_NUMBER = 6;
 	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 	public static final int NODES_FROM_NUMBER = 0;
 	/**
@@ -44,8 +46,11 @@ public final class SimulationMain {
 		// Clean Tendermint folder
 		TendermintHelper.cleanTendermintFiles();
 
-		// reset the tracker server
-		TrackerHelper.resetTrackerServer();
+		// reset the tracker server when you are running the tracker server
+		String trackerAddr = Application.TRACKER_SERVER_ADDRESS;
+		if (trackerAddr.equals("localhost") || trackerAddr.startsWith("127.")) {
+			TrackerHelper.resetTrackerServer();
+		}
 
 
 		// --- PHASE 1: generating key pairs and registering with tracker ---
@@ -65,6 +70,7 @@ public final class SimulationMain {
 		}
 
 		//wait for all the nodes to register in tracker
+		Log.log(Level.INFO, "Waiting on nodes to register");
 		while (TOTAL_NODES_NUMBER != TrackerHelper.getRegistered()) {
 			Thread.sleep(1000);
 		}
@@ -84,10 +90,13 @@ public final class SimulationMain {
 		Simulation simulation = new Simulation();
 		ITransactionPattern itp = new RandomTransactionPattern(10, 20, 1000, 2000, 1);
 		simulation.setTransactionPattern(itp);
-		
 		simulation.runNodesLocally(nodeNumbersToRunLocally, nodes, ownNodes, genesisBlock, nodeToKeyPair);
-		
-		Thread.sleep(5000);
+
+		Log.log(Level.INFO, "Waiting on nodes to initialize");
+		while (TOTAL_NODES_NUMBER != TrackerHelper.getInitialized()) {
+			Thread.sleep(1000);
+		}
+
 		simulation.initialize();
 		
 		Thread.sleep(5000);
