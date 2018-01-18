@@ -85,6 +85,7 @@ public class Simulation {
 			nodesForThisNode.remove(nodeNumber);
 
 			//TODO: fix this dirty hack
+			//The ownNodes and nodePort maps do not have the same port numbers for each node, so just override one to fix it.
 			ownNodes.get(nodeNumber).setPort(port);
 
 			try {
@@ -181,16 +182,17 @@ public class Simulation {
 	 * This method sends a "Start transacting" message to all nodes.
 	 * @throws IllegalStateException - if the state is not INITIALIZED.
 	 */
-	public void start() {
+	public void start(boolean isMaster) {
 		checkState(SimulationState.INITIALIZED, "start");
-		
-		if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
-			broadcastMessage(new StartTransactingMessage());
-		} else if (transactionPattern.getSimulationMode() == SimulationMode.DIRECTED) {
-			Log.log(Level.INFO, "[Simulation] Starting directed simulation...");
-			//TODO Directed simulation
+
+		if (isMaster) {
+			if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
+				broadcastMessage(new StartTransactingMessage());
+			} else if (transactionPattern.getSimulationMode() == SimulationMode.DIRECTED) {
+				Log.log(Level.INFO, "[Simulation] Starting directed simulation...");
+				//TODO Directed simulation
+			}
 		}
-		
 		Log.log(Level.INFO, "[Simulation] Running");
 		state = SimulationState.RUNNING;
 	}
@@ -199,10 +201,12 @@ public class Simulation {
 	 * Stops the simulation.
 	 * @throws IllegalStateException - if the state is not RUNNING.
 	 */
-	public void stop() {
+	public void stop(boolean isMaster) {
 		checkState(SimulationState.RUNNING, "stop");
 		
-		broadcastMessage(new StopTransactingMessage());
+		if (isMaster) {
+			broadcastMessage(new StopTransactingMessage());
+		}
 		Log.log(Level.INFO, "[Simulation] Stopped");
 		state = SimulationState.STOPPED;
 	}
