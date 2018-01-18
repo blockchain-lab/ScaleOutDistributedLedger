@@ -98,10 +98,10 @@ public class Simulation {
 		List<String> ret = new ArrayList<>(nodeAddresses.size() - 1);
 
 		for (Map.Entry<Integer, String> e : nodeAddresses.entrySet()) {
-			StringBuilder addressWithPort = new StringBuilder(21);
+			String addressWithPort = "";
 			int curNodeNumber = e.getKey();
 			if (curNodeNumber != i) {
-				addressWithPort.append(nodeAddresses.get(curNodeNumber)).append(":").append(nodePorts.get(curNodeNumber) + 1);
+				addressWithPort = nodeAddresses.get(curNodeNumber) + ":" + Integer.toString(nodePorts.get(curNodeNumber) + 1);
 			}
 			ret.add(addressWithPort.toString());
 		}
@@ -118,7 +118,7 @@ public class Simulation {
 
 	private Map<Integer, String> reduceToNodeAddresses(Map<Integer, Node> nodes) {
 		Map<Integer, String> ret = new HashMap<>(nodes.size());
-		for (Map.Entry<Integer, Node> e: nodes.entrySet()) {
+		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
 			ret.put(e.getKey(), e.getValue().getAddress());
 		}
 		return ret;
@@ -158,7 +158,7 @@ public class Simulation {
 			Log.log(Level.INFO, "[Simulation] No nodes found. Stopping simulation.");
 			return;
 		} else {
-			Log.log(Level.INFO, "[Simulation] Initializing with  " + nodes.size() + " nodes.");
+			Log.log(Level.INFO, "[Simulation] Initializing with " + nodes.size() + " nodes.");
 		}
 		
 		//Broadcast distributed transaction pattern
