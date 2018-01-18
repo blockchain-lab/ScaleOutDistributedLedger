@@ -39,28 +39,30 @@ import org.apache.commons.io.FileUtils;
 public final class TendermintHelper {
 
 	private static final String NODE_FOLDER_NAME_PREFIX = "node";
+	//the directory to store the file (will create separate directories in it for each node)
+	private static final String TENDERMINT_NODES_FOLDER = "tendermint-nodes";
+	//the executable binary of tendermint
+	private static final String TENDERMINT_BINARY = "./tendermint.exe";
 
 	/* do not initialize this */
 	private TendermintHelper() {}
 
 	/**
 	 * Generate the priv_validator.json file needed for Tendermint node to run.
-	 * If public/private key pair are to be generated, use {@link TendermintHelper#generatePrivValidatorFile(String, String, int)}.
+	 * If public/private key pair are to be generated, use {@link TendermintHelper#generatePrivValidatorFile(int)}.
 	 * If the file is already there, it is overridden.
 	 * WARNING: providing custom keyPair does not work until jABCI gets updated to TM15
-	 * @param tendermintBinaryPath - the executable binary of tendermint
-	 * @param nodeFilesDirectory - the directory to store the file (will create separate directories in it for each node)
 	 * @param keyPair - the public/private keypair that should be used, null if to be generated
 	 * @return the public/private key pair generated if none provided, the same if provided, null if method failed.
 	 */
-	public static Ed25519Key generatePrivValidatorFile(String tendermintBinaryPath, String nodeFilesDirectory, Ed25519Key keyPair, int nodeNumber) {
+	public static Ed25519Key generatePrivValidatorFile(Ed25519Key keyPair, int nodeNumber) {
 
 		StringBuilder script = new StringBuilder();
 
 		//add binary to execute
-		script.append(tendermintBinaryPath).append(" gen_validator ");
+		script.append(TENDERMINT_BINARY).append(" gen_validator ");
 
-		String nodeFilesLocation = getNodeFilesLocation(nodeFilesDirectory, nodeNumber);
+		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
 		//environment variable of TMROOT
 		String[] envVariables = { "TMROOT=" + nodeFilesLocation };
 
@@ -130,63 +132,56 @@ public final class TendermintHelper {
 
 	}
 
-	private static String getNodeFilesLocation(String nodeFilesDirectory, int nodeNumber) {
-		return new File(nodeFilesDirectory, NODE_FOLDER_NAME_PREFIX + nodeNumber).toString();
+	private static String getNodeFilesLocation(int nodeNumber) {
+		return new File(TENDERMINT_NODES_FOLDER, NODE_FOLDER_NAME_PREFIX + nodeNumber).toString();
 	}
 
 	/**
 	 * Generate the priv_validator.json file needed for Tendermint node to run,
 	 * generating all necessary data if it doesn't exist.
 	 * If the file is already there, it is overridden.
-	 * @param tendermintBinaryPath - the executable binary of tendermint
-	 * @param nodeFilesDirectory - the directory to store the file (will create separate directories in it for each node)
 	 * @param nodeNumber - the number of the node to generate file for
 	 * @return the public/private key pair generated, null if failed
 	 */
-	public static Ed25519Key generatePrivValidatorFile(String tendermintBinaryPath, String nodeFilesDirectory, int nodeNumber) {
-		return generatePrivValidatorFile(tendermintBinaryPath, nodeFilesDirectory, null, nodeNumber);
+	public static Ed25519Key generatePrivValidatorFile(int nodeNumber) {
+		return generatePrivValidatorFile(null, nodeNumber);
 	}
 
 	/** Generate multiple priv_validator.json file, one for each node number given in the argument list.
-	 * @param tendermintBinaryPath - the executable binary of tendermint
-	 * @param nodeFilesDirectory - the directory to store the node files directory (will create separate directories in it for each node)
 	 * @param numbersToGenerate - a list of node numbers that you want to generate priv_validator.json for
 	 * @return the map of id -> keyPair generated
 	 */
-	public static Map<Integer, Ed25519Key> generatePrivValidatorFiles(String tendermintBinaryPath, String nodeFilesDirectory, List<Integer> numbersToGenerate) {
+	public static Map<Integer, Ed25519Key> generatePrivValidatorFiles(List<Integer> numbersToGenerate) {
 		Map<Integer, Ed25519Key> nodeNumbersToKeys = new HashMap<>();
 		for (Integer i : numbersToGenerate) {
-			Ed25519Key generatedKey = generatePrivValidatorFile(tendermintBinaryPath, nodeFilesDirectory, i);
+			Ed25519Key generatedKey = generatePrivValidatorFile(i);
 			nodeNumbersToKeys.put(i, generatedKey);
 		}
 		return nodeNumbersToKeys;
 	}
 
 	/** Generate multiple priv_validator.json file, one for each node number from start to end given in the argument list.
-	 * @param tendermintBinaryPath - the executable binary of tendermint
-	 * @param nodeFilesDirectory - the directory to store the node files directory (will create separate directories in it for each node)
 	 * @param start - the lowest number of node to generate a file for (inclusive)
 	 * @param end - the highest number of node to generate a file for (inclusive)
 	 * @return the map of id -> keyPair generated
 	 */
-	public static Map<Integer, Ed25519Key> generatePrivValidatorFiles(String tendermintBinaryPath, String nodeFilesDirectory, int start, int end) {
+	public static Map<Integer, Ed25519Key> generatePrivValidatorFiles(int start, int end) {
 		List<Integer> range = IntStream.rangeClosed(start, end)
 				.boxed().collect(Collectors.toList());
-		return generatePrivValidatorFiles(tendermintBinaryPath, nodeFilesDirectory, range);
+		return generatePrivValidatorFiles(range);
 	}
 
 
 
 	/**
 	 * Method to generate a genesis.json file for tendermint. If the file is already in the given location, it is overridden.
-	 * @param nodeFilesDirectory - the directory to store the directory for node files
 	 * @param genesisTime - the time of genesis
 	 * @param publicKeys - the public keys of validators (usually all the nodes)
 	 * @param appHash - the hash of the application (ie. genesis block) at the beginning
 	 * @param nodeNumber - the number of the node to generate file for
 	 * @return true if succeeded; false otherwise
 	 */
-	public static boolean generateGenesisFile(String nodeFilesDirectory, Date genesisTime, Map<Integer, String> publicKeys, byte[] appHash, int nodeNumber) {
+	public static boolean generateGenesisFile(Date genesisTime, Map<Integer, String> publicKeys, byte[] appHash, int nodeNumber) {
 
 
 		JSONObject genesis = new JSONObject();
@@ -208,7 +203,7 @@ public final class TendermintHelper {
 		}
 		genesis.put("validators", validators);
 
-		String nodeFilesLocation = getNodeFilesLocation(nodeFilesDirectory, nodeNumber);
+		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
 		try (
 				BufferedWriter writer = Files.newBufferedWriter(Paths.get(nodeFilesLocation, "genesis.json"))
 		) {
@@ -227,17 +222,16 @@ public final class TendermintHelper {
 
 	/**
 	 * Generate multiple genesis.json files (one for each node). If the files is already in the given location, they are overridden.
-	 * @param nodeFilesDirectory - the directory to store the node files directory (will create separate directories in it for each node)
 	 * @param genesisTime - the time of genesis
 	 * @param publicKeys - the public keys of validators (usually all the nodes)
 	 * @param appHash - the hash of the application (ie. genesis block) at the beginning
 	 * @param numbersOfNodes - the numbers of nodes to generate genesis.json for
 	 * @return true if succeeded; false otherwise
 	 */
-	public static boolean generateGenesisFiles(String nodeFilesDirectory, Date genesisTime,
+	public static boolean generateGenesisFiles(Date genesisTime,
 											   Map<Integer, String> publicKeys, byte[] appHash, List<Integer> numbersOfNodes) {
 		for (Integer i : numbersOfNodes) {
-			if (!generateGenesisFile(nodeFilesDirectory, genesisTime, publicKeys, appHash, i)) {
+			if (!generateGenesisFile(genesisTime, publicKeys, appHash, i)) {
 				return false;
 			}
 		}
@@ -246,7 +240,6 @@ public final class TendermintHelper {
 
 	/**
 	 * Generate multiple genesis.json files (one for each node). If the files is already in the given location, they are overridden.
-	 * @param nodeFilesDirectory - the directory to store the node files directory (will create separate directories in it for each node)
 	 * @param genesisTime - the time of genesis
 	 * @param publicKeys - the public keys of validators (usually all the nodes)
 	 * @param appHash - the hash of the application (ie. genesis block) at the beginning
@@ -254,11 +247,11 @@ public final class TendermintHelper {
 	 * @param end - the highest number of node to generate a file for (inclusive)
 	 * @return true if succeeded; false otherwise
 	 */
-	public static boolean generateGenesisFiles(String nodeFilesDirectory, Date genesisTime,
+	public static boolean generateGenesisFiles(Date genesisTime,
 											   Map<Integer, String> publicKeys, byte[] appHash, int start, int end) {
 		List<Integer> range = IntStream.rangeClosed(start, end)
 				.boxed().collect(Collectors.toList());
-		return generateGenesisFiles(nodeFilesDirectory, genesisTime, publicKeys, appHash, range);
+		return generateGenesisFiles(genesisTime, publicKeys, appHash, range);
 	}
 
 	/**
@@ -269,19 +262,16 @@ public final class TendermintHelper {
 	 * 												       --rpc.laddr=tcp://0.0.0.0:[nodeBasePort+2]
 	 *												       --proxy_app=tcp://127.0.0.1:[nodeBasePort+2]
 	 *												       --p2p.seeds=[peerAddresses]
-	 * @param tendermintBinaryPath - the executable binary of tendermint
-	 * @param nodeFilesDirectory - the directory to store the node files directory (will access separate directories in it for the specific node)
 	 * @param nodeBasePort - the base port for the node (ie the lowest assigned port for the node, the port+0)
 	 * @param peerAddresses - a list of addresses (with ports, which should be basePort+1) of *other* nodes
 	 * @throws IOException - if an I/O error occurs
 	 */
-	public static void runTendermintNode(String tendermintBinaryPath, String nodeFilesDirectory,
-										 int nodeBasePort, List<String> peerAddresses, int nodeNumber) throws IOException {
+	public static void runTendermintNode(int nodeBasePort, List<String> peerAddresses, int nodeNumber) throws IOException {
 
 		StringBuilder script = new StringBuilder(256);
 
 		//add binary to execute
-		script.append(tendermintBinaryPath).append(" node --consensus.create_empty_blocks=false ");
+		script.append(TENDERMINT_BINARY).append(" node --consensus.create_empty_blocks=false ");
 
 		//TODO: get this from config/properties file?
 		//turn on for extra logging (on debug level)
@@ -289,7 +279,7 @@ public final class TendermintHelper {
 		if (logMore) {
 			script.append("--log_level=debug ");
 		}
-		String nodeFilesLocation = getNodeFilesLocation(nodeFilesDirectory, nodeNumber);
+		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
 		//add arguments
 		script.append("--home ").append(nodeFilesLocation).append(" ");
 		script.append("--p2p.laddr=tcp://0.0.0.0:").append(nodeBasePort + 1).append(" ");
@@ -368,16 +358,14 @@ public final class TendermintHelper {
 
 	/**
 	 * Generate the genesis block for the application.
-	 * @param numberOfNodes - the number of nodes that are in genesis
 	 * @param amount - the amount to give each of the nodes
 	 * @param nodeList - the list of all nodes with proper public keys, addresses and ports set
 	 * @return the genesis block
 	 */
-	public static Block generateGenesisBlock(int numberOfNodes, long amount, Map<Integer, Node> nodeList) {
+	public static Block generateGenesisBlock(long amount, Map<Integer, Node> nodeList) {
 		List<Transaction> initialTransactions = new ArrayList<>();
-		for (int i = 0; i < numberOfNodes; i++) {
+		for (Integer i : nodeList.keySet()) {
 			Transaction t = new Transaction(i, null, nodeList.get(i), amount, 0, new HashSet<>(0));
-			t.setBlockNumber(OptionalInt.of(0));
 			initialTransactions.add(t);
 		}
 		return new Block(0, null, initialTransactions);
@@ -385,11 +373,10 @@ public final class TendermintHelper {
 	
 	/**
 	 * Remove given folder, used to delete tendermint folders.
-	 * @param tendermintNodesFolder - name of folder to remove
 	 */
-	public static void cleanTendermintFiles(String tendermintNodesFolder) {
+	public static void cleanTendermintFiles() {
 		try {
-			FileUtils.deleteDirectory(new File(tendermintNodesFolder));
+			FileUtils.deleteDirectory(new File(TENDERMINT_NODES_FOLDER));
 		} catch (IOException ex) {
 			Log.log(Level.WARNING, "Could not delete Tendermint folder");
 		}
