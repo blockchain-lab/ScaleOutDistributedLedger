@@ -51,19 +51,7 @@ public class LocalStore {
 	 * @param isProduction - if this is production or testing
 	 */
 	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction) {
-		this(ownNode, application, genesisBlock, isProduction, new HashMap<>());
-	}
-	
-	/**
-	 * Constructor.
-	 * @param ownNode      - our own node.
-	 * @param application  - the application
-	 * @param genesisBlock - the genesis (initial) block for the entire system
-	 * @param isProduction - if this is production or testing
-	 * @param nodeMap      - the map of nodes to use
-	 */
-	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction, Map<Integer, Node> nodeMap) {
-		this.nodes = nodeMap;
+		this.nodes = new HashMap<>();
 		this.ownNode = ownNode;
 		this.application = application;
 		this.nodes.put(ownNode.getId(), ownNode);
@@ -86,17 +74,7 @@ public class LocalStore {
 	 * @throws IllegalStateException - exception while updating nodes
 	 */
 	public Node getNode(int id) {
-		Node node = nodes.get(id);
-		//TODO: this should no longer be needed
-		if (node == null) {
-			try {
-				TrackerHelper.updateNodes(nodes, ownNode);
-			} catch (IOException ex) {
-				throw new IllegalStateException("Node " + id + " was not found locally and the tracker update failed!", ex);
-			}
-			node = nodes.get(id);
-		}
-		return node;
+		return nodes.get(id);
 	}
 	
 	/**
@@ -166,6 +144,9 @@ public class LocalStore {
 		return ++transactionId;
 	}
 
+	/**
+	 * Initializes the main chain.
+	 */
 	public void initMainChain() {
 		this.mainChain.init();
 	}

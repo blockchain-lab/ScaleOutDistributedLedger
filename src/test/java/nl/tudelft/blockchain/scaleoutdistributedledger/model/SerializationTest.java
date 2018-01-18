@@ -62,7 +62,9 @@ public class SerializationTest {
 		this.receiver = this.nodeList.get(1);
 		
 		// Setup LocalStore
-		this.localStore = new LocalStore(this.sender, null, this.genesisBlock, false, this.nodeList);
+		this.localStore = new LocalStore(this.sender, null, this.genesisBlock, false);
+		this.localStore.getNodes().putAll(this.nodeList);
+		
 		// Add Transaction
 		this.transaction = new Transaction(44, this.sender, this.receiver, 100, 20, new HashSet<>());
 		this.block.getTransactions().add(this.transaction);
