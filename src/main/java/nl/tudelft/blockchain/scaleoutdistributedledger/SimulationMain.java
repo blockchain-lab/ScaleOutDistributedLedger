@@ -119,12 +119,12 @@ public final class SimulationMain {
 		simulation.start();
 		
 		Thread.sleep(20 * 1000);
-		simulation.stop(ownNodes);
+		simulation.stop();
 
 		Log.log(Level.INFO, "Waiting on nodes to stop");
-		while (0 != TrackerHelper.getRunning()) {
+		do {
 			Thread.sleep(2000);
-		}
+		} while (0 != TrackerHelper.getRunning());
 		Log.log(Level.INFO, "All nodes have stopped");
 
 		simulation.stopLocalNodes();

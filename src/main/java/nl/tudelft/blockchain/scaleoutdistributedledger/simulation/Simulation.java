@@ -200,9 +200,8 @@ public class Simulation {
 	/**
 	 * Stops the simulation.
 	 * @throws IllegalStateException - if the state is not RUNNING.
-	 * @param nodes
 	 */
-	public void stop(Map<Integer, OwnNode> nodes) {
+	public void stop() {
 		checkState(SimulationState.RUNNING, "stop");
 		
 		if (isMaster) {
@@ -211,19 +210,6 @@ public class Simulation {
 
 		Log.log(Level.INFO, "[Simulation] Stopped");
 		state = SimulationState.STOPPED;
-
-		//TODO: Better way to check if all transactions are done
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {	}
-
-		for (Integer nodeNumber : nodes.keySet()) {
-			try {
-				TrackerHelper.setRunning(nodeNumber, false);
-			} catch (IOException e) {
-				Log.log(Level.SEVERE, "Cannot unregister node " + nodeNumber);
-			}
-		}
 	}
 	
 	/**
