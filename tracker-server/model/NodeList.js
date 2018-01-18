@@ -43,27 +43,28 @@ class NodeList {
 	}
 	
 	/**
-	 * Mark the node with the given ID as being initialized.
+	 * Set the status of the node.
 	 * @param id - the id of the node that is marked
+	 * @param running - the new status of the node
 	 * @returns {boolean} - whether the id was valid.
 	 */
-	markNodeInitialized(id) {
+	setNodeStatus(id, running) {
 		if(id < this.nodes.length) {
-			this.nodes[id].initialized = true;
+			this.nodes[id].running = running;
 			return true;
 		}
 		return false;
 	}
 	
 	/**
-	 * Get the number of nodes that are initialized.
+	 * Get the number of nodes that are running.
 	 * @returns {int} - the number of nodes that is initialized
 	 */
-	getInitialized() {
+	getRunning() {
 		var count = 0;
 		var i;
 		for (i = 0; i < this.nodes.length; ++i) {
-			if (this.nodes[i].initialized) {
+			if (this.nodes[i].running) {
 				count ++;
 			}
 		}	

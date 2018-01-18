@@ -16,6 +16,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,13 +40,15 @@ public class Simulation {
 	
 	private Application[] localApplications;
 	private final SocketClient socketClient;
+	private final boolean isMaster;
 	
 	/**
 	 * Creates a new simulation.
 	 */
-	public Simulation() {
+	public Simulation(boolean isMaster) {
 		this.socketClient = new SocketClient();
 		this.state = SimulationState.STOPPED;
+		this.isMaster = isMaster;
 	}
 	
 	/**
@@ -91,7 +94,7 @@ public class Simulation {
 			try {
 				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
 				app.init(port, genesisBlock.clone(), nodesForThisNode, nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
-				TrackerHelper.setInitialized(nodeNumber);
+				TrackerHelper.setRunning(nodeNumber, true);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + port + "!", ex);
 			}
@@ -168,7 +171,7 @@ public class Simulation {
 		}
 		
 		//Broadcast distributed transaction pattern
-		if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
+		if (this.isMaster && transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
 			broadcastMessage(new TransactionPatternMessage(transactionPattern));
 		}
 		
@@ -182,7 +185,7 @@ public class Simulation {
 	 * This method sends a "Start transacting" message to all nodes.
 	 * @throws IllegalStateException - if the state is not INITIALIZED.
 	 */
-	public void start(boolean isMaster) {
+	public void start() {
 		checkState(SimulationState.INITIALIZED, "start");
 
 		if (isMaster) {
@@ -200,15 +203,25 @@ public class Simulation {
 	/**
 	 * Stops the simulation.
 	 * @throws IllegalStateException - if the state is not RUNNING.
+	 * @param nodes
 	 */
-	public void stop(boolean isMaster) {
+	public void stop(Map<Integer, OwnNode> nodes) {
 		checkState(SimulationState.RUNNING, "stop");
 		
 		if (isMaster) {
 			broadcastMessage(new StopTransactingMessage());
 		}
+
 		Log.log(Level.INFO, "[Simulation] Stopped");
 		state = SimulationState.STOPPED;
+		
+		for (Integer nodeNumber : nodes.keySet()) {
+			try {
+				TrackerHelper.setRunning(nodeNumber, false);
+			} catch (IOException e) {
+				Log.log(Level.SEVERE, "Cannot unregister node " + nodeNumber);
+			}
+		}
 	}
 	
 	/**

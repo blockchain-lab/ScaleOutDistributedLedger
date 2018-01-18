@@ -91,14 +91,14 @@ public final class SimulationMain {
 				genesisBlock.getHash().getBytes(), nodeNumbersToRunLocally);
 
 		// --- PHASE 3: start the actual simulation ---
-		Simulation simulation = new Simulation();
+		Simulation simulation = new Simulation(IS_MASTER);
 		ITransactionPattern itp = new RandomTransactionPattern(10, 20, 1000, 2000, 1);
 		simulation.setTransactionPattern(itp);
 		simulation.runNodesLocally(nodeNumbersToRunLocally, nodes, ownNodes, genesisBlock, nodeToKeyPair);
 
 
 		Log.log(Level.INFO, "Waiting on nodes to initialize");
-		while (TOTAL_NODES_NUMBER != TrackerHelper.getInitialized()) {
+		while (TOTAL_NODES_NUMBER != TrackerHelper.getRunning()) {
 			Thread.sleep(1000);
 		}
 		Log.log(Level.INFO, "All nodes to initialized");
@@ -106,13 +106,17 @@ public final class SimulationMain {
 		simulation.initialize();
 		
 		Thread.sleep(5000);
-		simulation.start(IS_MASTER);
+		simulation.start();
 		
-		Thread.sleep(60 * 1000);
-		simulation.stop(IS_MASTER);
+		Thread.sleep(20 * 1000);
+		simulation.stop(ownNodes);
 
-		Thread.sleep(10 * 1000);
-		
+		Log.log(Level.INFO, "Waiting on nodes to stop");
+		while (0 != TrackerHelper.getRunning()) {
+			Thread.sleep(1000);
+		}
+		Log.log(Level.INFO, "All nodes have stopped");
+
 		simulation.stopLocalNodes();
 		simulation.cleanup();
 	}

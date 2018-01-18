@@ -80,20 +80,21 @@ public final class TrackerHelper {
 	 * @throws IOException - IOException while registering node
 	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
-	public static void setInitialized(int id) throws IOException {
+	public static void setRunning(int id, boolean running) throws IOException {
 		JSONObject json = new JSONObject();
 		json.put("id", id);
+		json.put("running", running);
 
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
 			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-			HttpPost request = new HttpPost(String.format("http://%s:%d/initialized-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			HttpPost request = new HttpPost(String.format("http://%s:%d/set-node-status", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
 			request.setEntity(requestEntity);
 			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 			if (response.getBoolean("success")) {
-				Log.log(Level.INFO, "Successfully marked node as initialized");
+				Log.log(Level.INFO, "Successfully updated node to running=" + running);
 				return;
 			}
-			Log.log(Level.SEVERE, "Error while marking node as initialized");
+			Log.log(Level.SEVERE, "Error while updating the running status of the node");
 			//TODO: Create new excepton for this
 			throw new NodeRegisterFailedException();
 		}
@@ -167,14 +168,14 @@ public final class TrackerHelper {
 		}
 	}
 
-	/** Get the number of initialized nodes in tracker.
+	/** Get the number of running nodes in tracker.
 	 * @return the number of nodes already registered in tracker
 	 * @throws IOException when problems with creating/closing http client
 	 */
-	public static int getInitialized() throws IOException {
+	public static int getRunning() throws IOException {
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpGet request = new HttpGet(String.format("http://%s:%d/initialized", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).getInt("initialized");
+			HttpGet request = new HttpGet(String.format("http://%s:%d/running", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).getInt("running");
 		}
 	}
 

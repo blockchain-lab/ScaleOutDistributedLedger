@@ -24,7 +24,7 @@ public class CancellableInfiniteRunnable implements Runnable {
 		cancelled = true;
 		synchronized (this) {
 			if (runner != null) {
-//				runner.interrupt();
+				runner.interrupt();
 			}
 		}
 	}

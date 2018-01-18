@@ -13,7 +13,7 @@ class Node {
 		this.port = port;
 		this.publicKey = publicKey;
 		this.lastSeen = new Date();
-		this.initialized = false;
+		this.running = false;
 	}
 }
 
