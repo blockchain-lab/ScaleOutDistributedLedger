@@ -43,6 +43,20 @@ router.post('/register-node', (req, res) => {
 });
 
 /**
+ * Mark a node as having initialized (being ready).
+ */
+router.post('/initialized-node', (req, res) => {
+    if(!isPresent(req.body.id)) {
+        res.status(403);
+        res.json({success: false, err: 'Specify node ID'});
+    } else {
+		console.log(req.body.id)
+        app.nodeList.markNodeInitialized(req.body.id)
+        res.json({success: true, id: req.body.id});
+    }
+});
+
+/**
  * Gets a specific node. Getter body should contain id.
  */
 router.get('/node', (req, res) => {
@@ -69,11 +83,19 @@ router.post('/reset', (req, res) => {
 });
 
 /**
- * Get the number of currently registered nodes on the tracker server
+ * Get the number of currently registered nodes on the tracker server.
  */
 router.get('/registered', (req, res) => {
 	res.json({success: true, registered: app.nodeList.getSize()});
 });
+
+/**
+ * Get the number of initialized nodes on the tracker server.
+ */
+router.get('/initialized', (req, res) => {
+	res.json({success: true, initialized: app.nodeList.getInitialized()});
+});
+
 function isPresent(arg) {
 	return !!(arg || arg === 0 || arg === "" || arg === false);
 }

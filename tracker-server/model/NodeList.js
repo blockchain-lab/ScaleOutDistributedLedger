@@ -41,6 +41,34 @@ class NodeList {
 	registerNode(address, port, publicKey) {
 		return this.nodes.push(new Node(address, port, publicKey)) - 1;
 	}
+	
+	/**
+	 * Mark the node with the given ID as being initialized.
+	 * @param id - the id of the node that is marked
+	 * @returns {boolean} - whether the id was valid.
+	 */
+	markNodeInitialized(id) {
+		if(id < this.nodes.length) {
+			this.nodes[id].initialized = true;
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Get the number of nodes that are initialized.
+	 * @returns {int} - the number of nodes that is initialized
+	 */
+	getInitialized() {
+		var count = 0;
+		var i;
+		for (i = 0; i < this.nodes.length; ++i) {
+			if (this.nodes[i].initialized) {
+				count ++;
+			}
+		}	
+		return count
+	}
 
 	/**
 	 * Gets the node at the specified id, if present.
