@@ -14,7 +14,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.Inet4Address;
+import java.net.*;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -53,8 +54,9 @@ public final class TrackerHelper {
 	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
 	public static OwnNode registerNode(int nodePort, byte[] publicKey) throws IOException, NodeRegisterFailedException {
+		String address = getIP();
 		JSONObject json = new JSONObject();
-		json.put("address", Inet4Address.getLocalHost().getHostAddress());
+		json.put("address", address);
 		json.put("port", nodePort);
 		json.put("publicKey", publicKey);
 
@@ -65,12 +67,40 @@ public final class TrackerHelper {
 			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 			if (response.getBoolean("success")) {
 				Log.log(Level.INFO, "Successfully registered node to tracker server");
-				return new OwnNode(response.getInt("id"), publicKey,
-						Inet4Address.getLocalHost().getHostAddress(), nodePort);
+				return new OwnNode(response.getInt("id"), publicKey, address, nodePort);
 			}
 			Log.log(Level.SEVERE, "Error while registering node");
 			throw new NodeRegisterFailedException();
 		}
+	}
+
+	/**
+	 * Tries to resolve the IP(v4) address of this machine.
+	 * When it fails to do so it uses the local IP.
+	 *
+	 * @return the IP of this machine
+	 */
+	public static String getIP() {
+		try {
+			Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+			while (interfaces.hasMoreElements()) {
+				NetworkInterface ni = interfaces.nextElement();
+				Enumeration<InetAddress> addrss = ni.getInetAddresses();
+				while (addrss.hasMoreElements()) {
+					String addr = addrss.nextElement().getHostAddress();
+					if (addr.contains(":") || addr.startsWith("127.")) continue;	// IPv6 or Local
+					return (addr);
+				}
+			}
+		} catch (SocketException e) { }		// Intentionally empty catch block
+		try {
+			Log.log(Level.WARNING, "Could not resolve address, using localhost instead");
+			return Inet4Address.getLocalHost().getHostAddress();
+		} catch (UnknownHostException e) {
+			Log.log(Level.SEVERE, "Could not resolve localhost address, please check your network configuration");
+			return "0.0.0.0";
+		}
+
 	}
 
 	/**
