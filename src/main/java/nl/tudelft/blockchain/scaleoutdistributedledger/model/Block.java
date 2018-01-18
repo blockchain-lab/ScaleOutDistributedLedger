@@ -38,6 +38,7 @@ public class Block implements Cloneable {
 	
 	private transient boolean onMainChain;
 	private transient boolean hasNoAbstract;
+	private transient volatile boolean finalized;
 
 	/**
 	 * Constructor for a (genesis) block.
@@ -48,20 +49,23 @@ public class Block implements Cloneable {
 	public Block(int number, Node owner, List<Transaction> transactions) {
 		this.number = number;
 		this.owner = owner;
-		this.transactions = transactions;
 		this.previousBlock = null;
+		this.transactions = transactions;
+		for (Transaction transaction : this.transactions) {
+			transaction.setBlockNumber(number);
+		}
 	}
-
+	
 	/**
-	 * Constructor.
+	 * Constructor for an empty block.
 	 * @param previousBlock - reference to the previous block in the chain of this block.
-	 * @param transactions - a list of transactions of this block.
+	 * @param owner         - the owner
 	 */
-	public Block(Block previousBlock, List<Transaction> transactions) {
+	public Block(Block previousBlock, Node owner) {
 		this.number = previousBlock.getNumber() + 1;
 		this.previousBlock = previousBlock;
-		this.owner = previousBlock.getOwner();
-		this.transactions = transactions;
+		this.owner = owner;
+		this.transactions = new ArrayList<>();
 		
 		//Our own blocks are guaranteed to have no abstract until we create the abstract.
 		if (this.owner instanceof OwnNode) {
@@ -102,6 +106,20 @@ public class Block implements Cloneable {
 		}
 		//TODO Do we want to send the hash along?
 		this.hash = blockMessage.getHash();
+	}
+	
+	/**
+	 * Adds the given transaction to this block and sets its block number.
+	 * @param transaction - the transaction to add
+	 * @throws IllegalStateException - If this block has already been committed.
+	 */
+	public synchronized void addTransaction(Transaction transaction) {
+		if (finalized) {
+			throw new IllegalStateException("You cannot add transactions to a block that is already committed.");
+		}
+		
+		transactions.add(transaction);
+		transaction.setBlockNumber(this.getNumber());
 	}
 	
 	/**
@@ -146,6 +164,25 @@ public class Block implements Cloneable {
 		} catch (Exception ex) {
 			throw new IllegalStateException("Unable to sign block abstract", ex);
 		}
+	}
+	
+	/**
+	 * Commits this block to the main chain.
+	 * @param localStore - the local store
+	 */
+	public synchronized void commit(LocalStore localStore) {
+		if (finalized) {
+			throw new IllegalStateException("This block has already been committed!");
+		}
+		
+		Chain chain = getOwner().getChain();
+		synchronized (chain) {
+			BlockAbstract blockAbstract = calculateBlockAbstract();
+			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
+			getOwner().getChain().setLastCommittedBlock(this);
+		}
+		
+		finalized = true;
 	}
 
 	@Override

@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
@@ -56,8 +55,8 @@ public class SerializationTest {
 		this.sender.setGenesisBlock(genesisBlock.clone());
 		
 		//Create two following blocks
-		this.block = this.sender.getChain().appendNewBlock(new ArrayList<>());
-		this.sender.getChain().appendNewBlock(new ArrayList<>());
+		this.block = this.sender.getChain().appendNewBlock();
+		this.sender.getChain().appendNewBlock();
 		
 		this.receiver = this.nodeList.get(1);
 		
@@ -67,7 +66,7 @@ public class SerializationTest {
 		
 		// Add Transaction
 		this.transaction = new Transaction(44, this.sender, this.receiver, 100, 20, new HashSet<>());
-		this.block.getTransactions().add(this.transaction);
+		this.block.addTransaction(this.transaction);
 		// Add Proof
 		this.proof = new Proof(this.transaction);
 	}
@@ -182,7 +181,7 @@ public class SerializationTest {
 		HashSet<Transaction> listSources = new HashSet<>();
 		listSources.add(this.transaction);
 		Transaction newTransaction = new Transaction(88, this.sender, newReceiver, 200, 40, listSources);
-		this.sender.getChain().getBlocks().get(1).getTransactions().add(newTransaction);
+		this.sender.getChain().getBlocks().get(1).addTransaction(newTransaction);
 		// Encode Transaction into TransactionMessage
 		TransactionMessage transactionMessage = new TransactionMessage(newTransaction);
 		// Check the correctness of the encoding

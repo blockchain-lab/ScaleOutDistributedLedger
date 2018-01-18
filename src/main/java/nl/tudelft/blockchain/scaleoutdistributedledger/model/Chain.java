@@ -101,20 +101,18 @@ public class Chain {
 	}
 	
 	/**
-	 * Creates a new block with the given transactions and appends it to this chain.
-	 * @param transactions - the transactions to put in the block
-	 * @return             - the newly appended block
+	 * Creates a new block and appends it to this chain.
+	 * @return - the newly appended block
 	 * @throws UnsupportedOperationException - If this chain is not owned by us.
 	 * @throws IllegalStateException         - If there is no genesis block in this chain.
 	 */
-	public synchronized Block appendNewBlock(List<Transaction> transactions) {
+	public synchronized Block appendNewBlock() {
 		if (!(owner instanceof OwnNode)) throw new UnsupportedOperationException("You cannot append blocks to a chain that is not yours!");
 		
 		Block last = getLastBlock();
 		if (last == null) throw new IllegalStateException("There is no genesis block!");
 		
-		Block newBlock = new Block(last, transactions);
-		newBlock.setOwner(this.owner);
+		Block newBlock = new Block(last, this.owner);
 		blocks.add(newBlock);
 		return newBlock;
 	}
