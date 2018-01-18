@@ -34,6 +34,7 @@ public final class SimulationMain {
 	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 	public static final int NODES_FROM_NUMBER = 0;
 	//Whether this main is the master coordinator of the simulation
+	//Note that the master should always be started first
 	public static final boolean IS_MASTER = true;
 
 	/**
@@ -119,9 +120,9 @@ public final class SimulationMain {
 		simulation.stop(ownNodes);
 
 		Log.log(Level.INFO, "Waiting on nodes to stop");
-		do {    // At least wait a little to give the nodes some time to stop
+		while (0 != TrackerHelper.getRunning()) {
 			Thread.sleep(2000);
-		} while (0 != TrackerHelper.getRunning());
+		}
 		Log.log(Level.INFO, "All nodes have stopped");
 
 		simulation.stopLocalNodes();
