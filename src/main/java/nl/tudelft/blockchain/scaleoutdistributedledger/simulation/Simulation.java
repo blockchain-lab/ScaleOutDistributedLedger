@@ -6,6 +6,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionPatternMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.UpdateNodesMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -162,6 +163,9 @@ public class Simulation {
 		if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
 			broadcastMessage(new TransactionPatternMessage(transactionPattern));
 		}
+		
+		//Have everyone update their nodes list
+		broadcastMessage(new UpdateNodesMessage());
 		
 		Log.log(Level.INFO, "[Simulation] Initialized");
 		state = SimulationState.INITIALIZED;
