@@ -160,8 +160,8 @@ public class Transaction {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + number;
-		result = prime * result + ((receiver == null) ? 0 : receiver.hashCode());
-		result = prime * result + ((sender == null) ? 0 : sender.hashCode());
+		result = prime * result + receiver.getId();
+		result = prime * result + ((sender == null) ? -1 : sender.getId());
 		return result;
 	}
 
