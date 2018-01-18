@@ -20,7 +20,6 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.TrackerHelper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -282,10 +281,9 @@ public final class TendermintHelper {
 		}
 		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
 		//add arguments
-		String addr = TrackerHelper.getIP();
 		script.append("--home ").append(nodeFilesLocation).append(" ");
-		script.append("--p2p.laddr=tcp://"+ addr + ":").append(nodeBasePort + 1).append(" ");
-		script.append("--rpc.laddr=tcp://"+ addr + ":").append(nodeBasePort + 2).append(" ");
+		script.append("--p2p.laddr=tcp://0.0.0.0:").append(nodeBasePort + 1).append(" ");
+		script.append("--rpc.laddr=tcp://0.0.0.0:").append(nodeBasePort + 2).append(" ");
 		script.append("--proxy_app=tcp://127.0.0.1:").append(nodeBasePort + 3).append(" ");
 
 		//add other seeds
