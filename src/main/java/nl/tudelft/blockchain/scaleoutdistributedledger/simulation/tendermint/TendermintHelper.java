@@ -8,10 +8,10 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -363,7 +363,7 @@ public final class TendermintHelper {
 	 * @return the genesis block
 	 */
 	public static Block generateGenesisBlock(long amount, Map<Integer, Node> nodeList) {
-		List<Transaction> initialTransactions = new LinkedList<>();
+		List<Transaction> initialTransactions = new ArrayList<>();
 		for (Integer i : nodeList.keySet()) {
 			Transaction t = new Transaction(i, null, nodeList.get(i), amount, 0, new HashSet<>(0));
 			t.setBlockNumber(OptionalInt.of(0));

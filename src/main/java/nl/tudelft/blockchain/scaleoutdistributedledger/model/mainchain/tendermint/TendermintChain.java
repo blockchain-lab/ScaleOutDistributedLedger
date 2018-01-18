@@ -165,8 +165,6 @@ public final class TendermintChain implements MainChain {
 			return null;
 		} else {
 			abs.setAbstractHash(Sha256Hash.withHash(hash));
-
-			abs.setOnMainChain(Optional.of(true));
 			return Sha256Hash.withHash(hash);
 		}
 	}

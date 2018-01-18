@@ -43,7 +43,7 @@ public final class Main {
 	 */
 	private static void testSockets() {
 		try {
-			Thread t = new Thread(new SocketServer(8007, new LocalStore(new OwnNode(0), null, null, false, new HashMap<>())));
+			Thread t = new Thread(new SocketServer(8007, new LocalStore(new OwnNode(0), null, null, false)));
 			t.start();
 
 			Node node = new Node(1, null, "localhost", 8007);

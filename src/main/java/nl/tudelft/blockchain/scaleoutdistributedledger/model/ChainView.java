@@ -25,7 +25,7 @@ public class ChainView implements Iterable<Block> {
 	public ChainView(Chain chain, List<Block> updates) {
 		this.chain = chain;
 		this.updates = updates;
-		if(this.updates == null) this.updates = new ArrayList<>();
+		if (this.updates == null) this.updates = new ArrayList<>();
 	}
 	
 	/**
