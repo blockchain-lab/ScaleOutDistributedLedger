@@ -214,12 +214,13 @@ public class Block {
 	public Block genesisCopy() {
 		if (this.number != GENESIS_BLOCK_NUMBER) throw new UnsupportedOperationException("You can only copy genesis blocks");
 		
-		Block block = new Block(this.number, this.owner, new ArrayList<>());
+		ArrayList<Transaction> transactionsCopy = new ArrayList<>();
 		for (Transaction transaction : transactions) {
-			block.addTransaction(transaction.genesisCopy());
+			transactionsCopy.add(transaction.genesisCopy());
 		}
+		Block block = new Block(this.number, this.owner, transactionsCopy);
+		
 		block.onMainChain = true;
-		block.finalized = true;
 		return block;
 	}
 	

@@ -161,7 +161,9 @@ public class Transaction {
 	 */
 	public Transaction genesisCopy() {
 		if (!source.isEmpty()) throw new UnsupportedOperationException("Only genesis transactions can be copied");
-		return new Transaction(number, sender, receiver, amount, remainder, new HashSet<>(0));
+		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, new HashSet<>(0));
+		transaction.blockNumber = OptionalInt.of(0);
+		return transaction;
 	}
 
 	@Override
