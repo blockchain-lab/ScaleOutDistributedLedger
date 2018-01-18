@@ -215,8 +215,9 @@ public class Simulation {
 		Log.log(Level.INFO, "[Simulation] Stopped");
 		state = SimulationState.STOPPED;
 
+		//TODO: Better way to check if all transactions are done
 		try {
-			Thread.sleep(2000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {	}
 
 		for (Integer nodeNumber : nodes.keySet()) {

@@ -10,6 +10,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import org.apache.http.conn.HttpHostConnectException;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -27,11 +28,12 @@ public final class SimulationMain {
 
 	//SETTINGS
 	//number of local nodes to generate
-	public static final int LOCAL_NODES_NUMBER = 4;
+	public static final int LOCAL_NODES_NUMBER = 3;
 	//number of total nodes in the system
-	public static final int TOTAL_NODES_NUMBER = 4;
+	public static final int TOTAL_NODES_NUMBER = 6;
 	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 	public static final int NODES_FROM_NUMBER = 0;
+	//Whether this main is the master coordinator of the simulation
 	public static final boolean IS_MASTER = true;
 
 	/**
@@ -39,19 +41,24 @@ public final class SimulationMain {
 	 * @throws Exception - If an exception occurs.
 	 */
 	public static void main(String[] args) throws Exception {
-		//NOTE: The tracker should be started first, manually
-
-
 
 		// --- PHASE 0: Cleanup ---
 
 		// Clean Tendermint folder
 		TendermintHelper.cleanTendermintFiles();
 
-		// reset the tracker server when you are running the tracker server
-		String trackerAddr = Application.TRACKER_SERVER_ADDRESS;
-		if (trackerAddr.equals("localhost") || trackerAddr.startsWith("127.")) {
-			TrackerHelper.resetTrackerServer();
+		// Reset the tracker server when you are running the tracker server
+		try {
+			TrackerHelper.resetTrackerServer();String trackerAddr = Application.TRACKER_SERVER_ADDRESS;
+			if (trackerAddr.equals("localhost") || trackerAddr.startsWith("127.")) {
+				TrackerHelper.resetTrackerServer();
+			} else {
+				TrackerHelper.getRunning();
+			}
+		} catch (HttpHostConnectException e) {
+			Log.log(Level.SEVERE, "Tracker not running, please start it");
+			Log.log(Level.INFO, "The tracker can be started using `npm start` in the tracker-server folder");
+			return;
 		}
 
 
