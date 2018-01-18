@@ -32,9 +32,9 @@ public final class SimulationMain {
 
 		//SETTINGS
 		//number of local nodes to generate
-		int localNodesNumber = 4;
+		int localNodesNumber = 3;
 		//number of total nodes in the system
-		int totalNodesNumber = 4;
+		int totalNodesNumber = 3;
 		//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 		int nodesFromNumber = 0;
 

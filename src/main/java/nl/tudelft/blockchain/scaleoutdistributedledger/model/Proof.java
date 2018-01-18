@@ -140,9 +140,9 @@ public class Proof {
 		}
 
 		// Verify source transaction
-		for (Transaction sourceTransaction : transaction.getSource()) {
-			if (!verify(sourceTransaction, localStore)) return false;
-		}
+//		for (Transaction sourceTransaction : transaction.getSource()) {
+//			if (!verify(sourceTransaction, localStore)) return false;
+//		}
 		return true;
 	}
 	

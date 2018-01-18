@@ -49,7 +49,6 @@ public class SocketClient {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline p = socketChannel.pipeline();
-                        p.addLast("streamer", new ChunkedWriteHandler());
                         p.addLast(new ObjectEncoder(),
                                 new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                 new SocketClientHandler());
