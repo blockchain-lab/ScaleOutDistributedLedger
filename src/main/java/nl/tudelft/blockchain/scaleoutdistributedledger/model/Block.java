@@ -25,7 +25,7 @@ public class Block implements Cloneable {
 	private final int number;
 
 	@Getter
-	private Block previousBlock;
+	private final Block previousBlock;
 
 	@Getter @Setter
 	private Node owner;
@@ -169,8 +169,6 @@ public class Block implements Cloneable {
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
 		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
-
-		if (!this.getHash().equals(other.getHash())) return false;
 
 		return this.transactions.equals(other.transactions);
 	}
