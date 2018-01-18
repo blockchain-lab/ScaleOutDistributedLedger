@@ -101,6 +101,17 @@ public final class TrackerHelper {
 		}
 	}
 
+	/** Get the number of registered nodes in tracker.
+	 * @return the number of nodes already registered in tracker
+	 * @throws IOException when problems with creating/closing http client
+	 */
+	public static int getRegistered() throws IOException {
+		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+			HttpGet request = new HttpGet(String.format("http://%s:%d/registered", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).getInt("registered");
+		}
+	}
+
 	/**
 	 * Converts JSONArray containing ints to byte array.
 	 * @param json - the jsonarray to convert.

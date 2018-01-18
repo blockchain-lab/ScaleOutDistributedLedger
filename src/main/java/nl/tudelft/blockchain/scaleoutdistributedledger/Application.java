@@ -43,7 +43,7 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int, int)} before it can be used.
+	 * The application must be initialized with {@link #init(int, Block, Map, Ed25519Key, OwnNode)} before it can be used.
 	 * @param isProduction - if this is production or testing
 	 */
 	public Application(boolean isProduction) {
@@ -58,10 +58,9 @@ public class Application {
 	 * @param genesisBlock  - the genesis (initial) block for the entire system
 	 * @throws IOException   - error while registering node
 	 */
-	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList, Ed25519Key key) throws IOException {
-		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
+	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList, Ed25519Key key, OwnNode ownNode) {
 
-		ownNode.setGenesisBlock(genesisBlock.clone());
+		ownNode.setGenesisBlock(genesisBlock);
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 

@@ -58,7 +58,7 @@ public class SerializationTest {
 		this.sender.getChain().update(blockList);
 		this.receiver = this.nodeList.get(1);
 		// Generate genesis block (10 nodes, 1000 coins)
-		this.genesisBlock = TendermintHelper.generateGenesisBlock(10, 1000, nodeList);
+		this.genesisBlock = TendermintHelper.generateGenesisBlock( 1000, nodeList);
 		// Setup LocalStore
 		this.localStore = new LocalStore(this.sender, null, genesisBlock, false, this.nodeList);
 		// Add Transaction
