@@ -50,7 +50,7 @@ public final class SimulationMain {
 
 		// Reset the tracker server when you are running the tracker server
 		try {
-			TrackerHelper.resetTrackerServer();String trackerAddr = Application.TRACKER_SERVER_ADDRESS;
+			String trackerAddr = Application.TRACKER_SERVER_ADDRESS;
 			if (trackerAddr.equals("localhost") || trackerAddr.startsWith("127.")) {
 				TrackerHelper.resetTrackerServer();
 			} else {
