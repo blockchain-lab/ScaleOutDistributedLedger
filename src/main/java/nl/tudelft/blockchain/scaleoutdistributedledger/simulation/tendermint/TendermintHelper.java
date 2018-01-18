@@ -358,14 +358,13 @@ public final class TendermintHelper {
 
 	/**
 	 * Generate the genesis block for the application.
-	 * @param numberOfNodes - the number of nodes that are in genesis
 	 * @param amount - the amount to give each of the nodes
 	 * @param nodeList - the list of all nodes with proper public keys, addresses and ports set
 	 * @return the genesis block
 	 */
-	public static Block generateGenesisBlock(int numberOfNodes, long amount, Map<Integer, Node> nodeList) {
+	public static Block generateGenesisBlock(long amount, Map<Integer, Node> nodeList) {
 		List<Transaction> initialTransactions = new LinkedList<>();
-		for (int i = 0; i < numberOfNodes; i++) {
+		for (Integer i : nodeList.keySet()) {
 			Transaction t = new Transaction(i, null, nodeList.get(i), amount, 0, new HashSet<>(0));
 			t.setBlockNumber(OptionalInt.of(0));
 			initialTransactions.add(t);
