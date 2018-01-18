@@ -84,16 +84,13 @@ public class Simulation {
 			Application app = new Application(true);
 			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodeAddresses, nodePorts);
 			int port = nodePorts.get(nodeNumber);
-			Map<Integer, Node> nodesForThisNode = new HashMap<>(nodes);
-			nodesForThisNode.remove(nodeNumber);
 
 			//TODO: fix this dirty hack
 			//The ownNodes and nodePort maps do not have the same port numbers for each node, so just override one to fix it.
 			ownNodes.get(nodeNumber).setPort(port);
-
 			try {
 				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
-				app.init(port, genesisBlock.clone(), nodesForThisNode, nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
+				app.init(port, genesisBlock.clone(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 				TrackerHelper.setRunning(nodeNumber, true);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + port + "!", ex);
@@ -251,7 +248,6 @@ public class Simulation {
 			throw new IllegalStateException("You can only " + msg + " when the simulation is in the " + expected.name() + " state.");
 		}
 	}
-
 	
 	/**
 	 * Sends the given message to all nodes.

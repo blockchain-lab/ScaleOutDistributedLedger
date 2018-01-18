@@ -2,7 +2,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.mocks;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
@@ -33,7 +32,6 @@ public class TendermintChainMock implements MainChain {
 		
 		// Update abstract
 		abs.setAbstractHash(Sha256Hash.withHash(hash));
-		abs.setOnMainChain(Optional.of(true));
 		return Sha256Hash.withHash(hash);
 	}
 

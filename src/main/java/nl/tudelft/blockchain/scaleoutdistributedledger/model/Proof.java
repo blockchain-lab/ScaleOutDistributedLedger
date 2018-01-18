@@ -90,6 +90,7 @@ public class Proof {
 
 	/**
 	 * Verifies this proof.
+	 * @param localStore - the local store
 	 * @return - boolean indicating if this proof is valid.
 	 */
 	public boolean verify(LocalStore localStore) {
@@ -143,13 +144,18 @@ public class Proof {
 	
 	/**
 	 * Applies the updates in this proof.
+	 * This method also updates the meta knowledge of the sender of the transaction.
 	 */
 	public void applyUpdates() {
 		for (Entry<Node, List<Block>> entry : chainUpdates.entrySet()) {
 			Node node = entry.getKey();
+			
 			List<Block> updates = entry.getValue();
 			node.getChain().update(updates);
 		}
+		
+		//Update the meta knowledge of the sender
+		transaction.getSender().updateMetaKnowledge(this);
 	}
 	
 	/**
@@ -169,6 +175,8 @@ public class Proof {
 		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
 		for (Chain chain : chains) {
 			Node owner = chain.getOwner();
+			if (owner == receiver) continue;
+			
 			int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
 			int requiredKnown = chain.getLastCommittedBlock().getNumber();
 			
@@ -193,5 +201,16 @@ public class Proof {
 		for (Transaction source : transaction.getSource()) {
 			appendChains(source, receiver, chains);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Proof: ").append(transaction);
+		
+		for (Entry<Node, List<Block>> entry : this.chainUpdates.entrySet()) {
+			sb.append('\n').append(entry.getKey().getId()).append(": ").append(entry.getValue());
+		}
+		return sb.toString();
 	}
 }

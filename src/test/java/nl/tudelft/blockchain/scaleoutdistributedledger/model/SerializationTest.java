@@ -12,7 +12,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 
 import static org.junit.Assert.assertTrue;
@@ -51,16 +50,21 @@ public class SerializationTest {
 		}
 		// Setup sender and block
 		this.sender = (OwnNode) this.nodeList.get(0);
-		this.block = new Block(1234, sender, new ArrayList<>());
-		List<Block> blockList = new ArrayList<>();
-		blockList.add(this.block);
-		blockList.add(new Block(1235, this.sender, new ArrayList<>()));
-		this.sender.getChain().update(blockList);
-		this.receiver = this.nodeList.get(1);
+		
 		// Generate genesis block (10 nodes, 1000 coins)
-		this.genesisBlock = TendermintHelper.generateGenesisBlock( 1000, nodeList);
+		this.genesisBlock = TendermintHelper.generateGenesisBlock(1000, nodeList);
+		this.sender.setGenesisBlock(genesisBlock.clone());
+		
+		//Create two following blocks
+		this.block = this.sender.getChain().appendNewBlock(new ArrayList<>());
+		this.sender.getChain().appendNewBlock(new ArrayList<>());
+		
+		this.receiver = this.nodeList.get(1);
+		
 		// Setup LocalStore
-		this.localStore = new LocalStore(this.sender, null, genesisBlock, false, this.nodeList);
+		this.localStore = new LocalStore(this.sender, null, this.genesisBlock, false);
+		this.localStore.getNodes().putAll(this.nodeList);
+		
 		// Add Transaction
 		this.transaction = new Transaction(44, this.sender, this.receiver, 100, 20, new HashSet<>());
 		this.block.getTransactions().add(this.transaction);

@@ -27,4 +27,9 @@ public class OwnNode extends Node {
 	public byte[] sign(byte[] message) throws Exception {
 		return Ed25519Key.sign(message, this.privateKey);
 	}
+	
+	@Override
+	public String toString() {
+		return "(OwnNode) " + super.toString();
+	}
 }
