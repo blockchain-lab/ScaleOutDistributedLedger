@@ -12,7 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -37,7 +36,7 @@ public class Block implements Cloneable {
 	// Custom getter
 	private Sha256Hash hash;
 	
-	private transient Optional<Boolean> onMainChain;
+	private transient boolean onMainChain;
 	private transient boolean hasNoAbstract;
 
 	/**
@@ -51,7 +50,6 @@ public class Block implements Cloneable {
 		this.owner = owner;
 		this.transactions = transactions;
 		this.previousBlock = null;
-		this.onMainChain = Optional.empty();
 	}
 
 	/**
@@ -64,7 +62,6 @@ public class Block implements Cloneable {
 		this.previousBlock = previousBlock;
 		this.owner = previousBlock.getOwner();
 		this.transactions = transactions;
-		this.onMainChain = Optional.empty();
 		
 		//Our own blocks are guaranteed to have no abstract until we create the abstract.
 		if (this.owner instanceof OwnNode) {
@@ -105,7 +102,6 @@ public class Block implements Cloneable {
 		}
 		//TODO Do we want to send the hash along?
 		this.hash = blockMessage.getHash();
-		this.onMainChain = Optional.empty();
 	}
 	
 	/**
@@ -233,14 +229,14 @@ public class Block implements Cloneable {
 		if (this.number == GENESIS_BLOCK_NUMBER) return true;
 		
 		//Definitely has no abstract
-		if (hasNoAbstract) return false;
+		if (this.hasNoAbstract) return false;
 		
 		//We already determined before what the result should be
-		if (this.onMainChain.isPresent()) return this.onMainChain.get();
+		if (this.onMainChain) return true;
 		
 		//It is present, so store it and return
 		if (localStore.getMainChain().isPresent(this.getHash())) {
-			this.onMainChain = Optional.of(true);
+			this.onMainChain = true;
 			return true;
 		}
 		
