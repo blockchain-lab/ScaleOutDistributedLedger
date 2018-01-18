@@ -83,6 +83,10 @@ public class Simulation {
 			int port = nodePorts.get(nodeNumber);
 			Map<Integer, Node> nodesForThisNode = new HashMap<>(nodes);
 			nodesForThisNode.remove(nodeNumber);
+
+			//TODO: fix this dirty hack
+			ownNodes.get(nodeNumber).setPort(port);
+
 			try {
 				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
 				app.init(port, genesisBlock.clone(), nodesForThisNode, nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));

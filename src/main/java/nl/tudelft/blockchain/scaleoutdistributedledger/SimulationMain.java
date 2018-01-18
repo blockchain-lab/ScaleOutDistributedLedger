@@ -63,9 +63,10 @@ public final class SimulationMain {
 		//register with tracker, keep track of local own nodes
 		Map<Integer, byte[]> localPublicKeys = convertToPublicKeys(nodeToKeyPair);
 		Map<Integer, OwnNode> ownNodes = new HashMap<>(LOCAL_NODES_NUMBER);
-		//TODO: this would make each application ports start at different places, maybe it should always start at 40000?
+
+		int j = 0;
 		for (Integer i : localPublicKeys.keySet()) {
-			int basePort = Application.NODE_PORT + i * 4;
+			int basePort = Application.NODE_PORT + j++ * 4;
 			ownNodes.put(i, TrackerHelper.registerNode(basePort, localPublicKeys.get(i)));
 		}
 
@@ -74,6 +75,7 @@ public final class SimulationMain {
 		while (TOTAL_NODES_NUMBER != TrackerHelper.getRegistered()) {
 			Thread.sleep(1000);
 		}
+		Log.log(Level.INFO, "All nodes to registered");
 
 		// --- PHASE 2: all nodes registered, so create genesis block and genesis.json files ---
 		//update nodes from the tracker
@@ -92,10 +94,12 @@ public final class SimulationMain {
 		simulation.setTransactionPattern(itp);
 		simulation.runNodesLocally(nodeNumbersToRunLocally, nodes, ownNodes, genesisBlock, nodeToKeyPair);
 
+
 		Log.log(Level.INFO, "Waiting on nodes to initialize");
 		while (TOTAL_NODES_NUMBER != TrackerHelper.getInitialized()) {
 			Thread.sleep(1000);
 		}
+		Log.log(Level.INFO, "All nodes to initialized");
 
 		simulation.initialize();
 		
