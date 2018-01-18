@@ -366,7 +366,6 @@ public final class TendermintHelper {
 		List<Transaction> initialTransactions = new ArrayList<>();
 		for (Integer i : nodeList.keySet()) {
 			Transaction t = new Transaction(i, null, nodeList.get(i), amount, 0, new HashSet<>(0));
-			t.setBlockNumber(OptionalInt.of(0));
 			initialTransactions.add(t);
 		}
 		return new Block(0, null, initialTransactions);

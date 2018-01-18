@@ -40,8 +40,6 @@ public class Transaction {
 	// Custem getter
 	private Sha256Hash hash;
 	
-	// Custom getter
-	@Setter
 	private OptionalInt blockNumber;
 
 	/**
@@ -70,6 +68,8 @@ public class Transaction {
 	 */
 	public Transaction(TransactionMessage transactionMessage, LocalStore localStore)  {
 		this.number = transactionMessage.getNumber();
+		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
+		
 		// It's a genesis transaction
 		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
 			this.sender = null;
@@ -84,13 +84,13 @@ public class Transaction {
 		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
 			Integer nodeId = knownSourceEntry.getKey();
 			Integer transactionId = knownSourceEntry.getValue();
-			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
+			//TODO This might need to be done in a certain order
+			this.source.add(localStore.getTransactionFromNode(nodeId, transactionMessage.getBlockNumber(), transactionId));
 		}
 		for (TransactionMessage transactionMessageAux : transactionMessage.getNewSource()) {
 			this.source.add(new Transaction(transactionMessageAux, localStore));
 		}
 		this.hash = transactionMessage.getHash();
-		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
 	}
 	
 	/**
@@ -113,6 +113,14 @@ public class Transaction {
 			}
 		}
 		return this.blockNumber;
+	}
+	
+	/**
+	 * Sets the block number of this transaction.
+	 * @param number - the block number
+	 */
+	public void setBlockNumber(int number) {
+		this.blockNumber = OptionalInt.of(number);
 	}
 
 	/**

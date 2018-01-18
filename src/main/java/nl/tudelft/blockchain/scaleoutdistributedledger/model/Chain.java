@@ -1,7 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +16,6 @@ public class Chain {
 	@Getter
 	private final List<Block> blocks;
 	
-	/**
-	 * TODO The last committed Block has to be set somewhere.
-	 * @return the last block that was committed to the main chain
-	 */
-	@Getter @Setter
 	private Block lastCommittedBlock;
 
 	/**
@@ -69,6 +63,15 @@ public class Chain {
 	}
 	
 	/**
+	 * @return - the genesis block
+	 */
+	public synchronized Block getGenesisBlock() {
+		if (blocks.isEmpty()) return null;
+
+		return blocks.get(0);
+	}
+	
+	/**
 	 * @return the last block in this chain
 	 */
 	public synchronized Block getLastBlock() {
@@ -78,12 +81,23 @@ public class Chain {
 	}
 	
 	/**
-	 * @return - the genesis block
+	 * @return - the last block that was committed to the main chain
 	 */
-	public synchronized Block getGenesisBlock() {
-		if (blocks.isEmpty()) return null;
-
-		return blocks.get(0);
+	public synchronized Block getLastCommittedBlock() {
+		return lastCommittedBlock;
+	}
+	
+	/**
+	 * Sets the last committed block to the given block.
+	 * If the given block is before the current last committed block then this method has no effect.
+	 * @param block - the block
+	 */
+	public synchronized void setLastCommittedBlock(Block block) {
+		if (lastCommittedBlock == null) {
+			lastCommittedBlock = block;
+		} else if (block.getNumber() > lastCommittedBlock.getNumber()) {
+			lastCommittedBlock = block;
+		}
 	}
 	
 	/**
