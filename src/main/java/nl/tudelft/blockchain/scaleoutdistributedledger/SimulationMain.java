@@ -41,7 +41,7 @@ public final class SimulationMain {
 		// --- PHASE 0: Cleanup ---
 
 		// Clean Tendermint folder
-		TendermintHelper.cleanTendermintFiles(Simulation.TENDERMINT_NODES_FOLDER);
+		TendermintHelper.cleanTendermintFiles();
 
 		// reset the tracker server
 		TrackerHelper.resetTrackerServer();
@@ -52,8 +52,7 @@ public final class SimulationMain {
 		List<Integer> nodeNumbersToRunLocally = IntStream.rangeClosed(nodesFromNumber, nodesFromNumber + localNodesNumber - 1)
 				.boxed().collect(Collectors.toList());
 		//generate priv_validator.json for each local node
-		Map<Integer, Ed25519Key> nodeToKeyPair = TendermintHelper.generatePrivValidatorFiles(
-				Simulation.TENDERMINT_BINARY, Simulation.TENDERMINT_NODES_FOLDER, nodeNumbersToRunLocally);
+		Map<Integer, Ed25519Key> nodeToKeyPair = TendermintHelper.generatePrivValidatorFiles(nodeNumbersToRunLocally);
 
 		//register with tracker, keep track of local own nodes
 		Map<Integer, byte[]> localPublicKeys = convertToPublicKeys(nodeToKeyPair);
@@ -76,8 +75,7 @@ public final class SimulationMain {
 		final Block genesisBlock = TendermintHelper.generateGenesisBlock(totalNodesNumber, 1000, nodes);
 
 		//generate genesis.json for all local nodes
-		TendermintHelper.generateGenesisFiles(
-				Simulation.TENDERMINT_NODES_FOLDER, new Date(),
+		TendermintHelper.generateGenesisFiles(new Date(),
 				generatePublicKeysMap(nodes),
 				genesisBlock.getHash().getBytes(), nodeNumbersToRunLocally);
 
@@ -86,7 +84,7 @@ public final class SimulationMain {
 		ITransactionPattern itp = new RandomTransactionPattern(10, 20, 1000, 2000, 1);
 		simulation.setTransactionPattern(itp);
 		
-		simulation.runNodesLocally(nodeNumbersToRunLocally, nodes, ownNodes, genesisBlock, Simulation.TENDERMINT_NODES_FOLDER, nodeToKeyPair);
+		simulation.runNodesLocally(nodeNumbersToRunLocally, nodes, ownNodes, genesisBlock, nodeToKeyPair);
 		
 		Thread.sleep(5000);
 		simulation.initialize();
