@@ -28,9 +28,9 @@ public final class SimulationMain {
 
 	//SETTINGS
 	//number of local nodes to generate
-	public static final int LOCAL_NODES_NUMBER = 3;
+	public static final int LOCAL_NODES_NUMBER = 4;
 	//number of total nodes in the system
-	public static final int TOTAL_NODES_NUMBER = 6;
+	public static final int TOTAL_NODES_NUMBER = 4;
 	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 	public static final int NODES_FROM_NUMBER = 0;
 	//Whether this main is the master coordinator of the simulation
@@ -50,14 +50,13 @@ public final class SimulationMain {
 
 		// Reset the tracker server when you are running the tracker server
 		try {
-			String trackerAddr = Application.TRACKER_SERVER_ADDRESS;
-			if (trackerAddr.equals("localhost") || trackerAddr.startsWith("127.")) {
+			if (IS_MASTER) {
 				TrackerHelper.resetTrackerServer();
 			} else {
 				TrackerHelper.getRunning();
 			}
 		} catch (HttpHostConnectException e) {
-			Log.log(Level.SEVERE, "Tracker not running, please start it");
+			Log.log(Level.SEVERE, "Tracker not running, please start it on '" + Application.TRACKER_SERVER_ADDRESS + "'");
 			Log.log(Level.INFO, "The tracker can be started using `npm start` in the tracker-server folder");
 			return;
 		}
@@ -118,7 +117,7 @@ public final class SimulationMain {
 		Thread.sleep(5000);
 		simulation.start();
 		
-		Thread.sleep(20 * 1000);
+		Thread.sleep(60 * 1000);
 		simulation.stop();
 
 		Log.log(Level.INFO, "Waiting on nodes to stop");
