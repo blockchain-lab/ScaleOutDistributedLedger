@@ -75,6 +75,7 @@ public class LocalStore {
 		
 		if (genesisBlock != null) {
 			this.addUnspentTransaction(genesisBlock.getTransactions().get(ownNode.getId()));
+			this.transactionId = genesisBlock.getTransactions().size() - 1;
 		}
 	}
 	

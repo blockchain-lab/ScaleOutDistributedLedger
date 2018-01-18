@@ -89,11 +89,11 @@ public class Node {
 	 * @param proof - the proof to update with
 	 */
 	public void updateMetaKnowledge(Proof proof) {
-		Map<Node, List<Block>> updates = proof.getChainUpdates();
-		for (Entry<Node, List<Block>> entry : updates.entrySet()) {
-			int lastBlockNr = getLastBlockNumber(entry.getValue());
-			metaKnowledge.merge(entry.getKey(), lastBlockNr, Math::max);
-		}
+//		Map<Node, List<Block>> updates = proof.getChainUpdates();
+//		for (Entry<Node, List<Block>> entry : updates.entrySet()) {
+//			int lastBlockNr = getLastBlockNumber(entry.getValue());
+//			metaKnowledge.merge(entry.getKey(), lastBlockNr, Math::max);
+//		}
 	}
 	
 	/**

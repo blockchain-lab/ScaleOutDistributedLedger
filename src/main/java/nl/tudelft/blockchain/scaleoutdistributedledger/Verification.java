@@ -51,20 +51,37 @@ public class Verification {
 		// Genesis transaction is always valid, TODO: something?
 		if (transaction.getSender() == null) return true;
 
+//		System.out.println("HERE1");
+
 		//Verify the proof
 		if (!proof.verify(localStore)) return false;
+//		System.out.println("HERE2");
 		
 		//Equality check: Check if the counts match up
 		long expectedSum = transaction.getAmount() + transaction.getRemainder();
 		long sum = 0L;
+//		System.out.println(transaction);
 		for (Transaction txj : transaction.getSource()) {
-			if(txj.getSender() != null && txj.getSender() == transaction.getSender()) sum += txj.getRemainder();
-			else sum += txj.getAmount();
-			if (sum > expectedSum) return false;
+			if(txj.getSender() != null && txj.getSender() == transaction.getSender()) {
+				sum += txj.getRemainder();
+			} else {
+				sum += txj.getAmount();
+			}
+			if (sum > expectedSum) {
+				System.out.println(txj);
+				System.out.println("HERE3");
+				System.out.println("Sum = " + sum);
+				System.out.println("Expected sum = " + expectedSum);
+				return false;
+			}
 		}
 
+//		System.out.println("HERE4");
 		if (sum != expectedSum) return false;
 
+
+
+//		System.out.println("HERE5");
 		//Double spending check
 		Chain chain = transaction.getSender().getChain();
 		for (Block block : chain.getBlocks()) {
@@ -81,6 +98,7 @@ public class Verification {
 			if (found) break;
 		}
 
+//		System.out.println("HERE6");
 		//Validate sources
 		for (Transaction txj : transaction.getSource()) {
 			Boolean cached = validationCache.get(txj);
@@ -88,6 +106,7 @@ public class Verification {
 				//We didn't see this transaction before, so we need to validate it.
 				if (!isValid(txj, proof, localStore)) return false;
 			} else if (!cached) {
+//				System.out.println("HERE7");
 				//We already invalidated this transaction
 				return false;
 			} else {

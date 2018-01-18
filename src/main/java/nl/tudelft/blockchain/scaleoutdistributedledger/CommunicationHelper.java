@@ -27,11 +27,14 @@ public final class CommunicationHelper {
 
 
 		if (!localStore.getVerification().isValid(proof.getTransaction(), proof, localStore)) {
+			System.out.println(proof.getTransaction());
 			Log.log(Level.WARNING, "Received an invalid transaction/proof: " + proof.getTransaction());
+
+			System.exit(0);
 			return false;
 		}
 		
-		proof.applyUpdates();
+		proof.applyUpdates(localStore);
 
 		Log.log(Level.INFO, "Received and validated transaction: " + proof.getTransaction());
 
