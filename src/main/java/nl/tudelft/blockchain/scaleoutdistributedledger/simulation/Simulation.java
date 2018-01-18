@@ -25,8 +25,6 @@ import java.util.logging.Level;
  * Class for simulations.
  */
 public class Simulation {
-	public static final String TENDERMINT_BINARY = "./tendermint.exe";
-	public static final String TENDERMINT_NODES_FOLDER = "tendermint-nodes";
 
 
 	@Getter
@@ -66,11 +64,10 @@ public class Simulation {
 	 * @param ownNodes - the list of own nodes registered to tracker server on this instance
 	 * @param genesisBlock - the genesis block of the main chain
 	 * @param nodeToKeyPair - the map of own nodes numbers to their private keys
-	 * @param nodeFilesDirectory - the directory of files for the nodes
 	 * @throws IllegalStateException - if the state is not STOPPED.
 	 */
 	public void runNodesLocally(List<Integer> nodeNumbers, Map<Integer, Node> nodes, Map<Integer, OwnNode> ownNodes,
-								Block genesisBlock, String nodeFilesDirectory, Map<Integer, Ed25519Key> nodeToKeyPair) {
+								Block genesisBlock, Map<Integer, Ed25519Key> nodeToKeyPair) {
 		checkState(SimulationState.STOPPED, "start local nodes");
 
 		this.nodes = nodes;
@@ -86,7 +83,7 @@ public class Simulation {
 			Map<Integer, Node> nodesForThisNode = new HashMap<>(nodes);
 			nodesForThisNode.remove(nodeNumber);
 			try {
-				TendermintHelper.runTendermintNode(TENDERMINT_BINARY, nodeFilesDirectory, nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
+				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
 				app.init(port, genesisBlock.clone(), nodesForThisNode, nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + port + "!", ex);
