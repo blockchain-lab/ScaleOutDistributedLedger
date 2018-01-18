@@ -214,7 +214,11 @@ public class Simulation {
 
 		Log.log(Level.INFO, "[Simulation] Stopped");
 		state = SimulationState.STOPPED;
-		
+
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {	}
+
 		for (Integer nodeNumber : nodes.keySet()) {
 			try {
 				TrackerHelper.setRunning(nodeNumber, false);
