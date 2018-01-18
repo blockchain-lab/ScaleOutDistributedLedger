@@ -74,17 +74,7 @@ public class LocalStore {
 	 * @throws IllegalStateException - exception while updating nodes
 	 */
 	public Node getNode(int id) {
-		Node node = nodes.get(id);
-		//TODO: this should no longer be needed
-		if (node == null) {
-			try {
-				TrackerHelper.updateNodes(nodes, ownNode);
-			} catch (IOException ex) {
-				throw new IllegalStateException("Node " + id + " was not found locally and the tracker update failed!", ex);
-			}
-			node = nodes.get(id);
-		}
-		return node;
+		return nodes.get(id);
 	}
 	
 	/**
@@ -154,6 +144,9 @@ public class LocalStore {
 		return ++transactionId;
 	}
 
+	/**
+	 * Initializes the main chain.
+	 */
 	public void initMainChain() {
 		this.mainChain.init();
 	}
