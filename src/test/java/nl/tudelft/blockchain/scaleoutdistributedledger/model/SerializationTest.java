@@ -52,7 +52,7 @@ public class SerializationTest {
 		this.sender = (OwnNode) this.nodeList.get(0);
 		
 		// Generate genesis block (10 nodes, 1000 coins)
-		this.genesisBlock = TendermintHelper.generateGenesisBlock(10, 1000, nodeList);
+		this.genesisBlock = TendermintHelper.generateGenesisBlock(1000, nodeList);
 		this.sender.setGenesisBlock(genesisBlock.clone());
 		
 		//Create two following blocks
