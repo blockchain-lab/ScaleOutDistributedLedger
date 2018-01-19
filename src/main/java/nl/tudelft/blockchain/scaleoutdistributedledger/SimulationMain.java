@@ -75,8 +75,8 @@ public final class SimulationMain {
 
 		for (int i = 0; i < LOCAL_NODES_NUMBER; i++) {
 			int basePort = Application.NODE_PORT + i * 4;
-			OwnNode node = TrackerHelper.registerNode(basePort, localPublicKeys.get(NODES_FROM_NUMBER + i));
-			ownNodes.put(node.getId(), node);
+			int nodeID = NODES_FROM_NUMBER + i;
+			ownNodes.put(nodeID, TrackerHelper.registerNode(basePort, localPublicKeys.get(nodeID), nodeID));
 		}
 
 		//wait for all the nodes to register in tracker
@@ -103,7 +103,7 @@ public final class SimulationMain {
 		Simulation simulation = new Simulation(IS_MASTER);
 		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 1);
 		simulation.setTransactionPattern(itp);
-		simulation.runNodesLocally(nodeNumbersToRunLocally, nodes, ownNodes, genesisBlock, nodeToKeyPair);
+		simulation.runNodesLocally(nodes, ownNodes, genesisBlock, nodeToKeyPair);
 
 
 		Log.log(Level.INFO, "Waiting on nodes to initialize");

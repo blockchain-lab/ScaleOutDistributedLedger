@@ -33,11 +33,11 @@ router.post('/update-node', (req, res) => {
  * Register a new node, body should contain address, port and publicKey.
  */
 router.post('/register-node', (req, res) => {
-    if(!isPresent(req.body.address) || !isPresent(req.body.port) || !isPresent(req.body.publicKey)) {
+    if(!isPresent(req.body.address) || !isPresent(req.body.port) || !isPresent(req.body.publicKey) || !isPresent(req.body.id)) {
         res.status(403);
-        res.json({success: false, err: 'Specify address, port and publicKey'});
+        res.json({success: false, err: 'Specify id, address, port and publicKey'});
     } else {
-        const id = app.nodeList.registerNode(req.body.address, req.body.port, req.body.publicKey);
+        const id = app.nodeList.registerNode(req.body.id, req.body.address, req.body.port, req.body.publicKey);
         res.json({success: true, id: id});
     }
 });

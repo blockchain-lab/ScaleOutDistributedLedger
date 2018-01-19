@@ -53,12 +53,13 @@ public final class TrackerHelper {
 	 * @throws IOException - IOException while registering node
 	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
-	public static OwnNode registerNode(int nodePort, byte[] publicKey) throws IOException, NodeRegisterFailedException {
+	public static OwnNode registerNode(int nodePort, byte[] publicKey, int id) throws IOException, NodeRegisterFailedException {
 		String address = getIP();
 		JSONObject json = new JSONObject();
 		json.put("address", address);
 		json.put("port", nodePort);
 		json.put("publicKey", publicKey);
+		json.put("id", id);
 
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
 			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
@@ -67,7 +68,7 @@ public final class TrackerHelper {
 			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 			if (response.getBoolean("success")) {
 				Log.log(Level.INFO, "Successfully registered node to tracker server");
-				return new OwnNode(response.getInt("id"), publicKey, address, nodePort);
+				return new OwnNode(id, publicKey, address, nodePort);
 			}
 			Log.log(Level.SEVERE, "Error while registering node");
 			throw new NodeRegisterFailedException();

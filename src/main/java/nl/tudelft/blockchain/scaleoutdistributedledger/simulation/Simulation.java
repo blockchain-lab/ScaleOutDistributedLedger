@@ -61,24 +61,25 @@ public class Simulation {
 	/**
 	 * Runs the given amount of nodes locally, in the current JVM process.
 	 *
-	 * @param nodeNumbers - list of numbers of nodes to run locally
 	 * @param nodes - the list of nodes retrieved from tracker server
 	 * @param ownNodes - the list of own nodes registered to tracker server on this instance
 	 * @param genesisBlock - the genesis block of the main chain
 	 * @param nodeToKeyPair - the map of own nodes numbers to their private keys
 	 * @throws IllegalStateException - if the state is not STOPPED.
 	 */
-	public void runNodesLocally(List<Integer> nodeNumbers, Map<Integer, Node> nodes, Map<Integer, OwnNode> ownNodes,
+	public void runNodesLocally(Map<Integer, Node> nodes, Map<Integer, OwnNode> ownNodes,
 								Block genesisBlock, Map<Integer, Ed25519Key> nodeToKeyPair) {
 		checkState(SimulationState.STOPPED, "start local nodes");
 
 		this.nodes = nodes;
 		//Init the applications
-		localApplications = new Application[nodeNumbers.size()];
+		localApplications = new Application[ownNodes.size()];
 		int counter = 0;
-		for (Integer nodeNumber : nodeNumbers) {
+		for (Map.Entry<Integer, OwnNode> nodeEntry : ownNodes.entrySet()) {
+			Node node = nodeEntry.getValue();
+			int nodeNumber = nodeEntry.getKey();
+
 			Application app = new Application(true);
-			Node node = nodes.get(nodeNumber);
 			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
 
 			try {
