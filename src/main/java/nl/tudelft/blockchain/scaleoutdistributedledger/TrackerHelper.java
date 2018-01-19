@@ -14,7 +14,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.logging.Level;
@@ -122,7 +125,7 @@ public final class TrackerHelper {
 		} catch (SocketException e) { }		// Intentionally empty catch block
 		try {
 			Log.log(Level.WARNING, "Could not resolve address, using localhost instead");
-			return Inet4Address.getLocalHost().getHostAddress();
+			return InetAddress.getLocalHost().getHostAddress();
 		} catch (UnknownHostException e) {
 			Log.log(Level.SEVERE, "Could not resolve localhost address, please check your network configuration");
 			return "0.0.0.0";
