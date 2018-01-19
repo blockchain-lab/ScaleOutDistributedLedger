@@ -5,6 +5,7 @@ class Node {
 
 	/**
 	 * Constructor.
+	 * @param id - the id of this node.
 	 * @param address - the address of this node.
 	 * @param port - the port of this node.
 	 */

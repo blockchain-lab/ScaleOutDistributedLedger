@@ -34,6 +34,7 @@ class NodeList {
 
 	/**
 	 * Register a new node.
+	 * @param id - the id of the new node
 	 * @param address - the address of the new node
 	 * @param port - the port of the new node
 	 * @param publicKey - the public key of the new node
@@ -65,7 +66,7 @@ class NodeList {
 	getRunning() {
 		var count = 0;
 		for (var i = 0; i < this.nodes.length; ++i) {
-			if (this.nodes[i].running) {
+			if (!!this.nodes[i] && this.nodes[i].running) {
 				count ++;
 			}
 		}	
