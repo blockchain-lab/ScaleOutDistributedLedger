@@ -77,39 +77,36 @@ public class Simulation {
 		this.nodes = nodes;
 		//Init the applications
 		localApplications = new Application[nodeNumbers.size()];
-		Map<Integer, String> nodeAddresses = reduceToNodeAddresses(nodes);
-		Map<Integer, Integer> nodePorts = reduceToNodePorts(nodes);
+//		Map<Integer, String> nodeAddresses = reduceToNodeAddresses(nodes);
 		int counter = 0;
 		for (Integer nodeNumber : nodeNumbers) {
 			Application app = new Application(true);
-			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodeAddresses, nodePorts);
-			int port = nodePorts.get(nodeNumber);
+			Node node = nodes.get(nodeNumber);
+			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
 
 			//TODO: fix this dirty hack
 			//The ownNodes and nodePort maps do not have the same port numbers for each node, so just override one to fix it.
-			ownNodes.get(nodeNumber).setPort(port);
+//			ownNodes.get(nodeNumber).setPort(port);
 			try {
-				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
-				app.init(port, genesisBlock.clone(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
+				TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
+				app.init(node.getPort(), genesisBlock.clone(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 				TrackerHelper.setRunning(nodeNumber, true);
 			} catch (Exception ex) {
-				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + port + "!", ex);
+				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + node.getPort() + "!", ex);
 			}
 
 			localApplications[counter++] = app;
 		}
 	}
 
-	private List<String> generateAddressesForNodeForTendermintP2P(Integer i, Map<Integer, String> nodeAddresses, Map<Integer, Integer> nodePorts) {
-		List<String> ret = new ArrayList<>(nodeAddresses.size() - 1);
+	private List<String> generateAddressesForNodeForTendermintP2P(Integer i, Map<Integer, Node> nodes) {
+		List<String> ret = new ArrayList<>(nodes.size() - 1);
 
-		for (Map.Entry<Integer, String> e : nodeAddresses.entrySet()) {
-			String addressWithPort = "";
+		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
 			int curNodeNumber = e.getKey();
-			if (curNodeNumber != i) {
-				addressWithPort = nodeAddresses.get(curNodeNumber) + ":" + Integer.toString(nodePorts.get(curNodeNumber) + 1);
-			}
-			ret.add(addressWithPort.toString());
+			if (curNodeNumber == i) continue;
+			Node node = nodes.get(curNodeNumber);
+			ret.add(node.getAddress() + ":" + Integer.toString(node.getPort() + 1));
 		}
 		return ret;
 	}
