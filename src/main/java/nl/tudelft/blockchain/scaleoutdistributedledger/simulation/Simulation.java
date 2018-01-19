@@ -84,7 +84,7 @@ public class Simulation {
 
 			try {
 				TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
-				app.init(node.getPort(), genesisBlock.clone(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
+				app.init(node.getPort(), genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 				TrackerHelper.setRunning(nodeNumber, true);
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + node.getPort() + "!", ex);
