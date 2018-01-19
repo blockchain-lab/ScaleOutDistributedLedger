@@ -53,7 +53,7 @@ public final class SimulationMain {
 			if (IS_MASTER) {
 				TrackerHelper.resetTrackerServer();
 			} else {
-				TrackerHelper.getRunning();
+				TrackerHelper.getRegistered();
 			}
 		} catch (HttpHostConnectException e) {
 			Log.log(Level.SEVERE, "Tracker not running, please start it on '" + Application.TRACKER_SERVER_ADDRESS + "'");

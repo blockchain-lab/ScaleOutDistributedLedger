@@ -64,8 +64,7 @@ class NodeList {
 	 */
 	getRunning() {
 		var count = 0;
-		var i;
-		for (i = 0; i < this.nodes.length; ++i) {
+		for (var i = 0; i < this.nodes.length; ++i) {
 			if (this.nodes[i].running) {
 				count ++;
 			}
@@ -99,7 +98,7 @@ class NodeList {
 	getSize() {
 		if (this.nodes) {
 			var count = 0;
-			for (i = 0; i < this.nodes.length; ++i) {
+			for (var i = 0; i < this.nodes.length; ++i) {
 				if (this.nodes[i]) {
 					count ++;
 				}
