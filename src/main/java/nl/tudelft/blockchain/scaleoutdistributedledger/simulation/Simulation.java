@@ -16,9 +16,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -103,22 +101,6 @@ public class Simulation {
 			if (curNodeNumber == i) continue;
 			Node node = nodes.get(curNodeNumber);
 			ret.add(node.getAddress() + ":" + Integer.toString(node.getPort() + 1));
-		}
-		return ret;
-	}
-
-	private Map<Integer, Integer> reduceToNodePorts(Map<Integer, Node> nodes) {
-		Map<Integer, Integer> ret = new HashMap<>(nodes.size());
-		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
-			ret.put(e.getKey(), e.getValue().getPort());
-		}
-		return ret;
-	}
-
-	private Map<Integer, String> reduceToNodeAddresses(Map<Integer, Node> nodes) {
-		Map<Integer, String> ret = new HashMap<>(nodes.size());
-		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
-			ret.put(e.getKey(), e.getValue().getAddress());
 		}
 		return ret;
 	}
