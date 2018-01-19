@@ -77,16 +77,12 @@ public class Simulation {
 		this.nodes = nodes;
 		//Init the applications
 		localApplications = new Application[nodeNumbers.size()];
-//		Map<Integer, String> nodeAddresses = reduceToNodeAddresses(nodes);
 		int counter = 0;
 		for (Integer nodeNumber : nodeNumbers) {
 			Application app = new Application(true);
 			Node node = nodes.get(nodeNumber);
 			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
 
-			//TODO: fix this dirty hack
-			//The ownNodes and nodePort maps do not have the same port numbers for each node, so just override one to fix it.
-//			ownNodes.get(nodeNumber).setPort(port);
 			try {
 				TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
 				app.init(node.getPort(), genesisBlock.clone(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));

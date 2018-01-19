@@ -73,10 +73,10 @@ public final class SimulationMain {
 		Map<Integer, byte[]> localPublicKeys = convertToPublicKeys(nodeToKeyPair);
 		Map<Integer, OwnNode> ownNodes = new HashMap<>(LOCAL_NODES_NUMBER);
 
-		int j = 0;
-		for (Integer i : localPublicKeys.keySet()) {
-			int basePort = Application.NODE_PORT + j++ * 4;
-			ownNodes.put(i, TrackerHelper.registerNode(basePort, localPublicKeys.get(i)));
+		for (int i = 0; i < LOCAL_NODES_NUMBER; i++) {
+			int basePort = Application.NODE_PORT + i * 4;
+			OwnNode node = TrackerHelper.registerNode(basePort, localPublicKeys.get(NODES_FROM_NUMBER + i));
+			ownNodes.put(node.getId(), node);
 		}
 
 		//wait for all the nodes to register in tracker
