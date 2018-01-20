@@ -139,9 +139,9 @@ public class Simulation {
 		} else {
 			Log.log(Level.INFO, "[Simulation] Initializing with " + nodes.size() + " nodes.");
 		}
-		
-		//Broadcast distributed transaction pattern
-		if (this.isMaster && transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
+
+		//Broadcast transaction pattern
+		if (this.isMaster) {
 			broadcastMessage(new TransactionPatternMessage(transactionPattern));
 		}
 		
@@ -159,12 +159,7 @@ public class Simulation {
 		checkState(SimulationState.INITIALIZED, "start");
 
 		if (isMaster) {
-			if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
-				broadcastMessage(new StartTransactingMessage());
-			} else if (transactionPattern.getSimulationMode() == SimulationMode.DIRECTED) {
-				Log.log(Level.INFO, "[Simulation] Starting directed simulation...");
-				//TODO Directed simulation
-			}
+			broadcastMessage(new StartTransactingMessage());
 		}
 		Log.log(Level.INFO, "[Simulation] Running");
 		state = SimulationState.RUNNING;

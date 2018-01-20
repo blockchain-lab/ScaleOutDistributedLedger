@@ -16,7 +16,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.SimulationMode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
@@ -27,11 +26,6 @@ public interface ITransactionPattern extends Serializable {
 	 * @return the name of this transaction pattern
 	 */
 	public String getName();
-	
-	/**
-	 * @return the simulation mode of this transaction pattern
-	 */
-	public SimulationMode getSimulationMode();
 	
 	/**
 	 * @return - the number of blocks to create before committing to the main chain
