@@ -1,13 +1,11 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.TrackerHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
@@ -143,12 +141,6 @@ public interface ITransactionPattern extends Serializable {
 			Log.log(Level.SEVERE, "Interrupted while committing blocks!");
 		} catch (Exception ex) {
 			Log.log(Level.SEVERE, "Unable to commit blocks onStop: ", ex);
-		} finally {
-			try {
-				TrackerHelper.setRunning(localStore.getOwnNode().getId(), false);
-			} catch (IOException ex) {
-				Log.log(Level.SEVERE, "Cannot update running status to stopped");
-			}
 		}
 	}
 
