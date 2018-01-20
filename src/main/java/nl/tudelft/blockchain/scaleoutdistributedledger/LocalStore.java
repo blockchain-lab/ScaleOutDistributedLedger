@@ -8,6 +8,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.validation.Verification;
 
 import java.io.IOException;
 import java.util.Collection;

@@ -1,15 +1,15 @@
-package nl.tudelft.blockchain.scaleoutdistributedledger;
+package nl.tudelft.blockchain.scaleoutdistributedledger.validation;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.ChainView;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
-import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 /**
  * Verification and validation algorithms.
