@@ -68,6 +68,7 @@ public class Application {
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
 		transactionSender = new TransactionSender(localStore);
+		TrackerHelper.setRunning(ownNode.getId(), true);
 	}
 	
 	/**
