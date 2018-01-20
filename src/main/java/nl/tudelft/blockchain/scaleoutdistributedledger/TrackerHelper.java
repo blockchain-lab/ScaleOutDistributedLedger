@@ -95,7 +95,7 @@ public final class TrackerHelper {
 			request.setEntity(requestEntity);
 			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 			if (response.getBoolean("success")) {
-				Log.log(Level.INFO, "Successfully updated node to running=" + running);
+				Log.log(Level.INFO, "Successfully updated node " + id + " to running=" + running);
 				return;
 			}
 			Log.log(Level.SEVERE, "Error while updating the running status of the node");
@@ -134,7 +134,6 @@ public final class TrackerHelper {
 	}
 
 	/**
-	 *
 	 * Updates the given map of nodes with new information from the tracker.
 	 * @param nodes - the map of nodes
 	 * @throws IOException - exception while updating nodes
@@ -166,7 +165,8 @@ public final class TrackerHelper {
 		}
 	}
 
-	/** Get the number of registered nodes in tracker.
+	/**
+	 * Get the number of registered nodes in tracker.
 	 * @return the number of nodes already registered in tracker
 	 * @throws IOException when problems with creating/closing http client
 	 */
@@ -177,7 +177,8 @@ public final class TrackerHelper {
 		}
 	}
 
-	/** Get the number of running nodes in tracker.
+	/**
+	 * Get the number of running nodes in tracker.
 	 * @return the number of nodes already registered in tracker
 	 * @throws IOException when problems with creating/closing http client
 	 */
