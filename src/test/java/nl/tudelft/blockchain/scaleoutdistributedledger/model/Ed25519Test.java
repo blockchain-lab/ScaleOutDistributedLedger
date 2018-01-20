@@ -1,12 +1,9 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
-import java.security.KeyPair;
+import org.junit.Test;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 /**
  * Test class for {@link Ed25519Key}.
@@ -56,7 +53,7 @@ public class Ed25519Test {
 	}
 
 	/**
-	 * Test for {@link Ed25519Key#generateKeys()}
+	 * Test for {@link Ed25519Key#generateKeys()}.
 	 */
 	@Test
 	public void testGenerateKeys() {
