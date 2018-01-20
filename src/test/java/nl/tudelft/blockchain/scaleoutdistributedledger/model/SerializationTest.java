@@ -13,15 +13,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.OptionalInt;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Test class for serialization of classes.
  */
 public class SerializationTest {
 	
-	private HashMap<Integer, Node> nodeList;
+	private Map<Integer, Node> nodeList;
 	
 	private Node aliceNode;
 	
@@ -58,47 +60,68 @@ public class SerializationTest {
 	public void setUp() {
 		// Initialize node list
 		this.nodeList = new HashMap<>();
-		this.nodeList.put(0, new OwnNode(0));
-		for (int i = 1; i < 10; i++) {
+		for (int i = 0; i < 10; i++) {
 			this.nodeList.put(i, new OwnNode(i));
 		}
 		// Generate genesis block (10 nodes, 1000 coins)
-		this.genesisBlock = TendermintHelper.generateGenesisBlock(1000, nodeList);
-		// Setup Alice and block
-		this.aliceNode = this.nodeList.get(0);
-		this.aliceNode.setGenesisBlock(this.genesisBlock);
-		Block aliceFirstBlock = this.aliceNode.getChain().appendNewBlock(new ArrayList<>());
-		this.aliceNode.getChain().appendNewBlock(new ArrayList<>());
-		// Setup Bob and block
-		this.bobNode = this.nodeList.get(1);
-		this.bobNode.setGenesisBlock(this.genesisBlock);
-		Block bobFirstBlock = this.bobNode.getChain().appendNewBlock(new ArrayList<>());
-		// Setup Charlie
-		this.charlieNode = this.nodeList.get(2);
-		this.charlieNode.setGenesisBlock(this.genesisBlock);
-		// Setup LocalStore for Alice
-		this.aliceLocalStore = new LocalStore((OwnNode) this.aliceNode, null, this.genesisBlock, false);
-		this.aliceLocalStore.getNodes().putAll(this.nodeList);
-		// Setup LocalStore for Bob 
-		this.bobLocalStore = new LocalStore((OwnNode) this.bobNode, null, this.genesisBlock, false);
-		this.bobLocalStore.getNodes().putAll(this.nodeList);
-		// Setup LocalStore for Charlie
-		this.charlieLocalStore = new LocalStore((OwnNode) this.charlieNode, null, this.genesisBlock, false);
-		this.charlieLocalStore.getNodes().putAll(this.nodeList);
-		// Send from Alice to Bob
-		HashSet<Transaction> sources = new HashSet<>();
-		sources.add(this.genesisBlock.getTransactions().get(0));
-		this.transactionSource = new Transaction(22, this.aliceNode, this.bobNode, 100, 900, sources);
-		this.transactionSource.setBlockNumber(OptionalInt.of(1));
-		aliceFirstBlock.getTransactions().add(this.transactionSource);
-		// Send from Bob to Alice
-		HashSet<Transaction> newSources = new HashSet<>();
-		newSources.add(this.transactionSource);
-		this.transaction = new Transaction(44, this.bobNode, this.aliceNode, 50, 50, newSources);
-		this.transaction.setBlockNumber(OptionalInt.of(1));
-		bobFirstBlock.getTransactions().add(this.transaction);
+		this.genesisBlock = TendermintHelper.generateGenesisBlock(1000, this.nodeList);
+		// Setup nodes
+		this.aliceNode = setupNode(0);
+		this.bobNode = setupNode(1);
+		this.charlieNode = setupNode(2);
+		// Setup LocalStore for all thhree nodes
+		this.aliceLocalStore = setupLocalStore(this.aliceNode);
+		this.bobLocalStore = setupLocalStore(this.bobNode);
+		this.charlieLocalStore = setupLocalStore(this.charlieNode);
+		// Send 100 coins from Alice to Bob
+		this.transactionSource = generateTransaction(this.aliceNode, this.bobNode, 100, this.genesisBlock.getTransactions().get(0));
+		// Send 50 coins from Bob to Alice
+		this.transaction = generateTransaction(this.bobNode, this.aliceNode, 50, this.transactionSource);
 		// Add Proof
 		this.proof = new Proof(this.transaction);
+	}
+	
+	/**
+	 * Setup a node with a genesis and two empty blocks.
+	 * @param nodeId - id of the node
+	 * @return node
+	 */
+	public Node setupNode(int nodeId) {
+		Node node = this.nodeList.get(nodeId);
+		node.setGenesisBlock(this.genesisBlock);
+		node.getChain().appendNewBlock(new ArrayList<>());
+		node.getChain().appendNewBlock(new ArrayList<>());
+		return node;
+	}
+	
+	/**
+	 * Setup a Local Store for a node.
+	 * @param node - node for the localStore
+	 * @return localStore
+	 */
+	public LocalStore setupLocalStore(Node node) {
+		LocalStore localStore = new LocalStore((OwnNode) node, null, this.genesisBlock, false);
+		localStore.getNodes().putAll(this.nodeList);
+		return localStore;
+	}
+	
+	/**
+	 * Generates a transaction that uses the genesis transaction as source.
+	 * @param sender - the sender of the transaction
+	 * @param receiver - the receiver of the transaction
+	 * @param amount - the amount of money
+	 * @param transactionSource - source for the new transaction
+	 * @return - the transaction
+	 */
+	public Transaction generateTransaction(Node sender, Node receiver, long amount, Transaction transactionSource) {
+		Set<Transaction> sources = new HashSet<>();
+		sources.add(transactionSource);
+		long remainder = transactionSource.getAmount() - amount;
+		Transaction newtTransaction = new Transaction(11, sender, receiver, amount, remainder, sources);
+		newtTransaction.setBlockNumber(OptionalInt.of(1));
+		sender.getChain().getBlocks().get(1).getTransactions().add(newtTransaction);
+		
+		return newtTransaction;
 	}
 	
 	/**
@@ -110,11 +133,11 @@ public class SerializationTest {
 		// Encode genesis block
 		BlockMessage genesisBlockMessage = new BlockMessage(this.genesisBlock);
 		// Check
-		assertTrue(genesisBlockMessage.getNumber() == this.genesisBlock.getNumber());
-		assertTrue(genesisBlockMessage.getPreviousBlockNumber() == -1);
-		assertTrue(genesisBlockMessage.getOwnerId() == Transaction.GENESIS_SENDER);
-		assertTrue(genesisBlockMessage.getTransactions().size() == this.genesisBlock.getTransactions().size());
-		assertTrue(genesisBlockMessage.getHash().equals(this.genesisBlock.getHash()));
+		assertEquals(genesisBlockMessage.getNumber(), this.genesisBlock.getNumber());
+		assertEquals(genesisBlockMessage.getPreviousBlockNumber(), -1);
+		assertEquals(genesisBlockMessage.getOwnerId(), Transaction.GENESIS_SENDER);
+		assertEquals(genesisBlockMessage.getTransactions().size(), this.genesisBlock.getTransactions().size());
+		assertEquals(genesisBlockMessage.getHash(), this.genesisBlock.getHash());
 	}
 	
 	/**
@@ -126,13 +149,13 @@ public class SerializationTest {
 		// Encode Transaction into TransactionMessage
 		TransactionMessage transactionMessage = new TransactionMessage(this.transaction);
 		// Check
-		assertTrue(transactionMessage.getNumber() == this.transaction.getNumber());
-		assertTrue(transactionMessage.getSenderId() == this.transaction.getSender().getId());
-		assertTrue(transactionMessage.getReceiverId() == this.transaction.getReceiver().getId());
-		assertTrue(transactionMessage.getAmount() == this.transaction.getAmount());
-		assertTrue(transactionMessage.getRemainder() == this.transaction.getRemainder());
-		assertTrue(transactionMessage.getHash().equals(this.transaction.getHash()));
-		assertTrue(transactionMessage.getBlockNumber() == this.transaction.getBlockNumber().getAsInt());
+		assertEquals(transactionMessage.getNumber(), this.transaction.getNumber());
+		assertEquals(transactionMessage.getSenderId(), this.transaction.getSender().getId());
+		assertEquals(transactionMessage.getReceiverId(), this.transaction.getReceiver().getId());
+		assertEquals(transactionMessage.getAmount(), this.transaction.getAmount());
+		assertEquals(transactionMessage.getRemainder(), this.transaction.getRemainder());
+		assertEquals(transactionMessage.getHash(), this.transaction.getHash());
+		assertEquals(transactionMessage.getBlockNumber(), this.transaction.getBlockNumber().getAsInt());
 	}
 	
 	/**
@@ -146,8 +169,8 @@ public class SerializationTest {
 		// Decode ProofMessage into Proof (on Alice node)
 		Proof decodedProof = new Proof(proofMessage, this.aliceLocalStore);
 		// Check references
-		assertTrue(decodedProof.getTransaction().equals(this.proof.getTransaction()));
-		assertTrue(decodedProof.getChainUpdates().equals(this.proof.getChainUpdates()));
+		assertEquals(decodedProof.getTransaction(), this.proof.getTransaction());
+		assertEquals(decodedProof.getChainUpdates(), this.proof.getChainUpdates());
 	}
 	
 	/**
@@ -160,11 +183,11 @@ public class SerializationTest {
 		Block aliceBlock = this.aliceNode.getChain().getBlocks().get(1);
 		BlockMessage blockMessage = new BlockMessage(aliceBlock);
 		// Check
-		assertTrue(blockMessage.getNumber() == aliceBlock.getNumber());
-		assertTrue(blockMessage.getPreviousBlockNumber() == 0);
-		assertTrue(blockMessage.getOwnerId() == aliceBlock.getOwner().getId());
-		assertTrue(blockMessage.getHash().equals(aliceBlock.getHash()));
-		assertTrue(blockMessage.getTransactions().size() == aliceBlock.getTransactions().size());
+		assertEquals(blockMessage.getNumber(), aliceBlock.getNumber());
+		assertEquals(blockMessage.getPreviousBlockNumber(), aliceBlock.getPreviousBlock().getNumber());
+		assertEquals(blockMessage.getOwnerId(), aliceBlock.getOwner().getId());
+		assertEquals(blockMessage.getTransactions().size(), aliceBlock.getTransactions().size());
+		assertEquals(blockMessage.getHash(), aliceBlock.getHash());
 	}
 	
 	/**
@@ -178,10 +201,7 @@ public class SerializationTest {
 		// Bob		---->	Charlie
 		
 		// Create new transaction
-		HashSet<Transaction> sourcesList = new HashSet<>();
-		sourcesList.add(this.transactionSource);
-		Transaction newTransaction = new Transaction(88, this.bobNode, this.charlieNode, 50, 50, sourcesList);
-		this.bobNode.getChain().getBlocks().get(1).getTransactions().add(newTransaction);
+		Transaction newTransaction = generateTransaction(this.bobNode, this.charlieNode, 50, this.transactionSource);
 		
 		// Create Proof
 		Proof originalProof = new Proof(newTransaction);

@@ -1,43 +1,39 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 /**
  * Test class for TransactionCreator.
  */
 public class TransactionCreatorTest {
-	private OwnNode ownNodeMock;
+	private OwnNode ownNode;
 	
-	private LocalStore storeMock;
+	private LocalStore localStore;
 	
 	private Map<Integer, Node> nodes;
 	
 	/**
 	 * Called before every test.
-	 * Creates all required mocks.
 	 */
 	@Before
 	public void setUp() {
-		ownNodeMock = mock(OwnNode.class);
-		when(ownNodeMock.getId()).thenReturn(0);
-		when(ownNodeMock.getMetaKnowledge()).thenReturn(new HashMap<>());
-		when(ownNodeMock.getChain()).thenReturn(new Chain(ownNodeMock));
+		ownNode = new OwnNode(0);
 		
-		storeMock = spy(new LocalStore(ownNodeMock, null, null, false));
-		nodes = storeMock.getNodes();
-		when(storeMock.getNode(anyInt())).thenAnswer(i -> nodes.get(i.getArgument(0)));
-		
-		nodes.put(0, ownNodeMock);
+		localStore = new LocalStore(ownNode, null, null, false);
+		nodes = localStore.getNodes();
 	}
 	
 	/**
@@ -47,24 +43,8 @@ public class TransactionCreatorTest {
 	 */
 	public void createNodes(int from, int to) {
 		for (int i = from; i <= to; i++) {
-			Node nodeMock = createNodeMock(i);
-			nodes.put(i, nodeMock);
+			nodes.put(i, new Node(i));
 		}
-	}
-	
-	/**
-	 * Creates a mock for a node with the given id.
-	 * The {@link Node#getId()}, {@link Node#getChain()} and {@link Node#getMetaKnowledge()}
-	 * methods will work as normal.
-	 * @param id - the id of the node
-	 * @return     the mocked node
-	 */
-	public Node createNodeMock(int id) {
-		Node nodeMock = mock(Node.class);
-		when(nodeMock.getId()).thenReturn(id);
-		when(nodeMock.getMetaKnowledge()).thenReturn(new HashMap<>());
-		when(nodeMock.getChain()).thenReturn(new Chain(nodeMock));
-		return nodeMock;
 	}
 	
 	/**
@@ -73,7 +53,7 @@ public class TransactionCreatorTest {
 	 * @return     the node with the given id
 	 */
 	public Node getNode(int id) {
-		return storeMock.getNode(id);
+		return localStore.getNode(id);
 	}
 	
 	/**
@@ -99,8 +79,8 @@ public class TransactionCreatorTest {
 	 */
 	public Transaction addUnspent(Node sender, Node receiver, long amount, long remainder) {
 		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new HashSet<>());
-		Transaction transaction = new Transaction(storeMock.getNewTransactionId(), sender, receiver, amount, remainder, Collections.singleton(genesis));
-		storeMock.addUnspentTransaction(transaction);
+		Transaction transaction = new Transaction(localStore.getNewTransactionId(), sender, receiver, amount, remainder, Collections.singleton(genesis));
+		localStore.addUnspentTransaction(transaction);
 		return transaction;
 	}
 	
@@ -111,7 +91,7 @@ public class TransactionCreatorTest {
 	 * @return         the transaction
 	 */
 	public Transaction addReceivedMoney(Node from, long amount) {
-		return addUnspent(from, ownNodeMock, amount, 0);
+		return addUnspent(from, ownNode, amount, 0);
 	}
 	
 	/**
@@ -121,7 +101,7 @@ public class TransactionCreatorTest {
 	 * @return            the transaction
 	 */
 	public Transaction addRemainderMoney(Node to, long remainder) {
-		return addUnspent(ownNodeMock, to, remainder + 1, remainder);
+		return addUnspent(ownNode, to, remainder + 1, remainder);
 	}
 	
 	/**
@@ -144,7 +124,7 @@ public class TransactionCreatorTest {
 	public void testNotEnoughMoney1() {
 		createNodes(1, 1);
 		
-		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(localStore, getNode(1), 10);
 		tc.createTransaction();
 	}
 	
@@ -158,7 +138,7 @@ public class TransactionCreatorTest {
 		//We have 5 money, received from node 2.
 		addReceivedMoney(getNode(2), 5);
 		
-		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(localStore, getNode(1), 10);
 		tc.createTransaction();
 	}
 	
@@ -207,12 +187,12 @@ public class TransactionCreatorTest {
 		Transaction t4 = addReceivedMoney(getNode(4), 10);
 		
 		//We want to send 10 money to node 1
-		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(localStore, getNode(1), 10);
 		
 		Transaction transaction = tc.createTransaction();
 		
 		//Check if all the fields are correct
-		assertEquals(ownNodeMock, transaction.getSender());
+		assertEquals(ownNode, transaction.getSender());
 		assertEquals(getNode(1), transaction.getReceiver());
 		assertEquals(10, transaction.getAmount());
 		assertEquals(0, transaction.getRemainder());
@@ -271,12 +251,12 @@ public class TransactionCreatorTest {
 		Transaction t5 = addReceivedMoney(getNode(5), 1);
 		
 		//We want to send 10 money to node 1
-		TransactionCreator tc = new TransactionCreator(storeMock, getNode(1), 10);
+		TransactionCreator tc = new TransactionCreator(localStore, getNode(1), 10);
 		
 		Transaction transaction = tc.createTransaction();
 		
 		//Check if all the fields are correct
-		assertEquals(ownNodeMock, transaction.getSender());
+		assertEquals(ownNode, transaction.getSender());
 		assertEquals(getNode(1), transaction.getReceiver());
 		assertEquals(10, transaction.getAmount());
 		assertEquals(0, transaction.getRemainder());
