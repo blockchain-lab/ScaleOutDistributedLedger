@@ -138,12 +138,8 @@ public interface ITransactionPattern extends Serializable {
 		} catch (Exception ex) {
 			Log.log(Level.SEVERE, "Unable to commit blocks onStop: ", ex);
 		} finally {
-			int nodeID = localStore.getOwnNode().getId();
-			try {
-				TrackerHelper.setRunning(nodeID, false);
-			} catch (IOException ex) {
-				Log.log(Level.SEVERE, "Cannot update running status to stopped for node " + nodeID);
-			}
+			//TODO: Call this method somewhere else
+			localStore.getApplication().onStopTransacting();
 		}
 	}
 

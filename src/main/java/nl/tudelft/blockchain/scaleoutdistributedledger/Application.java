@@ -128,4 +128,17 @@ public class Application {
 	public MainChain getMainChain() {
 		return localStore.getMainChain();
 	}
+
+	/**
+	 * Method called when the sending of transactions has stopped.
+	 * This marks the current node as stopped regarding the tracker, so the tracker is removed.
+	 */
+	public void onStopTransacting() {
+		int nodeID = localStore.getOwnNode().getId();
+		try {
+			TrackerHelper.setRunning(nodeID, false);
+		} catch (IOException ex) {
+			Log.log(Level.SEVERE, "Cannot update running status to stopped for node " + nodeID);
+		}
+	}
 }
