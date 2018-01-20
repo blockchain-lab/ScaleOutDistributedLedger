@@ -63,11 +63,13 @@ public class Node {
 	 * @param block - the genesis block
 	 */
 	public void setGenesisBlock(Block block) {
-		if (!this.chain.getBlocks().isEmpty()) {
-			throw new IllegalStateException("Adding genesis block to non-empty chain");
+		synchronized (this.chain) {
+			if (!this.chain.getBlocks().isEmpty()) {
+				throw new IllegalStateException("Adding genesis block to non-empty chain");
+			}
+			this.chain.getBlocks().add(block);
+			this.chain.setLastCommittedBlock(block);
 		}
-		this.chain.getBlocks().add(block);
-		this.chain.setLastCommittedBlock(block);
 	}
 	
 	/**
@@ -114,5 +116,10 @@ public class Node {
 	public boolean equals(Object obj) {
 		//We only have one Node object for each id, so we can compare with ==
 		return obj == this;
+	}
+	
+	@Override
+	public String toString() {
+		return this.id + " at " + this.address + ":" + this.port;
 	}
 }

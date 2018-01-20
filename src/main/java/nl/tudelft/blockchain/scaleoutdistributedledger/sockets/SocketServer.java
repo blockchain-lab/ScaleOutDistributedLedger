@@ -25,6 +25,8 @@ public class SocketServer implements Runnable {
 
     // In seconds, time connections are kept open after messages.
     private static final int CHANNEL_TIMEOUT = 30;
+    // The maximum message size in bytes.
+    private static final int MAX_MESSAGE_SIZE = 5 * 1024 * 1024;
 
     private int port;
     private LocalStore localStore;
@@ -57,7 +59,7 @@ public class SocketServer implements Runnable {
                             ChannelPipeline p = socketChannel.pipeline();
                             p.addLast(new IdleStateHandler(0, 0, CHANNEL_TIMEOUT),
                                     new ObjectEncoder(),
-                                    new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
+                                    new ObjectDecoder(MAX_MESSAGE_SIZE, ClassResolvers.cacheDisabled(null)),
                                     new SocketServerHandler(localStore));
                         }
                     });

@@ -106,10 +106,10 @@ public class Transaction {
 				List<BlockMessage> blockMessageList = encodedChainUpdates.get(owner.getId());
 				// Decode chain
 				List<Block> blockList = new ArrayList<>();
+				decodedChainUpdates.put(owner, blockList);
 				for (BlockMessage blockMessage : blockMessageList) {
 					blockList.add(new Block(blockMessage, encodedChainUpdates, decodedChainUpdates, localStore));
 				}
-				decodedChainUpdates.put(owner, blockList);
 			}
 			// Get transaction from the current chain of updates
 			List<Block> blockList = decodedChainUpdates.get(owner);
@@ -124,27 +124,6 @@ public class Transaction {
 		}
 		this.hash = transactionMessage.getHash();
 		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
-	}
-	
-	/**
-	 * Creates a proof for this transaction.
-	 * @return - the proof
-	 */
-	public Proof getProof() {
-		// TODO: do a smart include of chainUpdates
-
-		Map<Node, List<Block>> chainUpdates = new HashMap<>();
-		for (Transaction t : source) {
-			if (!chainUpdates.containsKey(t.getSender())) {
-				if (t.getSender() != null) {
-					chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
-				} else if (t.getBlockNumber().isPresent() && t.getBlockNumber().getAsInt() != 0) {
-					throw new IllegalStateException("Transaction found with no sender in a not-genesis block");
-				}
-			}
-		}
-
-		return new Proof(this, chainUpdates);
 	}
 	
 	/**
@@ -208,6 +187,17 @@ public class Transaction {
 		
 		return new Sha256Hash(transactionInBytes);
 	}
+	
+	/**
+	 * @return - a copy of this transaction
+	 * @throws UnsupportedOperationException - If this transaction has sources.
+	 */
+	public Transaction genesisCopy() {
+		if (!source.isEmpty()) throw new UnsupportedOperationException("Only genesis transactions can be copied");
+		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, new HashSet<>(0));
+		transaction.blockNumber = OptionalInt.of(0);
+		return transaction;
+	}
 
 	@Override
 	public int hashCode() {
@@ -226,8 +216,10 @@ public class Transaction {
 		
 		Transaction other = (Transaction) obj;
 		if (number != other.number) return false;
-		if (!receiver.equals(other.receiver)) return false;
-		if (!sender.equals(other.sender)) return false;
+		if (receiver.getId() != other.receiver.getId()) return false;
+		if (sender == null) {
+			if (other.sender != null) return false;
+		} else if (other.sender == null || sender.getId() != other.sender.getId()) return false;
 		if (amount != other.amount) return false;
 		if (remainder != other.remainder) return false;
 		if (!hash.equals(other.hash)) return false;

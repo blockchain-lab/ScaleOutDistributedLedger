@@ -65,43 +65,40 @@ public class SerializationTest {
 			this.nodeList.put(i, new OwnNode(i));
 		}
 		// Generate genesis block (10 nodes, 1000 coins)
-		this.genesisBlock = TendermintHelper.generateGenesisBlock(this.nodeList.size(), 1000, nodeList);
+		this.genesisBlock = TendermintHelper.generateGenesisBlock(1000, nodeList);
 		// Setup Alice and block
 		this.aliceNode = this.nodeList.get(0);
-		List<Block> blockListAlice = new ArrayList<>();
-		blockListAlice.add(this.genesisBlock);
-		blockListAlice.add(new Block(1, this.aliceNode, new ArrayList<>()));
-		blockListAlice.add(new Block(2, this.aliceNode, new ArrayList<>()));
-		this.aliceNode.getChain().update(blockListAlice);
+		this.aliceNode.setGenesisBlock(this.genesisBlock);
+		Block aliceFirstBlock = this.aliceNode.getChain().appendNewBlock(new ArrayList<>());
+		this.aliceNode.getChain().appendNewBlock(new ArrayList<>());
 		// Setup Bob and block
 		this.bobNode = this.nodeList.get(1);
-		List<Block> blockListBob = new ArrayList<>();
-		blockListBob.add(this.genesisBlock);
-		blockListBob.add(new Block(1, this.bobNode, new ArrayList<>()));
-		this.bobNode.getChain().update(blockListBob);
+		this.bobNode.setGenesisBlock(this.genesisBlock);
+		Block bobFirstBlock = this.bobNode.getChain().appendNewBlock(new ArrayList<>());
 		// Setup Charlie
 		this.charlieNode = this.nodeList.get(2);
-		List<Block> blockListCharlie = new ArrayList<>();
-		blockListCharlie.add(this.genesisBlock);
-		this.charlieNode.getChain().update(blockListCharlie);
+		this.charlieNode.setGenesisBlock(this.genesisBlock);
 		// Setup LocalStore for Alice
-		this.aliceLocalStore = new LocalStore((OwnNode) this.aliceNode, null, this.genesisBlock, false, this.nodeList);
+		this.aliceLocalStore = new LocalStore((OwnNode) this.aliceNode, null, this.genesisBlock, false);
+		this.aliceLocalStore.getNodes().putAll(this.nodeList);
 		// Setup LocalStore for Bob 
-		this.bobLocalStore = new LocalStore((OwnNode) this.bobNode, null, this.genesisBlock, false, this.nodeList);
+		this.bobLocalStore = new LocalStore((OwnNode) this.bobNode, null, this.genesisBlock, false);
+		this.bobLocalStore.getNodes().putAll(this.nodeList);
 		// Setup LocalStore for Charlie
-		this.charlieLocalStore = new LocalStore((OwnNode) this.charlieNode, null, this.genesisBlock, false, this.nodeList);
+		this.charlieLocalStore = new LocalStore((OwnNode) this.charlieNode, null, this.genesisBlock, false);
+		this.charlieLocalStore.getNodes().putAll(this.nodeList);
 		// Send from Alice to Bob
 		HashSet<Transaction> sources = new HashSet<>();
 		sources.add(this.genesisBlock.getTransactions().get(0));
 		this.transactionSource = new Transaction(22, this.aliceNode, this.bobNode, 100, 900, sources);
 		this.transactionSource.setBlockNumber(OptionalInt.of(1));
-		blockListAlice.get(0).getTransactions().add(this.transactionSource);
+		aliceFirstBlock.getTransactions().add(this.transactionSource);
 		// Send from Bob to Alice
 		HashSet<Transaction> newSources = new HashSet<>();
 		newSources.add(this.transactionSource);
 		this.transaction = new Transaction(44, this.bobNode, this.aliceNode, 50, 50, newSources);
 		this.transaction.setBlockNumber(OptionalInt.of(1));
-		blockListBob.get(0).getTransactions().add(this.transaction);
+		bobFirstBlock.getTransactions().add(this.transaction);
 		// Add Proof
 		this.proof = new Proof(this.transaction);
 	}
@@ -166,7 +163,7 @@ public class SerializationTest {
 		BlockMessage blockMessage = new BlockMessage(aliceBlock);
 		// Check
 		assertTrue(blockMessage.getNumber() == aliceBlock.getNumber());
-		assertTrue(blockMessage.getPreviousBlockNumber() == -1);
+		assertTrue(blockMessage.getPreviousBlockNumber() == 0);
 		assertTrue(blockMessage.getOwnerId() == aliceBlock.getOwner().getId());
 		assertTrue(blockMessage.getHash().equals(aliceBlock.getHash()));
 		assertTrue(blockMessage.getTransactions().size() == aliceBlock.getTransactions().size());

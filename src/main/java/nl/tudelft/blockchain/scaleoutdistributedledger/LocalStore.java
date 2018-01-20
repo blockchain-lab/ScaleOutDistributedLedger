@@ -10,7 +10,11 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Class to store information related to our own node.
@@ -41,15 +45,15 @@ public class LocalStore {
 	
 	/**
 	 * Constructor.
-	 * @param ownNode - our own node.
-	 * @param application - the application
+	 * @param ownNode      - our own node.
+	 * @param application  - the application
 	 * @param genesisBlock - the genesis (initial) block for the entire system
 	 * @param isProduction - if this is production or testing
 	 */
-	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction, Map<Integer, Node> nodeList) {
+	public LocalStore(OwnNode ownNode, Application application, Block genesisBlock, boolean isProduction) {
+		this.nodes = new HashMap<>();
 		this.ownNode = ownNode;
 		this.application = application;
-		this.nodes = nodeList;
 		this.nodes.put(ownNode.getId(), ownNode);
 		if (isProduction) {
 			this.mainChain = new TendermintChain(ownNode.getPort() + 3, genesisBlock, application);
@@ -70,16 +74,7 @@ public class LocalStore {
 	 * @throws IllegalStateException - exception while updating nodes
 	 */
 	public Node getNode(int id) {
-		Node node = nodes.get(id);
-		if (node == null) {
-			try {
-				TrackerHelper.updateNodes(nodes);
-			} catch (IOException ex) {
-				throw new IllegalStateException("Node " + id + " was not found locally and the tracker update failed!", ex);
-			}
-			node = nodes.get(id);
-		}
-		return node;
+		return nodes.get(id);
 	}
 	
 	/**
@@ -87,7 +82,7 @@ public class LocalStore {
 	 */
 	public void updateNodes() {
 		try {
-			TrackerHelper.updateNodes(nodes);
+			TrackerHelper.updateNodes(nodes, ownNode);
 		} catch (IOException ex) {
 			throw new IllegalStateException("Tracker update failed!", ex);
 		}
@@ -155,6 +150,9 @@ public class LocalStore {
 		return ++transactionId;
 	}
 
+	/**
+	 * Initializes the main chain.
+	 */
 	public void initMainChain() {
 		this.mainChain.init();
 	}

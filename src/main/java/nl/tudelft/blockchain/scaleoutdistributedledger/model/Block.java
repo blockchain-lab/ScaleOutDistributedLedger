@@ -19,9 +19,9 @@ import java.util.logging.Level;
 /**
  * Block class.
  */
-public class Block implements Cloneable {
+public class Block {
 
-	public static final int GENESIS_BLOCK_NUMBER = 1;
+	public static final int GENESIS_BLOCK_NUMBER = 0;
 	
 	@Getter
 	private final int number;
@@ -38,10 +38,11 @@ public class Block implements Cloneable {
 	// Custom getter
 	private Sha256Hash hash;
 	
-	private transient Optional<Boolean> onMainChain;
+	private transient boolean onMainChain;
+	private transient boolean hasNoAbstract;
 
 	/**
-	 * Constructor.
+	 * Constructor for a (genesis) block.
 	 * @param number - the number of this block.
 	 * @param owner - the owner of this block.
 	 * @param transactions - a list of transactions of this block.
@@ -51,22 +52,23 @@ public class Block implements Cloneable {
 		this.owner = owner;
 		this.transactions = transactions;
 		this.previousBlock = null;
-		this.onMainChain = Optional.empty();
 	}
 
 	/**
 	 * Constructor.
-	 * @param number - the number of this block.
 	 * @param previousBlock - reference to the previous block in the chain of this block.
-	 * @param owner - the owner of this block.
 	 * @param transactions - a list of transactions of this block.
 	 */
-	public Block(int number, Block previousBlock, Node owner, List<Transaction> transactions) {
-		this.number = number;
+	public Block(Block previousBlock, List<Transaction> transactions) {
+		this.number = previousBlock.getNumber() + 1;
 		this.previousBlock = previousBlock;
-		this.owner = owner;
+		this.owner = previousBlock.getOwner();
 		this.transactions = transactions;
-		this.onMainChain = Optional.empty();
+		
+		//Our own blocks are guaranteed to have no abstract until we create the abstract.
+		if (this.owner instanceof OwnNode) {
+			this.hasNoAbstract = true;
+		}
 	}
 
 	/**
@@ -112,8 +114,8 @@ public class Block implements Cloneable {
 		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
 			this.transactions.add(new Transaction(transactionMessage, encodedChainUpdates, decodedChainUpdates, localStore));
 		}
+		//TODO Do we want to send the hash along?
 		this.hash = blockMessage.getHash();
-		this.onMainChain = Optional.empty();
 	}
 	
 	/**
@@ -152,7 +154,9 @@ public class Block implements Cloneable {
 		// Sign the attributes
 		try {
 			byte[] signature = ((OwnNode) this.owner).sign(attrInBytes);
-			return new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
+			BlockAbstract blockAbstract = new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
+			this.hasNoAbstract = false;
+			return blockAbstract;
 		} catch (Exception ex) {
 			throw new IllegalStateException("Unable to sign block abstract", ex);
 		}
@@ -163,7 +167,7 @@ public class Block implements Cloneable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + number;
-		result = prime * result + owner.hashCode();
+		result = prime * result + (owner == null ? 0 : owner.hashCode());
 		return result;
 	}
 
@@ -174,8 +178,9 @@ public class Block implements Cloneable {
 
 		Block other = (Block) obj;
 		if (this.number != other.number) return false;
-		if (!this.owner.equals(other.owner)) return false;
-
+		if (this.owner == null) {
+			if (other.owner != null) return false;
+		} else if (other.owner == null || this.owner.getId() != other.owner.getId()) return false;
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
 		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
@@ -183,6 +188,11 @@ public class Block implements Cloneable {
 		if (!this.getHash().equals(other.getHash())) return false;
 
 		return this.transactions.equals(other.transactions);
+	}
+	
+	@Override
+	public String toString() {
+		return "Block<" + number + ", " + owner + ">";
 	}
 
 	/**
@@ -212,30 +222,45 @@ public class Block implements Cloneable {
 	}
 
 	/**
-	 * Clones the block.
-	 * @return - the clone
+	 * Creates a copy of this genesis block.
+	 * @return - a deep copy of this block and transactions
+	 * @throws UnsupportedOperationException - If this block is not a genesis block.
 	 */
-	@Override
-	public Block clone() {
-		try {
-			return (Block) super.clone();
-		} catch (CloneNotSupportedException e) {
-			throw new IllegalStateException("Clone not supported");
+	public Block genesisCopy() {
+		if (this.number != GENESIS_BLOCK_NUMBER) throw new UnsupportedOperationException("You can only copy genesis blocks");
+		
+		ArrayList<Transaction> transactionsCopy = new ArrayList<>();
+		for (Transaction transaction : transactions) {
+			transactionsCopy.add(transaction.genesisCopy());
 		}
+		Block block = new Block(this.number, this.owner, transactionsCopy);
+		
+		block.onMainChain = true;
+		return block;
 	}
 	
 	/**
-	 * Returns the boolean onMainChain, and gets it if it is not present.
+	 * Returns if an abstract of this block is present on the main chain.
 	 * @param localStore - the local store
-	 * @return - boolean identifying if this abstract is on the main chain.
+	 * @return - boolean identifying if an abstract of this block is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
-		// TODO: remove hack?
-		if (this.number == 0) this.onMainChain = Optional.of(true);
-
-		if (!this.onMainChain.isPresent()) {
-			this.onMainChain = Optional.of(localStore.getMainChain().isPresent(this.getHash()));
+		//TODO Remove hack?
+		if (this.number == GENESIS_BLOCK_NUMBER) return true;
+		
+		//Definitely has no abstract
+		if (this.hasNoAbstract) return false;
+		
+		//We already determined before what the result should be
+		if (this.onMainChain) return true;
+		
+		//It is present, so store it and return
+		if (localStore.getMainChain().isPresent(this.getHash())) {
+			this.onMainChain = true;
+			return true;
 		}
-		return this.onMainChain.get();
+		
+		//Not present (yet)
+		return false;
 	}
 }

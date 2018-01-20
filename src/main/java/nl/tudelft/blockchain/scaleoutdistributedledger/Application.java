@@ -2,18 +2,15 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
-import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketServer;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
@@ -26,8 +23,6 @@ public class Application {
 	public static final String TRACKER_SERVER_ADDRESS = "localhost";
 	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final int NODE_PORT = 40000;
-	private static MainChain aMainChain;
-	private static AtomicBoolean staticMainChainPresent = new AtomicBoolean(false);
 	
 	@Getter
 	private LocalStore localStore;
@@ -39,11 +34,11 @@ public class Application {
 	private Thread serverThread;
 	
 	@Getter
-	private SocketClient socketClient;
+	private TransactionSender transactionSender;
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int, int)} before it can be used.
+	 * The application must be initialized with {@link #init(int, Block, Map, Ed25519Key, OwnNode)} before it can be used.
 	 * @param isProduction - if this is production or testing
 	 */
 	public Application(boolean isProduction) {
@@ -53,32 +48,26 @@ public class Application {
 	/**
 	 * Initializes the application.
 	 * Registers to the tracker and creates the local store.
-	 * @param nodePort       - the port on which the node will accept connections. Note, also port+1,
-	 *                          port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
-	 * @param genesisBlock  - the genesis (initial) block for the entire system
-	 * @throws IOException   - error while registering node
+	 * @param nodePort     - the port on which the node will accept connections. Note, also port+1,
+	 *                       port+2 and port+3 are used (for tendermint: p2p.laddr, rpc.laddr, ABCI server).
+	 * @param genesisBlock - the genesis (initial) block for the entire system
+	 * @param key          - the key
+	 * @param ownNode      - the own node
+	 * @throws IOException - error while registering node
 	 */
-	public void init(int nodePort, Block genesisBlock, Map<Integer, Node> nodeList, Ed25519Key key) throws IOException {
-		OwnNode ownNode = TrackerHelper.registerNode(nodePort, key.getPublicKey());
-
-		ownNode.setGenesisBlock(genesisBlock.clone());
+	public void init(int nodePort, Block genesisBlock, Ed25519Key key, OwnNode ownNode) throws IOException {
+		ownNode.setGenesisBlock(genesisBlock);
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		// Setup local store
-		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction, nodeList);
+		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction);
 		localStore.updateNodes();
 		localStore.initMainChain();
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
-		socketClient = new SocketClient();
-
-		if (!staticMainChainPresent.getAndSet(true)) {
-			aMainChain = localStore.getMainChain();
-			//TODO Retrieve money from tendermint
-
-		}
+		transactionSender = new TransactionSender(localStore);
 	}
 	
 	/**
@@ -87,9 +76,8 @@ public class Application {
 	 */
 	public void stop() {
 		if (serverThread.isAlive()) serverThread.interrupt();
-		if (socketClient != null) socketClient.shutdown();
+		if (transactionSender != null) transactionSender.shutdownNow();
 		
-		//TODO Stop socket client?
 		localStore.getMainChain().stop();
 	}
 	
@@ -132,31 +120,11 @@ public class Application {
 	public synchronized boolean isTransacting() {
 		return this.executor != null && this.executor.isAlive();
 	}
-	
-	/**
-	 * Send a transaction to the receiver of the transaction.
-	 * An abstract of the block containing the transaction (or a block after it) must already be
-	 * committed to the main chain.
-	 * @param transaction - the transaction to send
-	 * @throws InterruptedException - when sending is interrupted
-	 */
-	public void sendTransaction(Transaction transaction) throws InterruptedException {
-		CommunicationHelper.sendTransaction(transaction, socketClient);
-	}
 
 	/**
 	 * @return - the main chain of this application
 	 */
 	public MainChain getMainChain() {
 		return localStore.getMainChain();
-	}
-	
-	/**
-	 * Only use the returned instance for checking if BlockAbstracts are on the main chain.
-	 * @return - a MainChain instance
-	 */
-	public static MainChain getAMainChain() {
-		return aMainChain;
-
 	}
 }

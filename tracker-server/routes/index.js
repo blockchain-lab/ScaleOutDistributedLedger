@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import app from '../app';
+import NodeList from '../model/NodeList';
 
 /**
  * Gets all nodes.
@@ -59,6 +60,20 @@ router.get('/node', (req, res) => {
 	}
 });
 
+/**
+ * Reset the nodelist on the tracker server.
+ */
+router.post('/reset', (req, res) => {
+	app.nodeList = new NodeList();
+	res.json({success: true});
+});
+
+/**
+ * Get the number of currently registered nodes on the tracker server
+ */
+router.get('/registered', (req, res) => {
+	res.json({success: true, registered: app.nodeList.getSize()});
+});
 function isPresent(arg) {
 	return !!(arg || arg === 0 || arg === "" || arg === false);
 }

@@ -2,7 +2,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.apache.commons.lang3.SerializationException;
@@ -14,7 +13,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.ByteArrayOutputStream;
 import java.security.SignatureException;
-import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -36,9 +34,6 @@ public class BlockAbstract implements Serializable {
 	@Getter
 	private byte[] signature;
 
-	@Setter
-	private transient Optional<Boolean> onMainChain; // any means unknown
-
 	@Setter	@Getter
 	private Sha256Hash abstractHash;
 
@@ -55,7 +50,6 @@ public class BlockAbstract implements Serializable {
 		this.blockNumber = blockNumber;
 		this.blockHash = blockHash;
 		this.signature = signature;
-		this.onMainChain = Optional.empty();
 	}
 
 	/**
@@ -91,18 +85,6 @@ public class BlockAbstract implements Serializable {
 			block = null;
 		}
 		return block;
-	}
-
-	/**
-	 * Returns the boolean onMainChain, and gets it if it is not present.
-	 *
-	 * @return - boolean identifying if this abstract is on the main chain.
-	 */
-	public boolean isOnMainChain() {
-		if (!this.onMainChain.isPresent()) {
-			this.onMainChain = Optional.of(Application.getAMainChain().isPresent(this.blockHash));
-		}
-		return this.onMainChain.get();
 	}
 
 	/**
@@ -142,7 +124,6 @@ public class BlockAbstract implements Serializable {
 	private void readObject(ObjectInputStream stream) throws IOException,
 			ClassNotFoundException {
 		stream.defaultReadObject();
-		this.onMainChain = Optional.empty();
 	}
 
 }
