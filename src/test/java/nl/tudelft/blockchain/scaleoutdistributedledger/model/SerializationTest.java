@@ -11,8 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.OptionalInt;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 
@@ -174,7 +172,7 @@ public class SerializationTest {
 	 * @throws IOException - error while getting nodes from tracker
 	 */
 	@Test
-	public void testDecoding_Valid() throws IOException {		
+	public void testDecoding_Valid() throws IOException {
 		// New Transaction:
 		// 1000		50		1000
 		// Bob		---->	Charlie
