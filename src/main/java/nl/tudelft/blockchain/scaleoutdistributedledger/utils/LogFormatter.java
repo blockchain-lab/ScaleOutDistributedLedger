@@ -14,6 +14,15 @@ public class LogFormatter extends Formatter {
 	private final Date dat = new Date();
 	
 	/**
+	 * Creates a new log formatter with the given format.
+	 * <pre>
+	 * %1 = date
+	 * %2 = source class
+	 * %3 = logger name
+	 * %4 = level
+	 * %5 = message
+	 * %6 = exception
+	 * </pre>
 	 * @param format - the format string
 	 */
 	public LogFormatter(String format) {
