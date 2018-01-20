@@ -36,6 +36,8 @@ public final class SimulationMain {
 	//Whether this main is the master coordinator of the simulation
 	//Note that the master should always be started first
 	public static final boolean IS_MASTER = true;
+	//The duration of the simulation in seconds. Only has an effect when IS_MASTER == true.
+	public static final int SIMULATION_DURATION = 60;
 
 	/**
 	 * @param args - the program arguments
@@ -92,8 +94,10 @@ public final class SimulationMain {
 
 		// --- PHASE 4: stop the simulation ---
 
-		Thread.sleep(60 * 1000);
-		simulation.stop();
+		if (IS_MASTER) {
+			Thread.sleep(SIMULATION_DURATION * 1000);
+			simulation.stop();
+		}
 
 		// Wait for all the other nodes to stop
 		waitForStop();
