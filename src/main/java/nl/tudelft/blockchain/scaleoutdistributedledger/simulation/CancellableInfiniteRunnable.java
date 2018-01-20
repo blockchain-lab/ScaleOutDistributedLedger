@@ -33,7 +33,6 @@ public class CancellableInfiniteRunnable<T> implements Runnable {
 	
 	/**
 	 * Cancels this runnable.
-	 * This also interrupts the task if it is running.
 	 */
 	public void cancel() {
 		if (cancelled) return;

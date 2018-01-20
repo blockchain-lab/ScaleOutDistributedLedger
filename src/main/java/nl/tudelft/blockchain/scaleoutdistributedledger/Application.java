@@ -112,13 +112,7 @@ public class Application {
 	public synchronized void stopTransacting() {
 		if (!isTransacting()) return;
 		this.transactionExecutable.cancel();
-		int nodeID = localStore.getOwnNode().getId();
-		Log.log(Level.INFO, "Node " + nodeID + ": Stopped transacting with transaction pattern.");
-		try {
-			TrackerHelper.setRunning(nodeID, false);
-		} catch (IOException ex) {
-			Log.log(Level.SEVERE, "Cannot update running status to stopped for node " + nodeID);
-		}
+		Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + ": Stopped transacting with transaction pattern.");
 	}
 	
 	/**
