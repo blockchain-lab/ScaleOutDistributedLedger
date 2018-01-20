@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -96,11 +97,12 @@ public final class SimulationMain {
 
 		if (IS_MASTER) {
 			Thread.sleep(SIMULATION_DURATION * 1000);
-			simulation.stop();
+			simulation.broadcastMessage(new StopTransactingMessage());
 		}
 
 		// Wait for all the other nodes to stop
 		waitForStop();
+		simulation.stop();
 
 		simulation.stopLocalNodes();
 		simulation.cleanup();

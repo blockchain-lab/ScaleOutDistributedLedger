@@ -2,10 +2,8 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.simulation;
 
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
-import nl.tudelft.blockchain.scaleoutdistributedledger.TrackerHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingMessage;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionPatternMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
@@ -178,11 +176,6 @@ public class Simulation {
 	 */
 	public void stop() {
 		checkState(SimulationState.RUNNING, "stop");
-		
-		if (isMaster) {
-			broadcastMessage(new StopTransactingMessage());
-		}
-
 		Log.log(Level.INFO, "[Simulation] Stopped");
 		state = SimulationState.STOPPED;
 	}
@@ -214,7 +207,7 @@ public class Simulation {
 	 * Sends the given message to all nodes.
 	 * @param msg - the message to send
 	 */
-	protected void broadcastMessage(Message msg) {
+	public void broadcastMessage(Message msg) {
 		Log.log(Level.INFO, "[Simulation] Sending " + msg + " to all nodes...");
 		
 		for (Node node : nodes.values()) {
