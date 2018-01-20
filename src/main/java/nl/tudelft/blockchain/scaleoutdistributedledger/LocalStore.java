@@ -66,7 +66,7 @@ public class LocalStore {
 			genesisTransaction.setReceiver(ownNode);
 			this.addUnspentTransaction(genesisTransaction);
 			
-			this.transactionId = genesisBlock.getTransactions().size() - 1;
+			this.transactionId = genesisBlock.getTransactions().size();
 		}
 	}
 	
@@ -149,8 +149,8 @@ public class LocalStore {
 	/**
 	 * @return a new transaction id
 	 */
-	public int getNewTransactionId() {
-		return ++transactionId;
+	public synchronized int getNewTransactionId() {
+		return transactionId++;
 	}
 
 	/**

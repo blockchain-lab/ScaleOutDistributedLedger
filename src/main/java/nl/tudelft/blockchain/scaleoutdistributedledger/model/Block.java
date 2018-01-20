@@ -212,7 +212,7 @@ public class Block {
 	
 	@Override
 	public String toString() {
-		return "Block<" + number + ", " + owner + ">";
+		return "Block<nr=" + number + ", owner=" + owner + ", transactions=" + transactions + ">";
 	}
 
 	/**
