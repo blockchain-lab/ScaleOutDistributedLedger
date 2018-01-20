@@ -215,7 +215,7 @@ public class SerializationTest {
 		// Check Block and Transaction
 		Block originalBlock = this.bobNode.getChain().getBlocks().get(1);
 		Block decodedBlock = decodedProof.getChainUpdates().get(this.bobNode).get(1);
-		assertTrue(decodedBlock.equals(originalBlock));
+		assertEquals(decodedBlock, originalBlock);
 	}
 	
 }
