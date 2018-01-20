@@ -166,27 +166,33 @@ public final class TrackerHelper {
 	}
 
 	/**
-	 * Get the number of registered nodes in tracker.
-	 * @return the number of nodes already registered in tracker
+	 * Get the status of the tracker.
+	 * @return a JSON object describing the status of the tracker
 	 * @throws IOException when problems with creating/closing http client
 	 */
-	public static int getRegistered() throws IOException {
+	public static JSONObject getStatus() throws IOException {
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpGet request = new HttpGet(String.format("http://%s:%d/registered", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).getInt("registered");
+			HttpGet request = new HttpGet(String.format("http://%s:%d/status", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 		}
 	}
 
 	/**
-	 * Get the number of running nodes in tracker.
+	 * Get the number of running nodes from the tracker.
 	 * @return the number of nodes already registered in tracker
 	 * @throws IOException when problems with creating/closing http client
 	 */
 	public static int getRunning() throws IOException {
-		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpGet request = new HttpGet(String.format("http://%s:%d/running", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).getInt("running");
-		}
+		return getStatus().getInt("running");
+	}
+
+	/**
+	 * Get the number of registered nodes from the  tracker.
+	 * @return the number of nodes already registered in tracker
+	 * @throws IOException when problems with creating/closing http client
+	 */
+	public static int getRegistered() throws IOException {
+		return getStatus().getInt("registered");
 	}
 
 	/**

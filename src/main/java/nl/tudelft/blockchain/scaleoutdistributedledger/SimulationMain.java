@@ -173,7 +173,7 @@ public final class SimulationMain {
 				TrackerHelper.resetTrackerServer();
 			} else {
 				// Check if the tracker is running
-				TrackerHelper.getRegistered();
+				TrackerHelper.getStatus();
 			}
 		} catch (IOException e) {
 			Log.log(Level.SEVERE, "Tracker not running, please start it on '" + Application.TRACKER_SERVER_ADDRESS + "'");

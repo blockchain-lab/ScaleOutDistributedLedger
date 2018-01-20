@@ -82,17 +82,10 @@ router.post('/reset', (req, res) => {
 });
 
 /**
- * Get the number of currently registered nodes on the tracker server.
+ * Get the number of currently registered nodes and currently running nodes on the tracker server.
  */
-router.get('/registered', (req, res) => {
-	res.json({success: true, registered: app.nodeList.getSize()});
-});
-
-/**
- * Get the number of initialized nodes on the tracker server.
- */
-router.get('/running', (req, res) => {
-	res.json({success: true, running: app.nodeList.getRunning()});
+router.get('/status', (req, res) => {
+	res.json({registered: app.nodeList.getSize(), running:  app.nodeList.getRunning()});
 });
 
 function isPresent(arg) {
