@@ -114,8 +114,7 @@ public class TransactionMessage extends Message {
 		if (knownSource.equals(other.knownSource)) return false;
 		if (newSource.equals(other.newSource)) return false;
 		if (hash.equals(other.hash)) return false;
-		if (blockNumber != other.blockNumber) return false;
-		return true;
+		return blockNumber == other.blockNumber;
 	}
 
 	@Override
