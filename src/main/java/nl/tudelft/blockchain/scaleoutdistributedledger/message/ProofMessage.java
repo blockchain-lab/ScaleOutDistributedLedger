@@ -43,9 +43,7 @@ public class ProofMessage extends Message {
 			if (!blockList.isEmpty()) {
 				// Convert Block to BlockMessage
 				List<BlockMessage> blockMessageList = new ArrayList<>();
-				// Don't use "previousBlock" pointer in the first block
-				blockMessageList.add(new BlockMessage(blockList.get(0), true));
-				for (int i = 1; i < blockList.size(); i++) {
+				for (int i = 0; i < blockList.size(); i++) {
 					Block block = blockList.get(i);
 					blockMessageList.add(new BlockMessage(block));
 				}

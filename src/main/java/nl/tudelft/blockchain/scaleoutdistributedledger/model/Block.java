@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -71,10 +72,13 @@ public class Block implements Cloneable {
 	/**
 	 * Constructor to decode a block message.
 	 * @param blockMessage - block message from network.
+	 * @param encodedChainUpdates - received chain of updates
+	 * @param decodedChainUpdates - current decoded chain of updates
 	 * @param localStore - local store.
 	 * @throws IOException - error while getting node from tracker.
 	 */
-	public Block(BlockMessage blockMessage, LocalStore localStore) throws IOException {
+	public Block(BlockMessage blockMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
+			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException {
 		this.number = blockMessage.getNumber();
 		// It's a genesis block
 		if (blockMessage.getOwnerId() == Transaction.GENESIS_SENDER) {
@@ -83,12 +87,21 @@ public class Block implements Cloneable {
 			this.owner = localStore.getNode(blockMessage.getOwnerId());
 		}
 		
-		if (blockMessage.getPreviousBlock() != null) {
-			// Convert BlockMessage to Block
-			this.previousBlock = new Block(blockMessage.getPreviousBlock(), localStore);
-		} else if (blockMessage.getPreviousBlockNumber() != -1) {
-			// Get block by number from owner
-			this.previousBlock = this.owner.getChain().getBlocks().get(blockMessage.getPreviousBlockNumber());
+		if (blockMessage.getPreviousBlockNumber() != -1) {
+			List<Block> searchableBlockList;
+			// Get block by number from the owner chain, if it's the first not decoded block
+			List<Block> currentDecodedBlockList = decodedChainUpdates.get(this.owner);
+			if (currentDecodedBlockList.isEmpty()) {
+				searchableBlockList = this.owner.getChain().getBlocks();
+			} else {
+				searchableBlockList = currentDecodedBlockList;
+			}
+			for (Block blockAux : searchableBlockList) {
+				if (blockAux.getNumber() == blockMessage.getPreviousBlockNumber()) {
+					this.previousBlock = blockAux;
+					break;
+				}
+			}
 		} else {
 			// It's a genesis block
 			this.previousBlock = null;
@@ -97,7 +110,7 @@ public class Block implements Cloneable {
 		// Convert TransactionMessage to Transaction
 		this.transactions = new ArrayList<>();
 		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
-			this.transactions.add(new Transaction(transactionMessage, localStore));
+			this.transactions.add(new Transaction(transactionMessage, encodedChainUpdates, decodedChainUpdates, localStore));
 		}
 		this.hash = blockMessage.getHash();
 		this.onMainChain = Optional.empty();
@@ -161,7 +174,7 @@ public class Block implements Cloneable {
 
 		Block other = (Block) obj;
 		if (this.number != other.number) return false;
-		if (this.owner != other.owner) return false;
+		if (!this.owner.equals(other.owner)) return false;
 
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;

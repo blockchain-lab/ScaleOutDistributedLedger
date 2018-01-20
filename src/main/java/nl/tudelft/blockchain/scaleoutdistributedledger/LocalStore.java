@@ -100,6 +100,12 @@ public class LocalStore {
 	 * @return transaction
 	 */
 	public Transaction getTransactionFromNode(int nodeId, int transactionId) {
+		if (nodeId == Transaction.GENESIS_SENDER) {
+			// It's a genesis transaction
+			Block genesisBlock = ((Node) this.ownNode).getChain().getBlocks().get(0);
+			return genesisBlock.getTransactions().get(transactionId);
+		}
+		
 		Node node = getNode(nodeId);
 		for (Block block : node.getChain().getBlocks()) {
 			for (Transaction transaction : block.getTransactions()) {

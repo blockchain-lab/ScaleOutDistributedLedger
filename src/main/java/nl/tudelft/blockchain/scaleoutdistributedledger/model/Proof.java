@@ -48,18 +48,22 @@ public class Proof {
 	 * @throws IOException - error while getting node info from tracker
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
-		this.transaction = new Transaction(proofMessage.getTransactionMessage(), localStore);
 		this.chainUpdates = new HashMap<>();
 		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
 			Node node = localStore.getNode(entry.getKey());
+			if (this.chainUpdates.containsKey(node)) {
+				// We have already decoded this chain in a previous iteration
+				continue;
+			}
 			List<BlockMessage> blockMessageList = entry.getValue();
 			// Convert BlockMessage to Block
 			List<Block> blockList = new ArrayList<>();
 			for (BlockMessage blockMessage : blockMessageList) {
-				blockList.add(new Block(blockMessage, localStore));
+				blockList.add(new Block(blockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore));
 			}
 			this.chainUpdates.put(node, blockList);
 		}
+		this.transaction = new Transaction(proofMessage.getTransactionMessage(), proofMessage.getChainUpdates(), this.chainUpdates, localStore);
 	}
 	
 	/**

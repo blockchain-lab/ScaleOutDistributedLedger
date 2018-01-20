@@ -9,9 +9,16 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.OptionalInt;
+import java.util.Set;
 import java.util.logging.Level;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 
 /**
  * Transaction class.
@@ -66,9 +73,13 @@ public class Transaction {
 	/**
 	 * Constructor to decode a transaction message.
 	 * @param transactionMessage - the message received from a transaction.
+	 * @param encodedChainUpdates - the received chain of updates
+	 * @param decodedChainUpdates - current chain of updates, from the decoding process
 	 * @param localStore - local store, to get each Node object
+	 * @throws java.io.IOException - error while getting node
 	 */
-	public Transaction(TransactionMessage transactionMessage, LocalStore localStore)  {
+	public Transaction(TransactionMessage transactionMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
+			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException  {
 		this.number = transactionMessage.getNumber();
 		// It's a genesis transaction
 		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
@@ -81,13 +92,35 @@ public class Transaction {
 		this.remainder = transactionMessage.getRemainder();
 		// Decode transaction messages to normal transactions
 		this.source = new HashSet<>();
+		// Use local store for known sources
 		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
 			Integer nodeId = knownSourceEntry.getKey();
 			Integer transactionId = knownSourceEntry.getValue();
 			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
 		}
-		for (TransactionMessage transactionMessageAux : transactionMessage.getNewSource()) {
-			this.source.add(new Transaction(transactionMessageAux, localStore));
+		// Use chain of updates for new sources
+		for (Entry<Integer, Integer> newSourceEntry : transactionMessage.getNewSource()) {
+			Node owner = localStore.getNode(newSourceEntry.getKey());
+			if (!decodedChainUpdates.containsKey(owner)) {
+				// Get that new chain
+				List<BlockMessage> blockMessageList = encodedChainUpdates.get(owner.getId());
+				// Decode chain
+				List<Block> blockList = new ArrayList<>();
+				for (BlockMessage blockMessage : blockMessageList) {
+					blockList.add(new Block(blockMessage, encodedChainUpdates, decodedChainUpdates, localStore));
+				}
+				decodedChainUpdates.put(owner, blockList);
+			}
+			// Get transaction from the current chain of updates
+			List<Block> blockList = decodedChainUpdates.get(owner);
+			for (Block blockAux : blockList) {
+				for (Transaction transactionAux : blockAux.getTransactions()) {
+					if (transactionAux.getNumber() == newSourceEntry.getValue()) {
+						this.source.add(transactionAux);
+						break;
+					}
+				}
+			}
 		}
 		this.hash = transactionMessage.getHash();
 		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
@@ -103,9 +136,9 @@ public class Transaction {
 		Map<Node, List<Block>> chainUpdates = new HashMap<>();
 		for (Transaction t : source) {
 			if (!chainUpdates.containsKey(t.getSender())) {
-				if(t.getSender() != null) {
+				if (t.getSender() != null) {
 					chainUpdates.put(t.getSender(), t.getSender().getChain().getBlocks());
-				} else if(t.getBlockNumber().isPresent() && t.getBlockNumber().getAsInt() != 0) {
+				} else if (t.getBlockNumber().isPresent() && t.getBlockNumber().getAsInt() != 0) {
 					throw new IllegalStateException("Transaction found with no sender in a not-genesis block");
 				}
 			}
@@ -193,8 +226,13 @@ public class Transaction {
 		
 		Transaction other = (Transaction) obj;
 		if (number != other.number) return false;
-		if (receiver != other.receiver) return false;
-		if (sender != other.sender) return false;
+		if (!receiver.equals(other.receiver)) return false;
+		if (!sender.equals(other.sender)) return false;
+		if (amount != other.amount) return false;
+		if (remainder != other.remainder) return false;
+		if (!hash.equals(other.hash)) return false;
+		if (!source.equals(other.source)) return false;
+		if (!blockNumber.equals(other.blockNumber)) return false;
 		return true;
 	}
 

@@ -20,8 +20,8 @@ public class BlockMessage extends Message {
 	@Getter
 	private final int previousBlockNumber;
 	
-	@Getter
-	private final BlockMessage previousBlock;
+	//@Getter
+	//private final BlockMessage previousBlock;
 	
 	@Getter
 	private final int ownerId;
@@ -38,23 +38,15 @@ public class BlockMessage extends Message {
 	/**
 	 * Constructor.
 	 * @param block - original block
-	 * @param usePreviousBlockNumber - option to use or not the previous block number instead of a reference to the object
 	 */
-	public BlockMessage(Block block, boolean usePreviousBlockNumber) {
+	public BlockMessage(Block block) {
 		this.number = block.getNumber();
 		Block prevBlock = block.getPreviousBlock();
 		if (prevBlock != null) {
-			if (usePreviousBlockNumber) {
-				this.previousBlockNumber = prevBlock.getNumber();
-				this.previousBlock = null;
-			} else {
-				this.previousBlockNumber = -1;
-				this.previousBlock = new BlockMessage(prevBlock);
-			}
+			this.previousBlockNumber = prevBlock.getNumber();
 		} else {
 			// It's a genesis block
 			this.previousBlockNumber = -1;
-			this.previousBlock = null;
 		}
 		// It's a genesis block
 		if (block.getOwner() == null) {
@@ -67,14 +59,6 @@ public class BlockMessage extends Message {
 			this.transactions.add(new TransactionMessage(transaction));
 		}
 		this.hash = block.getHash();
-	}
-	
-	/**
-	 * Constructor.
-	 * @param block - original block
-	 */
-	public BlockMessage(Block block) {
-		this(block, false);
 	}
 
 	@Override
