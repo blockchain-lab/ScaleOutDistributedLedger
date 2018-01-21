@@ -17,7 +17,7 @@ import java.util.logging.Level;
 /**
  * Block class.
  */
-public class Block implements Cloneable {
+public class Block {
 
 	public static final int GENESIS_BLOCK_NUMBER = 0;
 	
@@ -242,16 +242,21 @@ public class Block implements Cloneable {
 	}
 
 	/**
-	 * Clones the block.
-	 * @return - the clone
+	 * Creates a copy of this genesis block.
+	 * @return - a deep copy of this block and transactions
+	 * @throws UnsupportedOperationException - If this block is not a genesis block.
 	 */
-	@Override
-	public Block clone() {
-		try {
-			return (Block) super.clone();
-		} catch (CloneNotSupportedException e) {
-			throw new IllegalStateException("Clone not supported");
+	public Block genesisCopy() {
+		if (this.number != GENESIS_BLOCK_NUMBER) throw new UnsupportedOperationException("You can only copy genesis blocks");
+		
+		ArrayList<Transaction> transactionsCopy = new ArrayList<>();
+		for (Transaction transaction : transactions) {
+			transactionsCopy.add(transaction.genesisCopy());
 		}
+		Block block = new Block(this.number, this.owner, transactionsCopy);
+		
+		block.onMainChain = true;
+		return block;
 	}
 	
 	/**

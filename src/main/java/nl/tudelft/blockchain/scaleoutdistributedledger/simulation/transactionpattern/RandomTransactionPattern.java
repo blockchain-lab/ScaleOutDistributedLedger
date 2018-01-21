@@ -1,7 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.SimulationMode;
-
 /**
  * Random transaction pattern.
  */
@@ -16,11 +14,6 @@ public abstract class RandomTransactionPattern implements ITransactionPattern {
 	 */
 	public RandomTransactionPattern(int commitEvery) {
 		this.commitEvery = commitEvery;
-	}
-	
-	@Override
-	public SimulationMode getSimulationMode() {
-		return SimulationMode.DISTRIBUTED;
 	}
 	
 	@Override

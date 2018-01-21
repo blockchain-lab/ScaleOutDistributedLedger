@@ -9,18 +9,22 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.HashMap;
+import java.util.HashMap
+import java.util.ArrayList;
 import java.util.HashSet;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
+import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.TestHelper;
+
+import static org.junit.Assert.*;
 
 /**
  * Test class for serialization of classes.
  */
 public class SerializationTest {
 	
-	private HashMap<Integer, Node> nodeList;
+	private Map<Integer, Node> nodeList;
 	
 	private OwnNode sender;
 	
@@ -41,34 +45,43 @@ public class SerializationTest {
 	 */
 	@Before
 	public void setUp() {
-		// Initialize node list
-		this.nodeList = new HashMap<>();
-		this.nodeList.put(0, new OwnNode(0));
-		for (int i = 1; i < 10; i++) {
-			this.nodeList.put(i, new Node(i));
-		}
-		// Setup sender and block
-		this.sender = (OwnNode) this.nodeList.get(0);
-		
-		// Generate genesis block (10 nodes, 1000 coins)
-		this.genesisBlock = TendermintHelper.generateGenesisBlock(1000, nodeList);
-		this.sender.setGenesisBlock(genesisBlock.clone());
-		
-		//Create two following blocks
-		this.block = this.sender.getChain().appendNewBlock();
-		this.sender.getChain().appendNewBlock();
-		
-		this.receiver = this.nodeList.get(1);
+		//Generate a genesis block for 10 nodes, 1000 money each
+		this.sender = new OwnNode(0);
+		this.genesisBlock = TestHelper.generateGenesis(this.sender, 10, 1000);
+		this.nodeList = TestHelper.getNodeList(this.genesisBlock);
 		
 		// Setup LocalStore
 		this.localStore = new LocalStore(this.sender, null, this.genesisBlock, false);
 		this.localStore.getNodes().putAll(this.nodeList);
 		
-		// Add Transaction
-		this.transaction = new Transaction(44, this.sender, this.receiver, 100, 20, new HashSet<>());
+		this.receiver = this.nodeList.get(1);
+		
+		//Create a following block with one transaction
+		this.transaction = generateTransaction(this.receiver, 100);
+		this.block = this.sender.getChain().appendNewBlock();
+		
 		this.block.addTransaction(this.transaction);
+		
+		//Create an empty following block
+		this.sender.getChain().appendNewBlock();
+		
 		// Add Proof
 		this.proof = new Proof(this.transaction);
+	}
+	
+	/**
+	 * Generates a transaction that uses the genesis transaction as source.
+	 * @param receiver - the receiver of the transaction
+	 * @param amount - the amount of money
+	 * @return - the transaction
+	 */
+	public Transaction generateTransaction(Node receiver, long amount) {
+		Transaction genesisTransaction = this.sender.getChain().getGenesisBlock().getTransactions().get(this.sender.getId());
+		Set<Transaction> sources = new HashSet<>();
+		sources.add(genesisTransaction);
+		
+		long remainder = genesisTransaction.getAmount() - amount;
+		return new Transaction(20, this.sender, receiver, amount, remainder, sources);
 	}
 	
 	/**
@@ -80,22 +93,22 @@ public class SerializationTest {
 		// Encode genesis block
 		BlockMessage genesisBlockMessage = new BlockMessage(this.genesisBlock);
 		// Check
-		assertTrue(genesisBlockMessage.getNumber() == this.genesisBlock.getNumber());
-		assertTrue(genesisBlockMessage.getPreviousBlockNumber() == -1);
-		assertTrue(genesisBlockMessage.getPreviousBlock() == null);
-		assertTrue(genesisBlockMessage.getOwnerId() == Transaction.GENESIS_SENDER);
-		assertTrue(genesisBlockMessage.getTransactions().size() == this.genesisBlock.getTransactions().size());
-		assertTrue(genesisBlockMessage.getHash().equals(this.genesisBlock.getHash()));
+		assertEquals(this.genesisBlock.getNumber(), genesisBlockMessage.getNumber());
+		assertEquals(-1, genesisBlockMessage.getPreviousBlockNumber());
+		assertEquals(null, genesisBlockMessage.getPreviousBlock());
+		assertEquals(Transaction.GENESIS_SENDER, genesisBlockMessage.getOwnerId());
+		assertEquals(this.genesisBlock.getTransactions().size(), genesisBlockMessage.getTransactions().size());
+		assertEquals(this.genesisBlock.getHash(), genesisBlockMessage.getHash());
 		// Decode genesis block
 		Block decodedGenesisBlock = new Block(genesisBlockMessage, this.localStore);
 		// Check
-		assertTrue(decodedGenesisBlock.getNumber() == this.genesisBlock.getNumber());
+		assertEquals(this.genesisBlock.getNumber(), decodedGenesisBlock.getNumber());
 		// getPreviousBlock should be null
-		assertTrue(decodedGenesisBlock.getPreviousBlock() == this.genesisBlock.getPreviousBlock());
+		assertEquals(this.genesisBlock.getPreviousBlock(), decodedGenesisBlock.getPreviousBlock());
 		// getOwner should be null
-		assertTrue(decodedGenesisBlock.getOwner() == this.genesisBlock.getOwner());
-		assertTrue(decodedGenesisBlock.getTransactions().equals(this.genesisBlock.getTransactions()));
-		assertTrue(decodedGenesisBlock.getHash().equals(this.genesisBlock.getHash()));
+		assertEquals(this.genesisBlock.getOwner(), decodedGenesisBlock.getOwner());
+		assertEquals(this.genesisBlock.getTransactions(), decodedGenesisBlock.getTransactions());
+		assertEquals(this.genesisBlock.getHash(), decodedGenesisBlock.getHash());
 	}
 	
 	/**
@@ -107,24 +120,24 @@ public class SerializationTest {
 		// Encode Transaction into TransactionMessage
 		TransactionMessage transactionMessage = new TransactionMessage(this.transaction);
 		// Check
-		assertTrue(transactionMessage.getNumber() == this.transaction.getNumber());
-		assertTrue(transactionMessage.getSenderId() == this.transaction.getSender().getId());
-		assertTrue(transactionMessage.getReceiverId() == this.transaction.getReceiver().getId());
-		assertTrue(transactionMessage.getAmount() == this.transaction.getAmount());
-		assertTrue(transactionMessage.getRemainder() == this.transaction.getRemainder());
-		assertTrue(transactionMessage.getHash().equals(this.transaction.getHash()));
-		assertTrue(transactionMessage.getBlockNumber() == this.transaction.getBlockNumber().getAsInt());
+		assertEquals(this.transaction.getNumber(), transactionMessage.getNumber());
+		assertEquals(this.transaction.getSender().getId(), transactionMessage.getSenderId());
+		assertEquals(this.transaction.getReceiver().getId(), transactionMessage.getReceiverId());
+		assertEquals(this.transaction.getAmount(), transactionMessage.getAmount());
+		assertEquals(this.transaction.getRemainder(), transactionMessage.getRemainder());
+		assertEquals(this.transaction.getHash(), transactionMessage.getHash());
+		assertEquals(this.transaction.getBlockNumber().getAsInt(), transactionMessage.getBlockNumber());
 		// Decode TransactionMessahe into Transaction
 		Transaction decodedTransaction = new Transaction(transactionMessage, this.localStore);
 		// Check
-		assertTrue(decodedTransaction.getNumber() == this.transaction.getNumber());
-		assertTrue(decodedTransaction.getSender().equals(this.transaction.getSender()));
-		assertTrue(decodedTransaction.getReceiver().equals(this.transaction.getReceiver()));
-		assertTrue(decodedTransaction.getAmount() == this.transaction.getAmount());
-		assertTrue(decodedTransaction.getRemainder() == this.transaction.getRemainder());
-		assertTrue(decodedTransaction.getSource().equals(this.transaction.getSource()));
-		assertTrue(decodedTransaction.getHash().equals(this.transaction.getHash()));
-		assertTrue(decodedTransaction.getBlockNumber().equals(this.transaction.getBlockNumber()));
+		assertEquals(this.transaction.getNumber(), decodedTransaction.getNumber());
+		assertEquals(this.transaction.getSender(), decodedTransaction.getSender());
+		assertEquals(this.transaction.getReceiver(), decodedTransaction.getReceiver());
+		assertEquals(this.transaction.getAmount(), decodedTransaction.getAmount());
+		assertEquals(this.transaction.getRemainder(), decodedTransaction.getRemainder());
+		assertEquals(this.transaction.getSource(), decodedTransaction.getSource());
+		assertEquals(this.transaction.getHash(), decodedTransaction.getHash());
+		assertEquals(this.transaction.getBlockNumber(), decodedTransaction.getBlockNumber());
 	}
 	
 	/**
@@ -138,8 +151,8 @@ public class SerializationTest {
 		// Decode ProofMessage into Proof
 		Proof decodedProof = new Proof(proofMessage, this.localStore);
 		// Check references
-		assertTrue(decodedProof.getTransaction().equals(this.proof.getTransaction()));
-		assertTrue(decodedProof.getChainUpdates().equals(this.proof.getChainUpdates()));
+		assertEquals(this.proof.getTransaction(), decodedProof.getTransaction());
+		assertEquals(this.proof.getChainUpdates(), decodedProof.getChainUpdates());
 	}
 	
 	/**
@@ -151,21 +164,21 @@ public class SerializationTest {
 		// Encode Block into BlockMessage
 		BlockMessage blockMessage = new BlockMessage(this.block);
 		// Check
-		assertTrue(blockMessage.getNumber() == this.block.getNumber());
-		assertTrue(blockMessage.getPreviousBlockNumber() == -1);
-		assertTrue(blockMessage.getOwnerId() == this.block.getOwner().getId());
-		assertTrue(blockMessage.getHash().equals(this.block.getHash()));
-		assertTrue(blockMessage.getTransactions().size() == this.block.getTransactions().size());
+		assertEquals(this.block.getNumber(), blockMessage.getNumber());
+		assertEquals(-1, blockMessage.getPreviousBlockNumber());
+		assertEquals(this.block.getOwner().getId(), blockMessage.getOwnerId());
+		assertEquals(this.block.getHash(), blockMessage.getHash());
+		assertEquals(this.block.getTransactions().size(), blockMessage.getTransactions().size());
 		// Decode BlockMessage into Block
 		Block decodedBlock = new Block(blockMessage, this.localStore);
 		// Check
-		assertTrue(decodedBlock.getNumber() == this.block.getNumber());
+		assertEquals(this.block.getNumber(), decodedBlock.getNumber());
 		if (decodedBlock.getPreviousBlock() != null) {
-			assertTrue(decodedBlock.getPreviousBlock().equals(this.block.getPreviousBlock()));
+			assertEquals(this.block.getPreviousBlock(), decodedBlock.getPreviousBlock());
 		}
-		assertTrue(decodedBlock.getOwner().equals(this.block.getOwner()));
-		assertTrue(decodedBlock.getTransactions().equals(this.block.getTransactions()));
-		assertTrue(decodedBlock.getHash().equals(this.block.getHash()));
+		assertEquals(this.block.getOwner(), decodedBlock.getOwner());
+		assertEquals(this.block.getTransactions(), decodedBlock.getTransactions());
+		assertEquals(this.block.getHash(), decodedBlock.getHash());
 	}
 	
 	/**
@@ -180,7 +193,7 @@ public class SerializationTest {
 		// Create new transaction
 		HashSet<Transaction> listSources = new HashSet<>();
 		listSources.add(this.transaction);
-		Transaction newTransaction = new Transaction(88, this.sender, newReceiver, 200, 40, listSources);
+		Transaction newTransaction = new Transaction(40, this.sender, newReceiver, 200, 700, listSources);
 		this.sender.getChain().getBlocks().get(1).addTransaction(newTransaction);
 		// Encode Transaction into TransactionMessage
 		TransactionMessage transactionMessage = new TransactionMessage(newTransaction);
@@ -190,13 +203,13 @@ public class SerializationTest {
 		// Decode TransactionMessage into Transaction
 		Transaction decodedTransaction = new Transaction(transactionMessage, this.localStore);
 		// Check that newReceiver gets the sources correctly
-		assertTrue(decodedTransaction.getSource().size() == 1);
+		assertEquals(1, decodedTransaction.getSource().size());
 		Transaction sourceTransaction = decodedTransaction.getSource().iterator().next();
-		assertTrue(sourceTransaction.getNumber() == this.transaction.getNumber());
-		assertTrue(sourceTransaction.getAmount() == this.transaction.getAmount());
-		assertTrue(sourceTransaction.getRemainder() == this.transaction.getRemainder());
-		assertTrue(sourceTransaction.getHash().equals(this.transaction.getHash()));
-		assertTrue(sourceTransaction.getBlockNumber().equals(this.transaction.getBlockNumber()));
+		assertEquals(this.transaction.getNumber(), sourceTransaction.getNumber());
+		assertEquals(this.transaction.getAmount(), sourceTransaction.getAmount());
+		assertEquals(this.transaction.getRemainder(), sourceTransaction.getRemainder());
+		assertEquals(this.transaction.getHash(), sourceTransaction.getHash());
+		assertEquals(this.transaction.getBlockNumber(), sourceTransaction.getBlockNumber());
 	}
 	
 }

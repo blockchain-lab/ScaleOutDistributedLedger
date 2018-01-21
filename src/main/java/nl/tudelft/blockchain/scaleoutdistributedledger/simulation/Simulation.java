@@ -83,7 +83,7 @@ public class Simulation {
 			int port = nodePorts.get(nodeNumber);
 			try {
 				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
-				app.init(port, genesisBlock.clone(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
+				app.init(port, genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 			} catch (Exception ex) {
 				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + port + "!", ex);
 			}
@@ -159,10 +159,8 @@ public class Simulation {
 			Log.log(Level.INFO, "[Simulation] Initializing with " + nodes.size() + " nodes.");
 		}
 		
-		//Broadcast distributed transaction pattern
-		if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
-			broadcastMessage(new TransactionPatternMessage(transactionPattern));
-		}
+		//Broadcast transaction pattern
+		broadcastMessage(new TransactionPatternMessage(transactionPattern));
 		
 		//Have everyone update their nodes list
 		broadcastMessage(new UpdateNodesMessage());
@@ -180,12 +178,7 @@ public class Simulation {
 	public void start() {
 		checkState(SimulationState.INITIALIZED, "start");
 		
-		if (transactionPattern.getSimulationMode() == SimulationMode.DISTRIBUTED) {
-			broadcastMessage(new StartTransactingMessage());
-		} else if (transactionPattern.getSimulationMode() == SimulationMode.DIRECTED) {
-			Log.log(Level.INFO, "[Simulation] Starting directed simulation...");
-			//TODO Directed simulation
-		}
+		broadcastMessage(new StartTransactingMessage());
 		
 		Log.log(Level.INFO, "[Simulation] Running");
 		state = SimulationState.RUNNING;

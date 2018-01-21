@@ -162,6 +162,17 @@ public class Transaction {
 		
 		return new Sha256Hash(transactionInBytes);
 	}
+	
+	/**
+	 * @return - a copy of this transaction
+	 * @throws UnsupportedOperationException - If this transaction has sources.
+	 */
+	public Transaction genesisCopy() {
+		if (!source.isEmpty()) throw new UnsupportedOperationException("Only genesis transactions can be copied");
+		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, new HashSet<>(0));
+		transaction.blockNumber = OptionalInt.of(0);
+		return transaction;
+	}
 
 	@Override
 	public int hashCode() {
