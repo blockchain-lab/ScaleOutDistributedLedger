@@ -133,9 +133,8 @@ public class SerializationTest {
 		sources.add(transactionSource);
 		long remainder = transactionSource.getAmount() - amount;
 		Transaction newtTransaction = new Transaction(this.transactionNumber++, sender, receiver, amount, remainder, sources);
-		newtTransaction.setBlockNumber(1);
 		// Add to chains
-		sender.getChain().getBlocks().get(1).getTransactions().add(newtTransaction);
+		sender.getChain().getBlocks().get(1).addTransaction(newtTransaction);
 		// Set lastCommitedBlock
 		sender.getChain().setLastCommittedBlock(sender.getChain().getBlocks().get(1));
 		
