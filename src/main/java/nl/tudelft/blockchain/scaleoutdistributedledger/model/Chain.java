@@ -16,6 +16,9 @@ public class Chain {
 	@Getter
 	private final List<Block> blocks;
 	
+	@Getter
+	private Transaction genesisTransaction;
+	
 	private Block lastCommittedBlock;
 
 	/**
@@ -72,6 +75,22 @@ public class Chain {
 	}
 	
 	/**
+	 * Sets the genesis block.
+	 * @param genesisBlock - the genesis block
+	 * @throws IllegalStateException - If this chain already has a genesis block.
+	 */
+	public synchronized void setGenesisBlock(Block genesisBlock) {
+		if (!blocks.isEmpty()) throw new IllegalStateException("Adding genesis block to non-empty chain");
+		
+		blocks.add(genesisBlock);
+		setLastCommittedBlock(genesisBlock);
+		genesisTransaction = findGenesisTransaction(owner, genesisBlock);
+		if (genesisTransaction != null) {
+			genesisTransaction.setReceiver(owner);
+		}
+	}
+	
+	/**
 	 * @return the last block in this chain
 	 */
 	public synchronized Block getLastBlock() {
@@ -115,5 +134,19 @@ public class Chain {
 		Block newBlock = new Block(last, this.owner);
 		blocks.add(newBlock);
 		return newBlock;
+	}
+	
+	/**
+	 * Finds the genesis transaction of the given node.
+	 * @param node         - the node 
+	 * @param genesisBlock - the genesis block
+	 * @return             - the genesis transaction of the given node, or null if there is none
+	 */
+	private static Transaction findGenesisTransaction(Node node, Block genesisBlock) {
+		return genesisBlock.getTransactions()
+				.stream()
+				.filter(t -> t.getReceiver().getId() == node.getId())
+				.findFirst()
+				.orElse(null);
 	}
 }

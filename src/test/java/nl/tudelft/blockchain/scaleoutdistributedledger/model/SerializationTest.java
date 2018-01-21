@@ -94,7 +94,7 @@ public class SerializationTest {
 	 */
 	public Node setupNode(int nodeId) {
 		Node node = new OwnNode(nodeId);
-		node.setGenesisBlock(this.genesisBlock);
+		node.getChain().setGenesisBlock(this.genesisBlock);
 		node.getChain().appendNewBlock();
 		node.getChain().appendNewBlock();
 		return node;
@@ -112,7 +112,7 @@ public class SerializationTest {
 		for (int i = 0; i < 10; i++) {
 			if (node.getId() == i) continue;
 			Node localNode = new Node(i);
-			localNode.setGenesisBlock(this.genesisBlock);
+			localNode.getChain().setGenesisBlock(this.genesisBlock);
 			newNodeList.put(i, localNode);
 		}
 		localStore.getNodes().putAll(newNodeList);

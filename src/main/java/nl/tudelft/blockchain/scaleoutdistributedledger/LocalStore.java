@@ -63,11 +63,12 @@ public class LocalStore {
 		}
 		
 		if (genesisBlock != null) {
-			Transaction genesisTransaction = genesisBlock.getTransactions().get(ownNode.getId());
-			genesisTransaction.setReceiver(ownNode);
-			this.addUnspentTransaction(genesisTransaction);
+			this.transactionId = genesisBlock.getTransactions().size();
 			
-			this.transactionId = genesisBlock.getTransactions().size() - 1;
+			Transaction genesisTransaction = ownNode.getChain().getGenesisTransaction();
+			if (genesisTransaction != null) {
+				this.addUnspentTransaction(genesisTransaction);
+			}
 		}
 	}
 	
@@ -103,7 +104,7 @@ public class LocalStore {
 	public Transaction getTransactionFromNode(int nodeId, int transactionId) {
 		if (nodeId == Transaction.GENESIS_SENDER) {
 			// It's a genesis transaction
-			Block genesisBlock = ((Node) this.ownNode).getChain().getBlocks().get(0);
+			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
 			return genesisBlock.getTransactions().get(transactionId);
 		}
 		
@@ -127,7 +128,7 @@ public class LocalStore {
 	public Transaction getTransactionFromNode(int nodeId, int blockId, int transactionId) {
 		if (nodeId == Transaction.GENESIS_SENDER) {
 			// It's a genesis transaction
-			Block genesisBlock = ((Node) this.ownNode).getChain().getBlocks().get(0);
+			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
 			return genesisBlock.getTransactions().get(transactionId);
 		}
 		
@@ -179,8 +180,8 @@ public class LocalStore {
 	/**
 	 * @return a new transaction id
 	 */
-	public int getNewTransactionId() {
-		return ++transactionId;
+	public synchronized int getNewTransactionId() {
+		return transactionId++;
 	}
 
 	/**
