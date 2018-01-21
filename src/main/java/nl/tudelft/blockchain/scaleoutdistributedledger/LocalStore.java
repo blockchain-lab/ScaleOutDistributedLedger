@@ -93,6 +93,29 @@ public class LocalStore {
 			throw new IllegalStateException("Tracker update failed!", ex);
 		}
 	}
+	
+	/**
+	 * Get transaction from a specific node with a transaction id.
+	 * @param nodeId        - identifier of the node
+	 * @param transactionId - identifier of the transaction
+	 * @return              - the transaction
+	 */
+	public Transaction getTransactionFromNode(int nodeId, int transactionId) {
+		if (nodeId == Transaction.GENESIS_SENDER) {
+			// It's a genesis transaction
+			Block genesisBlock = ((Node) this.ownNode).getChain().getBlocks().get(0);
+			return genesisBlock.getTransactions().get(transactionId);
+		}
+		
+		Node node = getNode(nodeId);
+		for (Block block : node.getChain().getBlocks()) {
+			for (Transaction transaction : block.getTransactions()) {
+				if (transaction.getNumber() == transactionId) return transaction;
+			}
+		}
+		
+		throw new IllegalStateException("Transaction with id " + transactionId + " from node " + nodeId + " not found.");
+	}
 
 	/**
 	 * Get transaction from a specific node with a transaction id.
@@ -102,8 +125,14 @@ public class LocalStore {
 	 * @return              - the transaction
 	 */
 	public Transaction getTransactionFromNode(int nodeId, int blockId, int transactionId) {
+		if (nodeId == Transaction.GENESIS_SENDER) {
+			// It's a genesis transaction
+			Block genesisBlock = ((Node) this.ownNode).getChain().getBlocks().get(0);
+			return genesisBlock.getTransactions().get(transactionId);
+		}
+		
+		Node node = getNode(nodeId);
 		try {
-			Node node = getNode(nodeId);
 			Block block = node.getChain().getBlocks().get(blockId);
 			for (Transaction transaction : block.getTransactions()) {
 				if (transaction.getNumber() == transactionId) return transaction;
@@ -112,7 +141,7 @@ public class LocalStore {
 			throw new IllegalStateException("Block with id " + blockId + " from node " + nodeId + " not found.");
 		}
 		
-		throw new IllegalStateException("Transaction with id " + transactionId + " from node " + nodeId + " not found.");
+		throw new IllegalStateException("Transaction with id " + transactionId + " in block " + blockId + " from node " + nodeId + " not found.");
 	}
 	
 	/**

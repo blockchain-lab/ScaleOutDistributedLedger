@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -76,10 +77,13 @@ public class Block {
 	/**
 	 * Constructor to decode a block message.
 	 * @param blockMessage - block message from network.
+	 * @param encodedChainUpdates - received chain of updates
+	 * @param decodedChainUpdates - current decoded chain of updates
 	 * @param localStore - local store.
 	 * @throws IOException - error while getting node from tracker.
 	 */
-	public Block(BlockMessage blockMessage, LocalStore localStore) throws IOException {
+	public Block(BlockMessage blockMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
+			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException {
 		this.number = blockMessage.getNumber();
 		// It's a genesis block
 		if (blockMessage.getOwnerId() == Transaction.GENESIS_SENDER) {
@@ -88,12 +92,26 @@ public class Block {
 			this.owner = localStore.getNode(blockMessage.getOwnerId());
 		}
 		
-		if (blockMessage.getPreviousBlock() != null) {
-			// Convert BlockMessage to Block
-			this.previousBlock = new Block(blockMessage.getPreviousBlock(), localStore);
-		} else if (blockMessage.getPreviousBlockNumber() != -1) {
-			// Get block by number from owner
-			this.previousBlock = this.owner.getChain().getBlocks().get(blockMessage.getPreviousBlockNumber());
+		if (blockMessage.getPreviousBlockNumber() != -1) {
+			// Check if we have it in the local store
+			if (this.owner.getChain().getLastBlock().getNumber() < blockMessage.getPreviousBlockNumber()) {
+				// We don't have it (it should be in the received chain of updates)
+				int currentBlockIndex = encodedChainUpdates.get(this.owner.getId()).indexOf(blockMessage);
+				BlockMessage previousBlockMesssage = encodedChainUpdates.get(this.owner.getId()).get(currentBlockIndex - 1);
+				// Get decoded block list from the owner
+				Block previousBlockLocal = new Block(previousBlockMesssage, encodedChainUpdates, decodedChainUpdates, localStore);
+				if (decodedChainUpdates.containsKey(this.owner)) {
+					decodedChainUpdates.get(this.owner).add(previousBlockLocal);
+				} else {
+					List<Block> currentDecodedBlockList = new ArrayList<>();
+					currentDecodedBlockList.add(previousBlockLocal);
+					decodedChainUpdates.put(this.owner, currentDecodedBlockList);
+				}
+				this.previousBlock = previousBlockLocal;
+			} else {
+				// We have it (we infer it's the lastBlock from the chain)
+				this.previousBlock = this.owner.getChain().getLastBlock();
+			}
 		} else {
 			// It's a genesis block
 			this.previousBlock = null;
@@ -102,7 +120,7 @@ public class Block {
 		// Convert TransactionMessage to Transaction
 		this.transactions = new ArrayList<>();
 		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
-			this.transactions.add(new Transaction(transactionMessage, localStore));
+			this.transactions.add(new Transaction(transactionMessage, encodedChainUpdates, decodedChainUpdates, localStore));
 		}
 		//TODO Do we want to send the hash along?
 		this.hash = blockMessage.getHash();
@@ -201,8 +219,9 @@ public class Block {
 
 		Block other = (Block) obj;
 		if (this.number != other.number) return false;
-		if (this.owner != other.owner) return false;
-
+		if (this.owner == null) {
+			if (other.owner != null) return false;
+		} else if (other.owner == null || this.owner.getId() != other.owner.getId()) return false;
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
 		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
