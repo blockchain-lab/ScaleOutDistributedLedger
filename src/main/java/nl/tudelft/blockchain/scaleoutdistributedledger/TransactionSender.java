@@ -41,6 +41,7 @@ public class TransactionSender {
 	private final LocalStore localStore;
 	private final SocketClient socketClient;
 	private final AtomicInteger taskCounter = new AtomicInteger();
+	private boolean stopping;
 	
 	/**
 	 * Creates a new TransactionSender.
@@ -80,7 +81,7 @@ public class TransactionSender {
 				}
 				
 				//If we didn't find enough blocks, then we reschedule to check again later.
-				if (committedBlocks < REQUIRED_COMMITS) {
+				if (!canSend(committedBlocks)) {
 					schedule(this);
 					return;
 				}
@@ -95,10 +96,40 @@ public class TransactionSender {
 	}
 	
 	/**
+	 * @param committedBlocks - the number of blocks that have been committed
+	 * @return - if a block can be sent
+	 */
+	public boolean canSend(int committedBlocks) {
+		if (stopping && committedBlocks >= 1) {
+			return true;
+		}
+		
+		return committedBlocks >= REQUIRED_COMMITS;
+	}
+	
+	/**
 	 * @return - the number of blocks currently waiting to be sent
 	 */
 	public int blocksWaiting() {
 		return taskCounter.get();
+	}
+	
+	/**
+	 * Sleeps until all transactions have been sent.
+	 * @throws InterruptedException - If we are interrupted while waiting.
+	 */
+	public void waitUntilDone() throws InterruptedException {
+		while (taskCounter.get() != 0) {
+			Thread.sleep(1000L);
+		}
+	}
+	
+	/**
+	 * Indicates that we want to stop. This reduces the REQUIRED_COMMITS to 1, to ensure that all
+	 * remaining blocks get flushed whenever that is possible.
+	 */
+	public void stop() {
+		stopping = true;
 	}
 	
 	/**
@@ -108,6 +139,7 @@ public class TransactionSender {
 	public void shutdownNow() {
 		executor.shutdownNow();
 		socketClient.shutdown();
+		taskCounter.set(0);
 	}
 	
 	/**
