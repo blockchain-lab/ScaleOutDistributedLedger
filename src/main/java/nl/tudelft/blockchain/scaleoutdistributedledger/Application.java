@@ -38,7 +38,7 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int, Block, Map, Ed25519Key, OwnNode)} before it can be used.
+	 * The application must be initialized with {@link #init(int, Block, Ed25519Key, OwnNode)} before it can be used.
 	 * @param isProduction - if this is production or testing
 	 */
 	public Application(boolean isProduction) {
@@ -136,9 +136,15 @@ public class Application {
 	public void onStopTransacting() {
 		int nodeID = localStore.getOwnNode().getId();
 		try {
+			// This code should be a better check for if it can be marked stopped, but the list will never become empty.
+//			while (getTransactionSender().blocksWaiting() > 0) {
+//				Thread.sleep(1000);
+//			}
 			TrackerHelper.setRunning(nodeID, false);
 		} catch (IOException ex) {
 			Log.log(Level.SEVERE, "Cannot update running status to stopped for node " + nodeID);
+//		} catch (InterruptedException e) {
+//			Log.log(Level.SEVERE, "Thread interrupted, node " + nodeID + " is not marked stopped");
 		}
 	}
 }
