@@ -152,11 +152,11 @@ public class LocalStore {
 	public void addUnspentTransaction(Transaction transaction) {
 		if (!unspent.add(transaction)) return;
 
-		if (transaction.getReceiver() == ownNode) {
+		if (ownNode.equals(transaction.getReceiver())) {
 			availableMoney += transaction.getAmount();
 		}
 		
-		if (transaction.getSender() == ownNode) {
+		if (ownNode.equals(transaction.getSender())) {
 			availableMoney += transaction.getRemainder();
 		}
 	}
@@ -168,10 +168,10 @@ public class LocalStore {
 		for (Transaction transaction : toRemove) {
 			if (!unspent.remove(transaction)) continue;
 			
-			if (transaction.getReceiver() == ownNode) {
+			if (ownNode.equals(transaction.getReceiver())) {
 				availableMoney -= transaction.getAmount();
 			}
-			if (transaction.getSender() == ownNode) {
+			if (ownNode.equals(transaction.getSender())) {
 				availableMoney -= transaction.getRemainder();
 			}
 		}
