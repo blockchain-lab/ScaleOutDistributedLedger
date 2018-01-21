@@ -114,8 +114,12 @@ public class Node {
 
 	@Override
 	public boolean equals(Object obj) {
-		//We only have one Node object for each id, so we can compare with ==
-		return obj == this;
+		// We only have one Node object for each id, so we can compare with ==
+		if (obj == this) return true;
+		if (!(obj instanceof Node)) return false;
+		
+		Node other = (Node) obj;
+		return this.getId() == other.getId();
 	}
 	
 	@Override

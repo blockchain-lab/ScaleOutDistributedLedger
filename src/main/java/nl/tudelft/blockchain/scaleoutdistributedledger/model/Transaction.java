@@ -9,9 +9,15 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.OptionalInt;
+import java.util.Set;
 import java.util.logging.Level;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 
 /**
  * Transaction class.
@@ -66,9 +72,13 @@ public class Transaction {
 	/**
 	 * Constructor to decode a transaction message.
 	 * @param transactionMessage - the message received from a transaction.
+	 * @param encodedChainUpdates - the received chain of updates
+	 * @param decodedChainUpdates - current chain of updates, from the decoding process
 	 * @param localStore - local store, to get each Node object
+	 * @throws java.io.IOException - error while getting node
 	 */
-	public Transaction(TransactionMessage transactionMessage, LocalStore localStore)  {
+	public Transaction(TransactionMessage transactionMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
+			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException  {
 		this.number = transactionMessage.getNumber();
 		// It's a genesis transaction
 		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
@@ -81,13 +91,49 @@ public class Transaction {
 		this.remainder = transactionMessage.getRemainder();
 		// Decode transaction messages to normal transactions
 		this.source = new HashSet<>();
+		// Use local store for known sources
 		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
 			Integer nodeId = knownSourceEntry.getKey();
 			Integer transactionId = knownSourceEntry.getValue();
 			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
 		}
-		for (TransactionMessage transactionMessageAux : transactionMessage.getNewSource()) {
-			this.source.add(new Transaction(transactionMessageAux, localStore));
+		// Use chain of updates for new sources
+		for (Entry<Integer, Integer> newSourceEntry : transactionMessage.getNewSource()) {
+			try {
+				// Try to find the transaction in the local store
+				this.source.add(localStore.getTransactionFromNode(newSourceEntry.getKey(), newSourceEntry.getValue()));
+				continue;
+			} catch (IllegalStateException ex) {
+				// Not in localStore
+			}
+			// Use the transaction from the current chain of updates
+			Node owner = localStore.getNode(newSourceEntry.getKey());
+			if (!decodedChainUpdates.containsKey(owner)) {
+				// Get that new chain
+				List<BlockMessage> blockMessageList = encodedChainUpdates.get(owner.getId());
+				// Decode chain, in REVERSE order
+				BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
+				// Recursively decode the blocks of a chain (in reverse order)
+				Block lastBlockLocal = new Block(lastBlockMessage, encodedChainUpdates, decodedChainUpdates, localStore);
+				if (decodedChainUpdates.containsKey(owner)) {
+					// Add to already created list
+					decodedChainUpdates.get(owner).add(lastBlockLocal);
+				} else {
+					// Create a new list
+					List<Block> blockList = new ArrayList<>();
+					blockList.add(lastBlockLocal);
+					decodedChainUpdates.put(owner, blockList);
+				}
+			}
+			// TODO [Performance]: Find a way to directly go to the correct block instead of iterating through all of them
+			for (Block blockAux : decodedChainUpdates.get(owner)) {
+				for (Transaction transactionAux : blockAux.getTransactions()) {
+					if (transactionAux.getNumber() == newSourceEntry.getValue()) {
+						this.source.add(transactionAux);
+						break;
+					}
+				}
+			}
 		}
 		this.hash = transactionMessage.getHash();
 		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
@@ -187,6 +233,11 @@ public class Transaction {
 		if (sender == null) {
 			if (other.sender != null) return false;
 		} else if (other.sender == null || sender.getId() != other.sender.getId()) return false;
+		if (amount != other.amount) return false;
+		if (remainder != other.remainder) return false;
+		if (!hash.equals(other.hash)) return false;
+		if (!source.equals(other.source)) return false;
+		if (!blockNumber.equals(other.blockNumber)) return false;
 		return true;
 	}
 
