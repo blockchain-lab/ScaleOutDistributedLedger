@@ -49,7 +49,7 @@ public final class SimulationMain {
 				.boxed().collect(Collectors.toList());
 
 		// --- PHASE 0: cleanup ---
-		if (cleanup()) return;
+		if (!cleanup()) return;
 
 
 		// --- PHASE 1: generating key pairs and registering with tracker ---
@@ -61,7 +61,7 @@ public final class SimulationMain {
 		Map<Integer, OwnNode> ownNodes = registerOwnNodes(nodeToKeyPair);
 
 		// wait for all the nodes to register in tracker
-		WaitForRegister();
+		waitForRegister();
 
 
 		// --- PHASE 2: all nodes registered, so create genesis block and genesis.json files ---
@@ -139,7 +139,7 @@ public final class SimulationMain {
 	 * @throws InterruptedException - when the sleep is interrupted
 	 * @throws IOException - when the connection with the tracker fails
 	 */
-	private static void WaitForRegister() throws IOException, InterruptedException {
+	private static void waitForRegister() throws IOException, InterruptedException {
 		Log.log(Level.INFO, "Waiting on nodes to register");
 		while (TOTAL_NODES_NUMBER != TrackerHelper.getRegistered()) {
 			Thread.sleep(1000);
@@ -184,9 +184,9 @@ public final class SimulationMain {
 		} catch (IOException e) {
 			Log.log(Level.SEVERE, "Tracker not running, please start it on '" + Application.TRACKER_SERVER_ADDRESS + "'");
 			Log.log(Level.INFO, "The tracker can be started using `npm start` in the tracker-server folder");
-			return true;
+			return false;
 		}
-		return false;
+		return true;
 	}
 
 	private static Map<Integer, String> generatePublicKeysMap(Map<Integer, Node> nodes) {

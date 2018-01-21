@@ -130,7 +130,6 @@ public final class TrackerHelper {
 			Log.log(Level.SEVERE, "Could not resolve localhost address, please check your network configuration");
 			return "0.0.0.0";
 		}
-
 	}
 
 	/**
