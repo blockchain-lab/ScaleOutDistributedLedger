@@ -10,6 +10,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -100,20 +101,34 @@ public class Transaction {
 		}
 		// Use chain of updates for new sources
 		for (Entry<Integer, Integer> newSourceEntry : transactionMessage.getNewSource()) {
+			try {
+				// Try to find the transaction in the local store
+				this.source.add(localStore.getTransactionFromNode(newSourceEntry.getKey(), newSourceEntry.getValue()));
+				continue;
+			} catch (IllegalStateException ex) {
+				// Continue
+			}
+			// Use the transaction from the current chain of updates
 			Node owner = localStore.getNode(newSourceEntry.getKey());
 			if (!decodedChainUpdates.containsKey(owner)) {
 				// Get that new chain
 				List<BlockMessage> blockMessageList = encodedChainUpdates.get(owner.getId());
-				// Decode chain
-				List<Block> blockList = new ArrayList<>();
-				decodedChainUpdates.put(owner, blockList);
-				for (BlockMessage blockMessage : blockMessageList) {
-					blockList.add(new Block(blockMessage, encodedChainUpdates, decodedChainUpdates, localStore));
+				// Decode chain, in REVERSE order
+				BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
+				// Recursively decode the blocks of a chain (in reverse order)
+				Block lastBlockLocal = new Block(lastBlockMessage, encodedChainUpdates, decodedChainUpdates, localStore);
+				if (decodedChainUpdates.containsKey(owner)) {
+					// Add to already created list
+					decodedChainUpdates.get(owner).add(lastBlockLocal);
+				} else {
+					// Create a new list
+					List<Block> blockList = new ArrayList<>();
+					blockList.add(lastBlockLocal);
+					decodedChainUpdates.put(owner, blockList);
 				}
 			}
-			// Get transaction from the current chain of updates
-			List<Block> blockList = decodedChainUpdates.get(owner);
-			for (Block blockAux : blockList) {
+			// TODO [Performance]: Find a way to directly go to the correct block instead of iterating through all of them
+			for (Block blockAux : decodedChainUpdates.get(owner)) {
 				for (Transaction transactionAux : blockAux.getTransactions()) {
 					if (transactionAux.getNumber() == newSourceEntry.getValue()) {
 						this.source.add(transactionAux);

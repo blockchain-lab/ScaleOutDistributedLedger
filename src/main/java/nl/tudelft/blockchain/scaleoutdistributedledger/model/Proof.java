@@ -2,14 +2,21 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.OptionalInt;
+import java.util.Set;
 import java.util.logging.Level;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 
 /**
  * Proof class.
@@ -49,7 +56,25 @@ public class Proof {
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
 		this.chainUpdates = new HashMap<>();
-		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
+		// Decode the chain of the sender
+		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
+		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
+		// Start from the last block
+		BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
+		// Recursively decode the transaction and chainUpdates
+		Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
+		List<Block> currentDecodedBlockList;
+		if (this.chainUpdates.containsKey(senderNode)) {
+			// Add to already created list of blocks
+			currentDecodedBlockList = this.chainUpdates.get(senderNode);
+			currentDecodedBlockList.add(lastBlock);
+		} else {
+			// Create new list of blocks
+			currentDecodedBlockList = new ArrayList<>();
+			currentDecodedBlockList.add(lastBlock);
+			this.chainUpdates.put(senderNode, currentDecodedBlockList);
+		}
+		/*for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
 			Node node = localStore.getNode(entry.getKey());
 			if (this.chainUpdates.containsKey(node)) {
 				// We have already decoded this chain in a previous iteration
@@ -62,8 +87,18 @@ public class Proof {
 			for (BlockMessage blockMessage : blockMessageList) {
 				blockList.add(new Block(blockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore));
 			}
+		}*/
+		// Set the transaction from the decoded chain
+		Transaction foundTransaction = null;
+		for (Block block : currentDecodedBlockList) {
+			for (Transaction transactionAux : block.getTransactions()) {
+				if (transactionAux.getNumber() == proofMessage.getTransactionMessage().getNumber()) {
+					foundTransaction = transactionAux;
+					break;
+				}
+			}
 		}
-		this.transaction = new Transaction(proofMessage.getTransactionMessage(), proofMessage.getChainUpdates(), this.chainUpdates, localStore);
+		this.transaction = foundTransaction;
 	}
 	
 	/**

@@ -8,6 +8,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 
 /**
  * Block message for netty.
@@ -39,7 +40,7 @@ public class BlockMessage extends Message {
 	 * Constructor.
 	 * @param block - original block
 	 */
-	public BlockMessage(Block block) {
+	public BlockMessage(Block block, Node finalReceiver) {
 		this.number = block.getNumber();
 		Block prevBlock = block.getPreviousBlock();
 		if (prevBlock != null) {
@@ -56,7 +57,7 @@ public class BlockMessage extends Message {
 		}
 		this.transactions = new ArrayList<>();
 		for (Transaction transaction : block.getTransactions()) {
-			this.transactions.add(new TransactionMessage(transaction));
+			this.transactions.add(new TransactionMessage(transaction, finalReceiver));
 		}
 		this.hash = block.getHash();
 	}

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.OptionalInt;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import java.util.Map;
@@ -22,6 +23,8 @@ import static org.junit.Assert.*;
  * Test class for serialization of classes.
  */
 public class SerializationTest {
+	
+	private int transactionNumber = 11;
 	
 	private Map<Integer, Node> nodeList;
 	
@@ -79,6 +82,10 @@ public class SerializationTest {
 		this.transaction = generateTransaction(this.bobNode, this.aliceNode, 50, this.transactionSource);
 		// Add Proof
 		this.proof = new Proof(this.transaction);
+		// Manually change the chainUpdates
+		List<Block> listBlockUpdate = this.bobNode.getChain().getBlocks();
+		listBlockUpdate.remove(0);
+		this.proof.getChainUpdates().put(this.bobNode, listBlockUpdate);
 	}
 	
 	/**
@@ -87,7 +94,7 @@ public class SerializationTest {
 	 * @return node
 	 */
 	public Node setupNode(int nodeId) {
-		Node node = this.nodeList.get(nodeId);
+		Node node = new OwnNode(nodeId);
 		node.setGenesisBlock(this.genesisBlock);
 		node.getChain().appendNewBlock(new ArrayList<>());
 		node.getChain().appendNewBlock(new ArrayList<>());
@@ -101,7 +108,15 @@ public class SerializationTest {
 	 */
 	public LocalStore setupLocalStore(Node node) {
 		LocalStore localStore = new LocalStore((OwnNode) node, null, this.genesisBlock, false);
-		localStore.getNodes().putAll(this.nodeList);
+		// Make sure each node has its own list of nodes
+		HashMap<Integer, Node> newNodeList = new HashMap<>();
+		for (int i = 0; i < 10; i++) {
+			if (node.getId() == i) continue;
+			Node localNode = new Node(i);
+			localNode.setGenesisBlock(this.genesisBlock);
+			newNodeList.put(i, localNode);
+		}
+		localStore.getNodes().putAll(newNodeList);
 		return localStore;
 	}
 	
@@ -114,12 +129,16 @@ public class SerializationTest {
 	 * @return - the transaction
 	 */
 	public Transaction generateTransaction(Node sender, Node receiver, long amount, Transaction transactionSource) {
+		// Create transaction
 		Set<Transaction> sources = new HashSet<>();
 		sources.add(transactionSource);
 		long remainder = transactionSource.getAmount() - amount;
-		Transaction newtTransaction = new Transaction(11, sender, receiver, amount, remainder, sources);
+		Transaction newtTransaction = new Transaction(this.transactionNumber++, sender, receiver, amount, remainder, sources);
 		newtTransaction.setBlockNumber(OptionalInt.of(1));
+		// Add to chains
 		sender.getChain().getBlocks().get(1).getTransactions().add(newtTransaction);
+		// Set lastCommitedBlock
+		sender.getChain().setLastCommittedBlock(sender.getChain().getBlocks().get(1));
 		
 		return newtTransaction;
 	}
@@ -131,13 +150,13 @@ public class SerializationTest {
 	@Test
 	public void testGensisBlockMessage_Valid() throws IOException {
 		// Encode genesis block
-		BlockMessage genesisBlockMessage = new BlockMessage(this.genesisBlock);
+		BlockMessage genesisBlockMessage = new BlockMessage(this.genesisBlock, this.aliceNode);
 		// Check
-		assertEquals(genesisBlockMessage.getNumber(), this.genesisBlock.getNumber());
-		assertEquals(genesisBlockMessage.getPreviousBlockNumber(), -1);
-		assertEquals(genesisBlockMessage.getOwnerId(), Transaction.GENESIS_SENDER);
-		assertEquals(genesisBlockMessage.getTransactions().size(), this.genesisBlock.getTransactions().size());
-		assertEquals(genesisBlockMessage.getHash(), this.genesisBlock.getHash());
+		assertEquals(this.genesisBlock.getNumber(), genesisBlockMessage.getNumber());
+		assertEquals(-1, genesisBlockMessage.getPreviousBlockNumber());
+		assertEquals(Transaction.GENESIS_SENDER, genesisBlockMessage.getOwnerId());
+		assertEquals(this.genesisBlock.getTransactions().size(), genesisBlockMessage.getTransactions().size());
+		assertEquals(this.genesisBlock.getHash(), genesisBlockMessage.getHash());
 	}
 	
 	/**
@@ -147,15 +166,15 @@ public class SerializationTest {
 	@Test
 	public void testTransactionMessage_Valid() throws IOException {
 		// Encode Transaction into TransactionMessage
-		TransactionMessage transactionMessage = new TransactionMessage(this.transaction);
+		TransactionMessage transactionMessage = new TransactionMessage(this.transaction, this.transaction.getReceiver());
 		// Check
-		assertEquals(transactionMessage.getNumber(), this.transaction.getNumber());
-		assertEquals(transactionMessage.getSenderId(), this.transaction.getSender().getId());
-		assertEquals(transactionMessage.getReceiverId(), this.transaction.getReceiver().getId());
-		assertEquals(transactionMessage.getAmount(), this.transaction.getAmount());
-		assertEquals(transactionMessage.getRemainder(), this.transaction.getRemainder());
-		assertEquals(transactionMessage.getHash(), this.transaction.getHash());
-		assertEquals(transactionMessage.getBlockNumber(), this.transaction.getBlockNumber().getAsInt());
+		assertEquals(this.transaction.getNumber(), transactionMessage.getNumber());
+		assertEquals(this.transaction.getSender().getId(), transactionMessage.getSenderId());
+		assertEquals(this.transaction.getReceiver().getId(), transactionMessage.getReceiverId());
+		assertEquals(this.transaction.getAmount(), transactionMessage.getAmount());
+		assertEquals(this.transaction.getRemainder(), transactionMessage.getRemainder());
+		assertEquals(this.transaction.getHash(), transactionMessage.getHash());
+		assertEquals(this.transaction.getBlockNumber().getAsInt(), transactionMessage.getBlockNumber());
 	}
 	
 	/**
@@ -169,8 +188,8 @@ public class SerializationTest {
 		// Decode ProofMessage into Proof (on Alice node)
 		Proof decodedProof = new Proof(proofMessage, this.aliceLocalStore);
 		// Check references
-		assertEquals(decodedProof.getTransaction(), this.proof.getTransaction());
-		assertEquals(decodedProof.getChainUpdates(), this.proof.getChainUpdates());
+		assertEquals(this.proof.getTransaction(), decodedProof.getTransaction());
+		assertEquals(this.proof.getChainUpdates(), decodedProof.getChainUpdates());
 	}
 	
 	/**
@@ -181,13 +200,13 @@ public class SerializationTest {
 	public void testBlockMessage_Valid() throws IOException {
 		// Encode Block into BlockMessage
 		Block aliceBlock = this.aliceNode.getChain().getBlocks().get(1);
-		BlockMessage blockMessage = new BlockMessage(aliceBlock);
+		BlockMessage blockMessage = new BlockMessage(aliceBlock, this.bobNode);
 		// Check
-		assertEquals(blockMessage.getNumber(), aliceBlock.getNumber());
-		assertEquals(blockMessage.getPreviousBlockNumber(), aliceBlock.getPreviousBlock().getNumber());
-		assertEquals(blockMessage.getOwnerId(), aliceBlock.getOwner().getId());
-		assertEquals(blockMessage.getTransactions().size(), aliceBlock.getTransactions().size());
-		assertEquals(blockMessage.getHash(), aliceBlock.getHash());
+		assertEquals(aliceBlock.getNumber(), blockMessage.getNumber());
+		assertEquals(aliceBlock.getPreviousBlock().getNumber(), blockMessage.getPreviousBlockNumber());
+		assertEquals(aliceBlock.getOwner().getId(), blockMessage.getOwnerId());
+		assertEquals(aliceBlock.getTransactions().size(), blockMessage.getTransactions().size());
+		assertEquals(aliceBlock.getHash(), blockMessage.getHash());
 	}
 	
 	/**
@@ -205,6 +224,7 @@ public class SerializationTest {
 		
 		// Create Proof
 		Proof originalProof = new Proof(newTransaction);
+		// Manually change the chainUpdates
 		originalProof.getChainUpdates().put(this.aliceNode, this.aliceNode.getChain().getBlocks());
 		originalProof.getChainUpdates().put(this.bobNode, this.bobNode.getChain().getBlocks());
 		// Encode Proof into ProofMessage
@@ -213,9 +233,10 @@ public class SerializationTest {
 		Proof decodedProof = new Proof(encodedProof, this.charlieLocalStore);
 		
 		// Check Block and Transaction
-		Block originalBlock = this.bobNode.getChain().getBlocks().get(1);
-		Block decodedBlock = decodedProof.getChainUpdates().get(this.bobNode).get(1);
-		assertEquals(decodedBlock, originalBlock);
+		Block originalBlock = this.aliceNode.getChain().getBlocks().get(1);
+		// Note: The decoding process got rid of the genesis block
+		Block decodedBlock = decodedProof.getChainUpdates().get(this.charlieLocalStore.getNodes().get(0)).get(0);
+		assertEquals(originalBlock, decodedBlock);
 	}
 	
 }

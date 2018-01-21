@@ -35,7 +35,8 @@ public class ProofMessage extends Message {
 	 * @param proof - original proof 
 	 */
 	public ProofMessage(Proof proof) {
-		this.transactionMessage = new TransactionMessage(proof.getTransaction());
+		Node finalReceiver = proof.getTransaction().getReceiver();
+		this.transactionMessage = new TransactionMessage(proof.getTransaction(), finalReceiver);
 		this.chainUpdates = new HashMap<>();
 		for (Map.Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
 			Node node = entry.getKey();
@@ -45,7 +46,7 @@ public class ProofMessage extends Message {
 				List<BlockMessage> blockMessageList = new ArrayList<>();
 				for (int i = 0; i < blockList.size(); i++) {
 					Block block = blockList.get(i);
-					blockMessageList.add(new BlockMessage(block));
+					blockMessageList.add(new BlockMessage(block, finalReceiver));
 				}
 				this.chainUpdates.put(node.getId(), blockMessageList);
 			}

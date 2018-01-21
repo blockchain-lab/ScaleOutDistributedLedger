@@ -90,19 +90,24 @@ public class Block {
 		}
 		
 		if (blockMessage.getPreviousBlockNumber() != -1) {
-			List<Block> searchableBlockList;
-			// Get block by number from the owner chain, if it's the first not decoded block
-			List<Block> currentDecodedBlockList = decodedChainUpdates.get(this.owner);
-			if (currentDecodedBlockList.isEmpty()) {
-				searchableBlockList = this.owner.getChain().getBlocks();
-			} else {
-				searchableBlockList = currentDecodedBlockList;
-			}
-			for (Block blockAux : searchableBlockList) {
-				if (blockAux.getNumber() == blockMessage.getPreviousBlockNumber()) {
-					this.previousBlock = blockAux;
-					break;
+			// Check if we have it in the local store
+			if (this.owner.getChain().getLastBlock().getNumber() < blockMessage.getPreviousBlockNumber()) {
+				// We don't have it (it should be in the received chain of updates)
+				int currentBlockIndex = encodedChainUpdates.get(this.owner.getId()).indexOf(blockMessage);
+				BlockMessage previousBlockMesssage = encodedChainUpdates.get(this.owner.getId()).get(currentBlockIndex - 1);
+				// Get decoded block list from the owner
+				Block previousBlockLocal = new Block(previousBlockMesssage, encodedChainUpdates, decodedChainUpdates, localStore);
+				if (decodedChainUpdates.containsKey(this.owner)) {
+					decodedChainUpdates.get(this.owner).add(previousBlockLocal);
+				} else {
+					List<Block> currentDecodedBlockList = new ArrayList<>();
+					currentDecodedBlockList.add(previousBlockLocal);
+					decodedChainUpdates.put(this.owner, currentDecodedBlockList);
 				}
+				this.previousBlock = previousBlockLocal;
+			} else {
+				// We have it (we infer it's the lastBlock from the chain)
+				this.previousBlock = this.owner.getChain().getLastBlock();
 			}
 		} else {
 			// It's a genesis block
