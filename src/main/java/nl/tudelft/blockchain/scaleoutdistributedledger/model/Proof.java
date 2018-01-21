@@ -56,7 +56,7 @@ public class Proof {
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
 		this.chainUpdates = new HashMap<>();
-		// Decode the chain of the sender
+		// Start by decoding the chain of the sender
 		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
 		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
 		// Start from the last block
@@ -74,20 +74,6 @@ public class Proof {
 			currentDecodedBlockList.add(lastBlock);
 			this.chainUpdates.put(senderNode, currentDecodedBlockList);
 		}
-		/*for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
-			Node node = localStore.getNode(entry.getKey());
-			if (this.chainUpdates.containsKey(node)) {
-				// We have already decoded this chain in a previous iteration
-				continue;
-			}
-			List<BlockMessage> blockMessageList = entry.getValue();
-			// Convert BlockMessage to Block
-			List<Block> blockList = new ArrayList<>();
-			this.chainUpdates.put(node, blockList);
-			for (BlockMessage blockMessage : blockMessageList) {
-				blockList.add(new Block(blockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore));
-			}
-		}*/
 		// Set the transaction from the decoded chain
 		Transaction foundTransaction = null;
 		for (Block block : currentDecodedBlockList) {
