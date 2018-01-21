@@ -113,7 +113,7 @@ public class Simulation {
 
 		int sum = 0;
 		for (Application app : localApplications) {
-			app.stop();
+			app.kill();
 			Log.log(Level.INFO, String.format("Node %d has a final amount of %d moneyz.",
 					app.getLocalStore().getOwnNode().getId(), app.getLocalStore().getAvailableMoney()));
 			sum += app.getLocalStore().getAvailableMoney();
