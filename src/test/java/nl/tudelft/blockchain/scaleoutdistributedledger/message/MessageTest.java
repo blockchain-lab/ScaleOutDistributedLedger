@@ -1,7 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 
@@ -24,5 +23,6 @@ public abstract class MessageTest {
 		OwnNode ownNode = new OwnNode(0);
 		appMock = mock(Application.class);
 		storeSpy = spy(new LocalStore(ownNode, appMock, null, false));
+		doNothing().when(storeSpy).updateNodes();
 	}
 }
