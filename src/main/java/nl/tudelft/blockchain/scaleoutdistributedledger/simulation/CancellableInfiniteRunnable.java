@@ -68,11 +68,18 @@ public class CancellableInfiniteRunnable<T> implements Runnable {
 			while (!isCancelled()) {
 				try {
 					action.accept(t);
-					Thread.sleep(sleepFunction.applyAsLong(t));
 				} catch (InterruptedException ex) {
 					continue;
 				} catch (Exception ex) {
 					Log.log(Level.SEVERE, "Uncaught exception in action", ex);
+				}
+				
+				try {
+					Thread.sleep(sleepFunction.applyAsLong(t));
+				} catch (InterruptedException ex) {
+					continue;
+				} catch (Exception ex) {
+					Log.log(Level.SEVERE, "Uncaught exception in sleep function", ex);
 				}
 			}
 		} finally {
