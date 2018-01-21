@@ -39,8 +39,9 @@ public class BlockMessage extends Message {
 	/**
 	 * Constructor.
 	 * @param block - original block
+	 * @param proofReceiver - receiver of the proof
 	 */
-	public BlockMessage(Block block, Node finalReceiver) {
+	public BlockMessage(Block block, Node proofReceiver) {
 		this.number = block.getNumber();
 		Block prevBlock = block.getPreviousBlock();
 		if (prevBlock != null) {
@@ -57,7 +58,7 @@ public class BlockMessage extends Message {
 		}
 		this.transactions = new ArrayList<>();
 		for (Transaction transaction : block.getTransactions()) {
-			this.transactions.add(new TransactionMessage(transaction, finalReceiver));
+			this.transactions.add(new TransactionMessage(transaction, proofReceiver));
 		}
 		this.hash = block.getHash();
 	}

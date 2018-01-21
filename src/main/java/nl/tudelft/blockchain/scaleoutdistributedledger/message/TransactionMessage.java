@@ -49,8 +49,9 @@ public class TransactionMessage extends Message {
 	/**
 	 * Constructor.
 	 * @param transaction - the original transaction object
+	 * @param proofReceiver - receiver of the proof
 	 */
-	public TransactionMessage(Transaction transaction, Node finalReceiver) {
+	public TransactionMessage(Transaction transaction, Node proofReceiver) {
 		if (!transaction.getBlockNumber().isPresent()) {
 			throw new RuntimeException("Block number not present");
 		}
@@ -73,13 +74,13 @@ public class TransactionMessage extends Message {
 				// Receiver already knows about a genesis transaction
 				this.knownSource.add(new SimpleEntry<>(Transaction.GENESIS_SENDER, sourceTransaction.getNumber()));
 			} else {
-				if (finalReceiver.equals(sourceSender)) {
+				if (proofReceiver.equals(sourceSender)) {
 					// Receiver is the sender of the source
 					// So receiver knows about himself
 					this.knownSource.add(new SimpleEntry<>(sourceSender.getId(), sourceTransaction.getNumber()));
 				} else {
 					// Receiver is not the sender of the source
-					Integer lastBlockNumber = finalReceiver.getMetaKnowledge().get(sourceSender);
+					Integer lastBlockNumber = proofReceiver.getMetaKnowledge().get(sourceSender);
 					if (lastBlockNumber != null && sourceTransaction.getBlockNumber().getAsInt() <= lastBlockNumber) {
 						// Receiver knows about other node
 						this.knownSource.add(new SimpleEntry<>(sourceSender.getId(), sourceTransaction.getNumber()));

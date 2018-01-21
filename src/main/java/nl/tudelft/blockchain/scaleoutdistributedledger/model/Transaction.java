@@ -10,8 +10,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +104,7 @@ public class Transaction {
 				this.source.add(localStore.getTransactionFromNode(newSourceEntry.getKey(), newSourceEntry.getValue()));
 				continue;
 			} catch (IllegalStateException ex) {
-				// Continue
+				// Not in localStore
 			}
 			// Use the transaction from the current chain of updates
 			Node owner = localStore.getNode(newSourceEntry.getKey());

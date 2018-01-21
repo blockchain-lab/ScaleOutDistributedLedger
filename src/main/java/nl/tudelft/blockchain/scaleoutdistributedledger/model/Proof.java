@@ -75,6 +75,7 @@ public class Proof {
 			this.chainUpdates.put(senderNode, currentDecodedBlockList);
 		}
 		// Set the transaction from the decoded chain
+		// TODO [possible improvement]: is the transaction always in the last block ?
 		Transaction foundTransaction = null;
 		for (Block block : currentDecodedBlockList) {
 			for (Transaction transactionAux : block.getTransactions()) {
