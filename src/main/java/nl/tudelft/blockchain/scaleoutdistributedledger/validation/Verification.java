@@ -168,14 +168,6 @@ public class Verification {
 	}
 	
 	/**
-	 * @param transaction - the transaction
-	 * @return              if the transaction is cached
-	 */
-	public boolean isCached(Transaction transaction) {
-		return validationCache.containsKey(transaction);
-	}
-	
-	/**
 	 * Checks if the intersection of the given sets is empty or not.
 	 * 
 	 * This method has O(m*c) performance, where {@code m = max(|A|, |B|)} and
