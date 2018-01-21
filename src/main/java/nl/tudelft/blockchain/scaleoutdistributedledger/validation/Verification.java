@@ -160,10 +160,6 @@ public class Verification {
 			throw new ValidationException("Genesis Transaction " + transaction + " is invalid: there are sources specified.");
 		}
 		
-		if (transaction.getAmount() != getOwnGenesisTransaction(localStore).getAmount()) {
-			throw new ValidationException("Genesis Transaction " + transaction + " is invalid: we got a different genesis amount.");
-		}
-		
 		if (transaction.getRemainder() != 0) {
 			throw new ValidationException("Genesis Transaction " + transaction + " is invalid: there is a remainder.");
 		}
@@ -177,17 +173,6 @@ public class Verification {
 	 */
 	public boolean isCached(Transaction transaction) {
 		return validationCache.containsKey(transaction);
-	}
-	
-	/**
-	 * @param localStore - the local store
-	 * @return - our own genesis transaction
-	 */
-	private static Transaction getOwnGenesisTransaction(LocalStore localStore) {
-		Node ownNode = localStore.getOwnNode();
-		Block genesisBlock = ownNode.getChain().getGenesisBlock();
-		Transaction genesisTransaction = genesisBlock.getTransactions().get(ownNode.getId());
-		return genesisTransaction;
 	}
 	
 	/**
