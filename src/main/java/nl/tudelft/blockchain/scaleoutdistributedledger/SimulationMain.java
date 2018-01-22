@@ -7,6 +7,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.Simulation;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.OnlyNodeZeroTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.UniformRandomTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
@@ -82,7 +83,8 @@ public final class SimulationMain {
 
 		// --- PHASE 3: start the actual simulation ---
 		Simulation simulation = new Simulation();
-		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 1);
+		ITransactionPattern itp = new OnlyNodeZeroTransactionPattern(10, 20, 1000, 2000, 1);
+//		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 1);
 		simulation.setTransactionPattern(itp);
 		
 		simulation.runNodesLocally(nodeNumbersToRunLocally, nodes, ownNodes, genesisBlock, nodeToKeyPair);

@@ -113,13 +113,7 @@ public class Transaction {
 				// Get that new chain
 				List<BlockMessage> blockMessageList = encodedChainUpdates.get(owner.getId());
 				// Decode chain, in REVERSE order
-				BlockMessage lastBlockMessage = null;
-				try {
-					lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
-				} catch(NullPointerException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
+				BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
 				// Recursively decode the blocks of a chain (in reverse order)
 				Block lastBlockLocal = new Block(lastBlockMessage, encodedChainUpdates, decodedChainUpdates, localStore);
 				if (decodedChainUpdates.containsKey(owner)) {

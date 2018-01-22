@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
+import org.apache.commons.lang3.ObjectUtils;
 
 /**
  * Helper class for communication.
