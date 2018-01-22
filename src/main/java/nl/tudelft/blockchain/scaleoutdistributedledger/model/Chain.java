@@ -55,6 +55,12 @@ public class Chain {
 		
 		if (updates.isEmpty()) return;
 		
+		ArrayList<Block> copy = new ArrayList<>(updates);
+		copy.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
+		if (!copy.equals(updates)) {
+			throw new IllegalArgumentException("The blocks are not ordered correctly :(");
+		}
+		
 		int nextNr;
 		Block previousBlock;
 		if (blocks.isEmpty()) {
