@@ -100,6 +100,7 @@ public class Proof {
 		// Initialize the chainviews only once
 		for (Node node : this.chainUpdates.keySet()) {
 			chainViews.put(node.getId(),  new ChainView(node.getChain(), this.chainUpdates.get(node)));
+			chainViews.get(node.getId()).isValid();
 		}
 
 		// For all transactions of all nodes do
@@ -108,6 +109,10 @@ public class Proof {
 				for (Block block : this.chainUpdates.get(node)) {
 					for (Transaction tx : block.getTransactions()) {
 						tx.getMessage().getSource().forEach(entry -> {
+//							System.out.println(chainViews.get(entry.getKey()));
+//							System.out.println(entry.getKey());
+//							System.out.println(entry.getValue()[0]);
+//							System.out.println(entry.getValue()[1]);
 							Block sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
 							tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
 						});
