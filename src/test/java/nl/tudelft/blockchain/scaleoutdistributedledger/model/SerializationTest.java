@@ -233,7 +233,7 @@ public class SerializationTest {
 		// Check Block and Transaction
 		Block originalBlock = this.aliceNode.getChain().getBlocks().get(1);
 		// Note: The decoding process got rid of the genesis block
-		Block decodedBlock = decodedProof.getChainUpdates().get(this.charlieLocalStore.getNodes().get(0)).get(0);
+		Block decodedBlock = decodedProof.getChainUpdates().get(this.charlieLocalStore.getNodes().get(0)).get(1);
 		assertEquals(originalBlock, decodedBlock);
 	}
 	

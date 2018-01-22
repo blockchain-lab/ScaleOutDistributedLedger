@@ -27,6 +27,8 @@ public class Proof {
 
 	@Getter
 	private final Map<Node, List<Block>> chainUpdates;
+	
+	private final Map<Node, ChainView> chainViews = new HashMap<>();
 
 	/**
 	 * Constructor.
@@ -70,7 +72,7 @@ public class Proof {
 		this.fixTransactionSources(localStore);
 
 		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
-		ChainView senderChainView = new ChainView(senderNode.getChain(), this.chainUpdates.get(senderNode));
+		ChainView senderChainView = getChainView(senderNode);
 		this.transaction = senderChainView.getBlock(proofMessage.getTransactionMessage().getBlockNumber())
 				.getTransaction(proofMessage.getTransactionMessage().getNumber());
 	}
@@ -101,8 +103,7 @@ public class Proof {
 		HashMap<Integer, ChainView> chainViews = new HashMap<>();
 		// Initialize the chainviews only once
 		for (Node node : this.chainUpdates.keySet()) {
-			chainViews.put(node.getId(),  new ChainView(node.getChain(), this.chainUpdates.get(node)));
-			chainViews.get(node.getId()).isValid();
+			chainViews.put(node.getId(), getChainView(node));
 		}
 
 		// For all transactions of all nodes do
@@ -181,7 +182,6 @@ public class Proof {
 		int absmark = 0;
 		boolean seen = false;
 
-		//TODO [PERFORMANCE]: We check the same chain views multiple times, even though we don't have to.
 		ChainView chainView = getChainView(transaction.getSender());
 		if (!chainView.isValid()) {
 			throw new ProofValidationException("ChainView of node " + transaction.getSender().getId() + " is invalid.");
@@ -247,8 +247,14 @@ public class Proof {
 	 * @param node - the node
 	 * @return - a chainview for the specified node
 	 */
-	public ChainView getChainView(Node node) {
-		return new ChainView(node.getChain(), chainUpdates.get(node));
+	public synchronized ChainView getChainView(Node node) {
+		ChainView chainView = chainViews.get(node);
+		if (chainView == null) {
+			chainView = new ChainView(node.getChain(), chainUpdates.get(node), false);
+			chainView.isValid();
+			chainViews.put(node, chainView);
+		}
+		return chainView;
 	}
 	
 	/**
