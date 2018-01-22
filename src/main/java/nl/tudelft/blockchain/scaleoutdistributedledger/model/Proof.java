@@ -248,12 +248,14 @@ public class Proof {
 		//TODO We might want to do some kind of caching?
 		Map<Chain, Integer> chains = new HashMap<>();
 		Block current = toBlock;
-		do {
+		while (true) {
 			for (Transaction t : current.getTransactions()) {
 				appendChains2(t, receiver, chains);
 			}
+			
+			if (current == fromBlock) break;
 			current = current.getPreviousBlock();
-		} while (current != fromBlock);
+		}
 		
 		appendChains2(transaction, receiver, chains);
 		
