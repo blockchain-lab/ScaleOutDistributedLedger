@@ -70,7 +70,7 @@ public class Chain {
 		
 		for (Block block : ReversedIterator.reversed(this.blocks)) {
 			if (block.isOnMainChain(localStore)) {
-				this.lastCommittedBlock = block;
+				setLastCommittedBlock(block);
 				return;
 			}
 		}
