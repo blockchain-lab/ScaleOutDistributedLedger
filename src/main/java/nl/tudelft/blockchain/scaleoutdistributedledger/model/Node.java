@@ -77,7 +77,11 @@ public class Node {
 	public void updateMetaKnowledge(Proof proof) {
 		Map<Node, List<Block>> updates = proof.getChainUpdates();
 		for (Entry<Node, List<Block>> entry : updates.entrySet()) {
+			//Don't include self
+			if (entry.getKey() == this) continue;
+			
 			int lastBlockNr = getLastBlockNumber(entry.getValue());
+			if (lastBlockNr == -1) continue;
 			metaKnowledge.merge(entry.getKey(), lastBlockNr, Math::max);
 		}
 	}

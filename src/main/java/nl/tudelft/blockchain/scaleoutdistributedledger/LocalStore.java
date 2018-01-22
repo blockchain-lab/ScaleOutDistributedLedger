@@ -197,7 +197,7 @@ public class LocalStore {
 	private void normalizeGenesis() {
 		for (Transaction transaction : ownNode.getChain().getGenesisBlock().getTransactions()) {
 			Node receiver = getNode(transaction.getReceiver().getId());
-			if (receiver != transaction.getReceiver()) {
+			if (receiver != null && receiver != transaction.getReceiver()) {
 				transaction.setReceiver(receiver);
 			}
 		}

@@ -60,7 +60,6 @@ public class Application {
 
 		// Setup local store
 		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction);
-		localStore.updateNodes();
 		localStore.initMainChain();
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
