@@ -33,7 +33,6 @@ public class CancellableInfiniteRunnable<T> implements Runnable {
 	
 	/**
 	 * Cancels this runnable.
-	 * This also interrupts the task if it is running.
 	 */
 	public void cancel() {
 		if (cancelled) return;
@@ -69,11 +68,18 @@ public class CancellableInfiniteRunnable<T> implements Runnable {
 			while (!isCancelled()) {
 				try {
 					action.accept(t);
-					Thread.sleep(sleepFunction.applyAsLong(t));
 				} catch (InterruptedException ex) {
 					continue;
 				} catch (Exception ex) {
 					Log.log(Level.SEVERE, "Uncaught exception in action", ex);
+				}
+				
+				try {
+					Thread.sleep(sleepFunction.applyAsLong(t));
+				} catch (InterruptedException ex) {
+					continue;
+				} catch (Exception ex) {
+					Log.log(Level.SEVERE, "Uncaught exception in sleep function", ex);
 				}
 			}
 		} finally {

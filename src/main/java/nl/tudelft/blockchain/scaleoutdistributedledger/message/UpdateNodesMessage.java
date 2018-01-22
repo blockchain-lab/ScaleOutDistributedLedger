@@ -6,22 +6,22 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
- * Message to indicate that the receiver can start transacting.
+ * Message to indicate that the receiver should update their node list.
  */
-public class StartTransactingMessage extends Message {
+public class UpdateNodesMessage extends Message {
 	private static final long serialVersionUID = 1L;
 
 	@Override
 	public void handle(LocalStore localStore) {
 		try {
-			localStore.getApplication().startTransacting();
+			localStore.updateNodes();
 		} catch (Exception ex) {
-			Log.log(Level.SEVERE, "Unable to start node " + localStore.getOwnNode().getId(), ex);
+			Log.log(Level.SEVERE, "Unable to update node list of " + localStore.getOwnNode().getId(), ex);
 		}
 	}
 
 	@Override
 	public String toString() {
-		return "StartTransactingMessage";
+		return "UpdateNodesMessage";
 	}
 }

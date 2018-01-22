@@ -1,14 +1,11 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
@@ -68,14 +65,11 @@ public interface ITransactionPattern extends Serializable {
 			//Create the transaction
 			TransactionCreator creator = new TransactionCreator(localStore, receiver, amount);
 			Transaction transaction = creator.createTransaction();
-			
-			//Create the block
+
 			//TODO how many transactions do we put in one block?
-			List<Transaction> transactions = new ArrayList<>();
-			transactions.add(transaction);
-			
 			//Add block to local chain
-			newBlock = ownNode.getChain().appendNewBlock(transactions);
+			newBlock = ownNode.getChain().appendNewBlock();
+			newBlock.addTransaction(transaction);
 		}
 		
 		//Ensure that the block is sent at some point
@@ -86,11 +80,13 @@ public interface ITransactionPattern extends Serializable {
 	}
 	
 	/**
-	 * @param uncommittedBlocks - the number of blocks that have not yet been committed
-	 * @return                  - true if we should commit now
+	 * @param lastBlock     - the last block in the chain
+	 * @param lastCommitted - the last committed block
+	 * @return              - true if we should commit now
 	 */
-	public default boolean shouldCommitBlocks(int uncommittedBlocks) {
-		return uncommittedBlocks >= getCommitEvery();
+	public default boolean shouldCommitBlocks(Block lastBlock, Block lastCommitted) {
+		int uncommitted = lastBlock.getNumber() - lastCommitted.getNumber();
+		return uncommitted >= getCommitEvery();
 	}
 	
 	/**
@@ -104,17 +100,13 @@ public interface ITransactionPattern extends Serializable {
 		synchronized (ownChain) {
 			Block lastBlock = ownChain.getLastBlock();
 			Block lastCommitted = ownChain.getLastCommittedBlock();
-			//TODO The last committed block should never be null (should be at least the genesis block)
 			
 			//Don't commit if we don't have anything to commit
 			if (lastBlock == lastCommitted) return;
 			
-			if (!force && !shouldCommitBlocks(lastBlock.getNumber() - lastCommitted.getNumber())) return;
-			
-			//Commit to main chain
-			BlockAbstract blockAbstract = lastBlock.calculateBlockAbstract();
-			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
-			ownChain.setLastCommittedBlock(lastBlock);
+			if (force || shouldCommitBlocks(lastBlock, lastCommitted)) {
+				lastBlock.commit(localStore);
+			}
 		}
 	}
 
@@ -135,6 +127,8 @@ public interface ITransactionPattern extends Serializable {
 			Log.log(Level.SEVERE, "Interrupted while committing blocks!");
 		} catch (Exception ex) {
 			Log.log(Level.SEVERE, "Unable to commit blocks onStop: ", ex);
+		} finally {
+			localStore.getApplication().finishTransactionSending();
 		}
 	}
 

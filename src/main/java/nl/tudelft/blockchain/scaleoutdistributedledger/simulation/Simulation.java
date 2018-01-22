@@ -4,8 +4,8 @@ import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingMessage;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionPatternMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.UpdateNodesMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -16,7 +16,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -38,13 +37,15 @@ public class Simulation {
 	
 	private Application[] localApplications;
 	private final SocketClient socketClient;
+	private final boolean isMaster;
 	
 	/**
 	 * Creates a new simulation.
 	 */
-	public Simulation() {
+	public Simulation(boolean isMaster) {
 		this.socketClient = new SocketClient();
 		this.state = SimulationState.STOPPED;
+		this.isMaster = isMaster;
 	}
 	
 	/**
@@ -59,64 +60,46 @@ public class Simulation {
 	/**
 	 * Runs the given amount of nodes locally, in the current JVM process.
 	 *
-	 * @param nodeNumbers - list of numbers of nodes to run locally
 	 * @param nodes - the list of nodes retrieved from tracker server
 	 * @param ownNodes - the list of own nodes registered to tracker server on this instance
 	 * @param genesisBlock - the genesis block of the main chain
 	 * @param nodeToKeyPair - the map of own nodes numbers to their private keys
 	 * @throws IllegalStateException - if the state is not STOPPED.
 	 */
-	public void runNodesLocally(List<Integer> nodeNumbers, Map<Integer, Node> nodes, Map<Integer, OwnNode> ownNodes,
+	public void runNodesLocally(Map<Integer, Node> nodes, Map<Integer, OwnNode> ownNodes,
 								Block genesisBlock, Map<Integer, Ed25519Key> nodeToKeyPair) {
 		checkState(SimulationState.STOPPED, "start local nodes");
 
 		this.nodes = nodes;
 		//Init the applications
-		localApplications = new Application[nodeNumbers.size()];
-		Map<Integer, String> nodeAddresses = reduceToNodeAddresses(nodes);
-		Map<Integer, Integer> nodePorts = reduceToNodePorts(nodes);
+		localApplications = new Application[ownNodes.size()];
 		int counter = 0;
-		for (Integer nodeNumber : nodeNumbers) {
+		for (Map.Entry<Integer, OwnNode> nodeEntry : ownNodes.entrySet()) {
+			Node node = nodeEntry.getValue();
+			int nodeNumber = nodeEntry.getKey();
+
 			Application app = new Application(true);
-			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodeAddresses, nodePorts);
-			int port = nodePorts.get(nodeNumber);
+			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
+
 			try {
-				TendermintHelper.runTendermintNode(nodePorts.get(nodeNumber), addressesForThisNode, nodeNumber);
-				app.init(port, genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
+				TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
+				app.init(node.getPort(), genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 			} catch (Exception ex) {
-				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + port + "!", ex);
+				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + node.getPort() + "!", ex);
 			}
 
 			localApplications[counter++] = app;
 		}
 	}
 
-	private List<String> generateAddressesForNodeForTendermintP2P(Integer i, Map<Integer, String> nodeAddresses, Map<Integer, Integer> nodePorts) {
-		List<String> ret = new ArrayList<>(nodeAddresses.size() - 1);
+	private List<String> generateAddressesForNodeForTendermintP2P(Integer i, Map<Integer, Node> nodes) {
+		List<String> ret = new ArrayList<>(nodes.size() - 1);
 
-		for (Map.Entry<Integer, String> e : nodeAddresses.entrySet()) {
-			String addressWithPort = "";
+		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
 			int curNodeNumber = e.getKey();
-			if (curNodeNumber != i) {
-				addressWithPort = nodeAddresses.get(curNodeNumber) + ":" + Integer.toString(nodePorts.get(curNodeNumber) + 1);
-			}
-			ret.add(addressWithPort.toString());
-		}
-		return ret;
-	}
-
-	private Map<Integer, Integer> reduceToNodePorts(Map<Integer, Node> nodes) {
-		Map<Integer, Integer> ret = new HashMap<>(nodes.size());
-		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
-			ret.put(e.getKey(), e.getValue().getPort());
-		}
-		return ret;
-	}
-
-	private Map<Integer, String> reduceToNodeAddresses(Map<Integer, Node> nodes) {
-		Map<Integer, String> ret = new HashMap<>(nodes.size());
-		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
-			ret.put(e.getKey(), e.getValue().getAddress());
+			if (curNodeNumber == i) continue;
+			Node node = nodes.get(curNodeNumber);
+			ret.add(node.getAddress() + ":" + Integer.toString(node.getPort() + 1));
 		}
 		return ret;
 	}
@@ -131,7 +114,7 @@ public class Simulation {
 
 		int sum = 0;
 		for (Application app : localApplications) {
-			app.stop();
+			app.kill();
 			Log.log(Level.INFO, String.format("Node %d has a final amount of %d moneyz.",
 					app.getLocalStore().getOwnNode().getId(), app.getLocalStore().getAvailableMoney()));
 			sum += app.getLocalStore().getAvailableMoney();
@@ -157,9 +140,14 @@ public class Simulation {
 		} else {
 			Log.log(Level.INFO, "[Simulation] Initializing with " + nodes.size() + " nodes.");
 		}
-		
+
 		//Broadcast transaction pattern
-		broadcastMessage(new TransactionPatternMessage(transactionPattern));
+		if (this.isMaster) {
+			broadcastMessage(new TransactionPatternMessage(transactionPattern));
+		}
+		
+		//Have everyone update their nodes list
+		broadcastMessage(new UpdateNodesMessage());
 		
 		Log.log(Level.INFO, "[Simulation] Initialized");
 		state = SimulationState.INITIALIZED;
@@ -173,9 +161,10 @@ public class Simulation {
 	 */
 	public void start() {
 		checkState(SimulationState.INITIALIZED, "start");
-		
-		broadcastMessage(new StartTransactingMessage());
-		
+
+		if (isMaster) {
+			broadcastMessage(new StartTransactingMessage());
+		}
 		Log.log(Level.INFO, "[Simulation] Running");
 		state = SimulationState.RUNNING;
 	}
@@ -186,8 +175,6 @@ public class Simulation {
 	 */
 	public void stop() {
 		checkState(SimulationState.RUNNING, "stop");
-		
-		broadcastMessage(new StopTransactingMessage());
 		Log.log(Level.INFO, "[Simulation] Stopped");
 		state = SimulationState.STOPPED;
 	}
@@ -219,7 +206,7 @@ public class Simulation {
 	 * Sends the given message to all nodes.
 	 * @param msg - the message to send
 	 */
-	protected void broadcastMessage(Message msg) {
+	public void broadcastMessage(Message msg) {
 		Log.log(Level.INFO, "[Simulation] Sending " + msg + " to all nodes...");
 		
 		for (Node node : nodes.values()) {

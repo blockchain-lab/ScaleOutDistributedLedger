@@ -23,6 +23,7 @@ class NodeList {
 	 */
 	updateNode(id, address, port, publicKey) {
 		if(id < this.nodes.length) {
+			if (!!this.nodes[id]) return false;
 			this.nodes[id].address = address;
 			this.nodes[id].port = port;
 			this.nodes[id].publicKey = publicKey;
@@ -33,13 +34,43 @@ class NodeList {
 
 	/**
 	 * Register a new node.
+	 * @param id - the id of the new node
 	 * @param address - the address of the new node
 	 * @param port - the port of the new node
 	 * @param publicKey - the public key of the new node
 	 * @returns {number} - the id of the new node
 	 */
-	registerNode(address, port, publicKey) {
-		return this.nodes.push(new Node(address, port, publicKey)) - 1;
+	registerNode(id, address, port, publicKey) {
+		this.nodes[id] = new Node(id, address, port, publicKey)
+		return id;
+	}
+	
+	/**
+	 * Set the status of the node.
+	 * @param id - the id of the node that is marked
+	 * @param running - the new status of the node
+	 * @returns {boolean} - whether the id was valid.
+	 */
+	setNodeStatus(id, running) {
+		if(id < this.nodes.length) {
+			this.nodes[id].running = running;
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Get the number of nodes that are running.
+	 * @returns {int} - the number of nodes that is initialized
+	 */
+	getRunning() {
+		var count = 0;
+		for (var i = 0; i < this.nodes.length; ++i) {
+			if (!!this.nodes[i] && this.nodes[i].running) {
+				count ++;
+			}
+		}	
+		return count
 	}
 
 	/**
@@ -67,7 +98,13 @@ class NodeList {
 	 */
 	getSize() {
 		if (this.nodes) {
-			return this.nodes.length;
+			var count = 0;
+			for (var i = 0; i < this.nodes.length; ++i) {
+				if (this.nodes[i]) {
+					count ++;
+				}
+			}
+			return count;
 		} else {
 			return 0;
 		}

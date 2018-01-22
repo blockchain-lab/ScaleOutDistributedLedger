@@ -4,16 +4,14 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.OptionalInt;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import java.util.Map;
 import java.util.Set;
 
@@ -80,6 +78,7 @@ public class SerializationTest {
 		this.transactionSource = generateTransaction(this.aliceNode, this.bobNode, 100, this.genesisBlock.getTransactions().get(0));
 		// Send 50 coins from Bob to Alice
 		this.transaction = generateTransaction(this.bobNode, this.aliceNode, 50, this.transactionSource);
+
 		// Add Proof
 		this.proof = new Proof(this.transaction);
 		// Manually change the chainUpdates
@@ -95,9 +94,9 @@ public class SerializationTest {
 	 */
 	public Node setupNode(int nodeId) {
 		Node node = new OwnNode(nodeId);
-		node.setGenesisBlock(this.genesisBlock);
-		node.getChain().appendNewBlock(new ArrayList<>());
-		node.getChain().appendNewBlock(new ArrayList<>());
+		node.getChain().setGenesisBlock(this.genesisBlock);
+		node.getChain().appendNewBlock();
+		node.getChain().appendNewBlock();
 		return node;
 	}
 	
@@ -113,7 +112,7 @@ public class SerializationTest {
 		for (int i = 0; i < 10; i++) {
 			if (node.getId() == i) continue;
 			Node localNode = new Node(i);
-			localNode.setGenesisBlock(this.genesisBlock);
+			localNode.getChain().setGenesisBlock(this.genesisBlock);
 			newNodeList.put(i, localNode);
 		}
 		localStore.getNodes().putAll(newNodeList);
@@ -134,9 +133,8 @@ public class SerializationTest {
 		sources.add(transactionSource);
 		long remainder = transactionSource.getAmount() - amount;
 		Transaction newtTransaction = new Transaction(this.transactionNumber++, sender, receiver, amount, remainder, sources);
-		newtTransaction.setBlockNumber(OptionalInt.of(1));
 		// Add to chains
-		sender.getChain().getBlocks().get(1).getTransactions().add(newtTransaction);
+		sender.getChain().getBlocks().get(1).addTransaction(newtTransaction);
 		// Set lastCommitedBlock
 		sender.getChain().setLastCommittedBlock(sender.getChain().getBlocks().get(1));
 		
