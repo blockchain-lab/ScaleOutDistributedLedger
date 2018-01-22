@@ -75,12 +75,13 @@ public class Proof {
 		// Set the transaction from the decoded chain
 		// TODO [possible improvement]: is the transaction always in the last block ?
 		Transaction foundTransaction = null;
-		for (Block block : currentDecodedBlockList) {
-			for (Transaction transactionAux : block.getTransactions()) {
-				if (transactionAux.getNumber() == proofMessage.getTransactionMessage().getNumber()) {
-					foundTransaction = transactionAux;
-					break;
-				}
+		
+		ChainView cv = new ChainView(senderNode.getChain(), currentDecodedBlockList);
+		Block block = cv.getBlock(proofMessage.getTransactionMessage().getBlockNumber());
+		for (Transaction transactionAux : block.getTransactions()) {
+			if (transactionAux.getNumber() == proofMessage.getTransactionMessage().getNumber()) {
+				foundTransaction = transactionAux;
+				break;
 			}
 		}
 		this.transaction = foundTransaction;
