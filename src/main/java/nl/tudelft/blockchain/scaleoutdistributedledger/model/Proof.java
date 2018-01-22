@@ -26,6 +26,8 @@ public class Proof {
 
 	@Getter
 	private final Map<Node, List<Block>> chainUpdates;
+	
+	private final Map<Node, ChainView> chainViews = new HashMap<>();
 
 	/**
 	 * Constructor.
@@ -76,6 +78,7 @@ public class Proof {
 		// TODO [possible improvement]: is the transaction always in the last block ?
 		Transaction foundTransaction = null;
 		
+		//TODO Change to getChainView whenever we no longer use a separate block list
 		ChainView cv = new ChainView(senderNode.getChain(), currentDecodedBlockList);
 		Block block = cv.getBlock(proofMessage.getTransactionMessage().getBlockNumber());
 		for (Transaction transactionAux : block.getTransactions()) {
@@ -145,7 +148,6 @@ public class Proof {
 		int absmark = 0;
 		boolean seen = false;
 
-		//TODO [PERFORMANCE]: We check the same chain views multiple times, even though we don't have to.
 		ChainView chainView = getChainView(transaction.getSender());
 		if (!chainView.isValid()) {
 			throw new ProofValidationException("ChainView of node " + transaction.getSender().getId() + " is invalid.");
@@ -207,8 +209,14 @@ public class Proof {
 	 * @param node - the node
 	 * @return - a chainview for the specified node
 	 */
-	public ChainView getChainView(Node node) {
-		return new ChainView(node.getChain(), chainUpdates.get(node));
+	public synchronized ChainView getChainView(Node node) {
+		ChainView chainView = chainViews.get(node);
+		if (chainView == null) {
+			chainView = new ChainView(node.getChain(), chainUpdates.get(node), false);
+			chainView.isValid();
+			chainViews.put(node, chainView);
+		}
+		return chainView;
 	}
 	
 	/**
