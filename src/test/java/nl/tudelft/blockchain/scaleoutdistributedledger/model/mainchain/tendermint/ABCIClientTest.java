@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermi
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
+import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.SilencedTestClass;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,8 +19,9 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class for {@link ABCIClient}.
+ * Tests cases that log warnings, so logging is silenced.
  */
-public class ABCIClientTest {
+public class ABCIClientTest extends SilencedTestClass {
 	private ABCIClient instance;
 
 	/**

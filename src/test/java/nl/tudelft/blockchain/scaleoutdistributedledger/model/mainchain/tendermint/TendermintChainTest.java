@@ -7,6 +7,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.SilencedTestClass;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -25,8 +26,9 @@ import static org.mockito.Mockito.*;
 
 /**
  * Class testing the Tendermint implementation of the {@link MainChain} interface.
+ * Tests cases that log warnings, so logging is silenced.
  */
-public class TendermintChainTest {
+public class TendermintChainTest extends SilencedTestClass {
 	private TendermintChain instance;
 	private ABCIClient clientMock;
 	private TSocket socketMock;
