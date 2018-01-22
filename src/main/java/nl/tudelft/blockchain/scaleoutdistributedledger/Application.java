@@ -1,12 +1,10 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
@@ -38,7 +36,7 @@ public class Application {
 
 	/**
 	 * Creates a new application.
-	 * The application must be initialized with {@link #init(int, Block, Map, Ed25519Key, OwnNode)} before it can be used.
+	 * The application must be initialized with {@link #init(int, Block, Ed25519Key, OwnNode)} before it can be used.
 	 * @param isProduction - if this is production or testing
 	 */
 	public Application(boolean isProduction) {
@@ -56,7 +54,7 @@ public class Application {
 	 * @throws IOException - error while registering node
 	 */
 	public void init(int nodePort, Block genesisBlock, Ed25519Key key, OwnNode ownNode) throws IOException {
-		ownNode.setGenesisBlock(genesisBlock);
+		ownNode.getChain().setGenesisBlock(genesisBlock);
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 
@@ -68,13 +66,14 @@ public class Application {
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
 		transactionSender = new TransactionSender(localStore);
+		TrackerHelper.setRunning(ownNode.getId(), true);
 	}
 	
 	/**
 	 * Stops this application. This means that this application no longer accepts any new
 	 * connections and that all existing connections are closed.
 	 */
-	public void stop() {
+	public void kill() {
 		if (serverThread.isAlive()) serverThread.interrupt();
 		if (transactionSender != null) transactionSender.shutdownNow();
 		
@@ -126,5 +125,22 @@ public class Application {
 	 */
 	public MainChain getMainChain() {
 		return localStore.getMainChain();
+	}
+
+	/**
+	 * Stop sending transactions and wait to finish sending.
+	 * This also marks the current node as stopped on the tracker.
+	 */
+	public void finishTransactionSending() {
+		int nodeID = localStore.getOwnNode().getId();
+		transactionSender.stop();
+		try {
+			transactionSender.waitUntilDone();
+			TrackerHelper.setRunning(nodeID, false);
+		} catch (IOException ex) {
+			Log.log(Level.SEVERE, "Cannot update running status to stopped for node " + nodeID);
+		} catch (InterruptedException e) {
+			Log.log(Level.SEVERE, "Thread interrupted, node " + nodeID + " is not marked stopped");
+		}
 	}
 }

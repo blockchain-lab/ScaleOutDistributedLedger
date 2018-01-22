@@ -80,7 +80,7 @@ public class SimulationTest {
 		simulationSpy.setState(SimulationState.STOPPED);
 		simulationSpy.stopLocalNodes();
 		
-		verify(appMock, times(1)).stop();
+		verify(appMock, times(1)).kill();
 	}
 	
 	/**
@@ -143,7 +143,6 @@ public class SimulationTest {
 		simulationSpy.setState(SimulationState.RUNNING);
 		simulationSpy.stop();
 		
-		verify(simulationSpy, times(1)).broadcastMessage(any(StopTransactingMessage.class));
 		assertEquals(SimulationState.STOPPED, simulationSpy.getState());
 	}
 	

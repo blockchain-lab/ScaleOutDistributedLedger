@@ -57,20 +57,6 @@ public class Node {
 		this.port = port;
 		this.chain = new Chain(this);
 	}
-
-	/**
-	 * Add a genesis block to the chain.
-	 * @param block - the genesis block
-	 */
-	public void setGenesisBlock(Block block) {
-		synchronized (this.chain) {
-			if (!this.chain.getBlocks().isEmpty()) {
-				throw new IllegalStateException("Adding genesis block to non-empty chain");
-			}
-			this.chain.getBlocks().add(block);
-			this.chain.setLastCommittedBlock(block);
-		}
-	}
 	
 	/**
 	 * Verify the signature of a message made by this node.
@@ -114,8 +100,11 @@ public class Node {
 
 	@Override
 	public boolean equals(Object obj) {
-		//We only have one Node object for each id, so we can compare with ==
-		return obj == this;
+		if (obj == this) return true;
+		if (!(obj instanceof Node)) return false;
+		
+		Node other = (Node) obj;
+		return this.getId() == other.getId();
 	}
 	
 	@Override
