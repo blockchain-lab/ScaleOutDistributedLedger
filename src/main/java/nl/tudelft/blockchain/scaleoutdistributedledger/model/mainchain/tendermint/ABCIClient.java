@@ -175,7 +175,7 @@ public class ABCIClient {
 	 * @param params - the params passed along with the request
 	 * @return - the JSON response, or null when the response was invalid JSON
 	 */
-	private JSONObject sendRequest(String endpoint, Map<String, String> params) {
+	protected JSONObject sendRequest(String endpoint, Map<String, String> params) {
 		try {
 			StringBuilder str = new StringBuilder("http://" + addr + "/" + endpoint);
 
