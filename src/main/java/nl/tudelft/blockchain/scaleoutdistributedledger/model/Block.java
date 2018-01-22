@@ -75,57 +75,18 @@ public class Block {
 	}
 
 	/**
-	 * Constructor to decode a block message.
-	 * @param blockMessage - block message from network.
-	 * @param encodedChainUpdates - received chain of updates
-	 * @param decodedChainUpdates - current decoded chain of updates
-	 * @param localStore - local store.
-	 * @throws IOException - error while getting node from tracker.
+	 * Gets the transaction with the correct number in this block.
+	 * @param transactionNumber - the number of the transaction to get.
+	 * @return - the transaction.
 	 */
-	public Block(BlockMessage blockMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
-			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException {
-		this.number = blockMessage.getNumber();
-		// It's a genesis block
-		if (blockMessage.getOwnerId() == Transaction.GENESIS_SENDER) {
-			this.owner = null;
-		} else {
-			this.owner = localStore.getNode(blockMessage.getOwnerId());
+	public Transaction getTransaction(int transactionNumber) {
+		for (Transaction transaction : this.transactions) {
+			if (transaction.getNumber() == transactionNumber)
+				return transaction;
 		}
-		
-		if (blockMessage.getPreviousBlockNumber() != -1) {
-			// Check if we have it in the local store
-			if (this.owner.getChain().getLastBlock().getNumber() < blockMessage.getPreviousBlockNumber()) {
-				// We don't have it (it should be in the received chain of updates)
-				int currentBlockIndex = encodedChainUpdates.get(this.owner.getId()).indexOf(blockMessage);
-				BlockMessage previousBlockMesssage = encodedChainUpdates.get(this.owner.getId()).get(currentBlockIndex - 1);
-				// Get decoded block list from the owner
-				Block previousBlockLocal = new Block(previousBlockMesssage, encodedChainUpdates, decodedChainUpdates, localStore);
-				if (decodedChainUpdates.containsKey(this.owner)) {
-					decodedChainUpdates.get(this.owner).add(previousBlockLocal);
-				} else {
-					List<Block> currentDecodedBlockList = new ArrayList<>();
-					currentDecodedBlockList.add(previousBlockLocal);
-					decodedChainUpdates.put(this.owner, currentDecodedBlockList);
-				}
-				this.previousBlock = previousBlockLocal;
-			} else {
-				// We have it (we infer it's the lastBlock from the chain)
-				this.previousBlock = this.owner.getChain().getLastBlock();
-			}
-		} else {
-			// It's a genesis block
-			this.previousBlock = null;
-		}
-		
-		// Convert TransactionMessage to Transaction
-		this.transactions = new ArrayList<>();
-		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
-			this.transactions.add(new Transaction(transactionMessage, encodedChainUpdates, decodedChainUpdates, localStore));
-		}
-		//TODO Do we want to send the hash along?
-		this.hash = blockMessage.getHash();
+		throw new IllegalStateException("Invalid transaction number");
 	}
-	
+
 	/**
 	 * Adds the given transaction to this block and sets its block number.
 	 * @param transaction - the transaction to add

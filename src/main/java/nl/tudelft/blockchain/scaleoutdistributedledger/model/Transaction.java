@@ -48,6 +48,10 @@ public class Transaction {
 	
 	private OptionalInt blockNumber;
 
+	// Only temporarily used while decoding
+	@Getter @Setter
+	private TransactionMessage message;
+
 	/**
 	 * Constructor.
 	 * @param number - the number of this transaction.
@@ -67,78 +71,6 @@ public class Transaction {
 		this.blockNumber = OptionalInt.empty();
 	}
 
-	/**
-	 * Constructor to decode a transaction message.
-	 * @param transactionMessage - the message received from a transaction.
-	 * @param encodedChainUpdates - the received chain of updates
-	 * @param decodedChainUpdates - current chain of updates, from the decoding process
-	 * @param localStore - local store, to get each Node object
-	 * @throws java.io.IOException - error while getting node
-	 */
-	public Transaction(TransactionMessage transactionMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
-			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException  {
-		this.number = transactionMessage.getNumber();
-		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
-		
-		// It's a genesis transaction
-		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
-			this.sender = null;
-		} else {
-			this.sender = localStore.getNode(transactionMessage.getSenderId());
-		}
-		this.receiver = localStore.getNode(transactionMessage.getReceiverId());
-		this.amount = transactionMessage.getAmount();
-		this.remainder = transactionMessage.getRemainder();
-		// Decode transaction messages to normal transactions
-		this.source = new HashSet<>();
-		// Use local store for known sources
-		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
-			Integer nodeId = knownSourceEntry.getKey();
-			Integer transactionId = knownSourceEntry.getValue();
-			//TODO This might need to be done in a certain order
-			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
-		}
-		// Use chain of updates for new sources
-		for (Entry<Integer, Integer> newSourceEntry : transactionMessage.getNewSource()) {
-			try {
-				// Try to find the transaction in the local store
-				this.source.add(localStore.getTransactionFromNode(newSourceEntry.getKey(), newSourceEntry.getValue()));
-				continue;
-			} catch (IllegalStateException ex) {
-				// Not in localStore
-			}
-			// Use the transaction from the current chain of updates
-			Node owner = localStore.getNode(newSourceEntry.getKey());
-			if (!decodedChainUpdates.containsKey(owner)) {
-				// Get that new chain
-				List<BlockMessage> blockMessageList = encodedChainUpdates.get(owner.getId());
-				// Decode chain, in REVERSE order
-				BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
-				// Recursively decode the blocks of a chain (in reverse order)
-				Block lastBlockLocal = new Block(lastBlockMessage, encodedChainUpdates, decodedChainUpdates, localStore);
-				if (decodedChainUpdates.containsKey(owner)) {
-					// Add to already created list
-					decodedChainUpdates.get(owner).add(lastBlockLocal);
-				} else {
-					// Create a new list
-					List<Block> blockList = new ArrayList<>();
-					blockList.add(lastBlockLocal);
-					decodedChainUpdates.put(owner, blockList);
-				}
-			}
-			// TODO [Performance]: Find a way to directly go to the correct block instead of iterating through all of them
-			for (Block blockAux : decodedChainUpdates.get(owner)) {
-				for (Transaction transactionAux : blockAux.getTransactions()) {
-					if (transactionAux.getNumber() == newSourceEntry.getValue()) {
-						this.source.add(transactionAux);
-						break;
-					}
-				}
-			}
-		}
-		this.hash = transactionMessage.getHash();
-	}
-	
 	/**
 	 * Returns the number of the block (if it is in a block).
 	 * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)

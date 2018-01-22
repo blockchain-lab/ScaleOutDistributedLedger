@@ -67,4 +67,12 @@ public class BlockMessage extends Message {
 	public void handle(LocalStore localStore) {
 		// Do nothing.
 	}
+
+	public Block toBlockWithoutSources(LocalStore localStore) {
+		List<Transaction> transactions = new ArrayList<>();
+		for(TransactionMessage tm : this.transactions) {
+			transactions.add(tm.toTransactionWithoutSources(localStore));
+		}
+		return new Block(this.number, localStore.getNode(this.ownerId), transactions);
+	}
 }

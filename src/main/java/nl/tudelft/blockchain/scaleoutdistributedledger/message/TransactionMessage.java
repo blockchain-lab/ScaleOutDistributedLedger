@@ -7,6 +7,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -28,17 +29,10 @@ public class TransactionMessage extends Message {
 
 	/**
 	 * Transactions known by the receiver.
-	 * Entry: node id, transaction number
+	 * Entry: node id, [block number, transaction number]
 	 */
 	@Getter
-	private final Set<Entry<Integer, Integer>> knownSource;
-	
-	/**
-	 * Transactions new to the receiver.
-	 * Entry: node id, transaction number
-	 */
-	@Getter
-	private final Set<Entry<Integer, Integer>> newSource;
+	private final Set<Entry<Integer, int[]>> source;
 
 	@Getter
 	private final Sha256Hash hash;
@@ -65,34 +59,34 @@ public class TransactionMessage extends Message {
 		this.receiverId = transaction.getReceiver().getId();
 		this.amount = transaction.getAmount();
 		this.remainder = transaction.getRemainder();
-		this.knownSource = new HashSet<>();
-		this.newSource = new HashSet<>();
+		this.source = new HashSet<>();
 		// Optimization: categorize each transaction already known (or not) by the receiver
 		for (Transaction sourceTransaction : transaction.getSource()) {
 			Node sourceSender = sourceTransaction.getSender();
-			if (sourceSender == null) {
-				// Receiver already knows about a genesis transaction
-				this.knownSource.add(new SimpleEntry<>(Transaction.GENESIS_SENDER, sourceTransaction.getNumber()));
-			} else {
-				if (proofReceiver.equals(sourceSender)) {
-					// Receiver is the sender of the source
-					// So receiver knows about himself
-					this.knownSource.add(new SimpleEntry<>(sourceSender.getId(), sourceTransaction.getNumber()));
+			if (sourceTransaction.getBlockNumber().isPresent()) {
+				if (sourceSender == null) {
+					// Genesis transaction
+					this.source.add(new SimpleEntry<>(sourceTransaction.getReceiver().getId(),
+							new int[]{sourceTransaction.getBlockNumber().getAsInt(),
+									sourceTransaction.getNumber()}));
 				} else {
-					// Receiver is not the sender of the source
-					Integer lastBlockNumber = proofReceiver.getMetaKnowledge().get(sourceSender);
-					if (lastBlockNumber != null && sourceTransaction.getBlockNumber().getAsInt() <= lastBlockNumber) {
-						// Receiver knows about other node
-						this.knownSource.add(new SimpleEntry<>(sourceSender.getId(), sourceTransaction.getNumber()));
-					} else {
-						// Receiver does NOT know about other node
-						this.newSource.add(new SimpleEntry<>(sourceSender.getId(), sourceTransaction.getNumber()));
-					}
+					this.source.add(new SimpleEntry<>(sourceSender.getId(),
+							new int[]{sourceTransaction.getBlockNumber().getAsInt(),
+									sourceTransaction.getNumber()}));
 				}
+			} else {
+				throw new IllegalStateException("Transaction without blocknumber found");
 			}
 		}
 		this.hash = transaction.getHash();
 		this.blockNumber = transaction.getBlockNumber().getAsInt();
+	}
+
+	public Transaction toTransactionWithoutSources(LocalStore localStore) {
+		Transaction tx = new Transaction(this.number, localStore.getNode(this.senderId),
+				localStore.getNode(this.receiverId), this.amount, this.remainder, new HashSet<>());
+		tx.setMessage(this);
+		return tx;
 	}
 
 	@Override
@@ -111,8 +105,7 @@ public class TransactionMessage extends Message {
 		if (receiverId != other.receiverId) return false;
 		if (amount != other.amount) return false;
 		if (remainder != other.remainder) return false;
-		if (knownSource.equals(other.knownSource)) return false;
-		if (newSource.equals(other.newSource)) return false;
+		if (source.equals(other.source)) return false;
 		if (hash.equals(other.hash)) return false;
 		return blockNumber == other.blockNumber;
 	}
@@ -126,11 +119,9 @@ public class TransactionMessage extends Message {
 		result = prime * result + this.receiverId;
 		result = prime * result + (int) (this.amount ^ (this.amount >>> 32));
 		result = prime * result + (int) (this.remainder ^ (this.remainder >>> 32));
-		result = prime * result + Objects.hashCode(this.knownSource);
-		result = prime * result + Objects.hashCode(this.newSource);
+		result = prime * result + Objects.hashCode(this.source);
 		result = prime * result + Objects.hashCode(this.hash);
 		result = prime * result + this.blockNumber;
 		return result;
 	}
-	
 }

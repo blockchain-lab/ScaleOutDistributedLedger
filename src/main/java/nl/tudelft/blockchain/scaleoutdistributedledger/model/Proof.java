@@ -8,15 +8,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidatio
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * Proof class.
@@ -56,81 +49,36 @@ public class Proof {
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
 		this.chainUpdates = new HashMap<>();
-		
-		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
-			Node node = localStore.getNode(entry.getKey());
-			if (this.chainUpdates.containsKey(node)) {
-				// We have already decoded this chain in a previous iteration
-				continue;
-			}
-			List<BlockMessage> blockMessageList = entry.getValue();
-			// Start from the last block
-			BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
-			// Recursively decode the transaction and chainUpdates
-			Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
-			if (this.chainUpdates.containsKey(node)) {
-				// Add to already created list of blocks
-				this.chainUpdates.get(node).add(lastBlock);
-			} else {
-				// Create new list of blocks
-				List<Block> blockList = new ArrayList<>();
-				blockList.add(lastBlock);
-				this.chainUpdates.put(node, blockList);
-			}
-		}
-		
-		// Get decoded chain of sender, if any
-		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
-//<<<<<<< HEAD
-//		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
-//
-//		List<Block> currentDecodedBlockList = new ArrayList<>();
-//		if (senderChain != null){
-//			// Start from the last block
-//			BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
-//			// Recursively decode the transaction and chainUpdates
-//			Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
-//			if (this.chainUpdates.containsKey(senderNode)) {
-//				// Add to already created list of blocks
-//				currentDecodedBlockList = this.chainUpdates.get(senderNode);
-//				currentDecodedBlockList.add(lastBlock);
-//			} else {
-//				// Create new list of blocks
-//				currentDecodedBlockList.add(lastBlock);
-//				this.chainUpdates.put(senderNode, currentDecodedBlockList);
-//			}
-//		}
 
-//=======
-		List<Block> currentDecodedBlockList = new ArrayList<>();
-		if (this.chainUpdates.containsKey(senderNode)) {
-			currentDecodedBlockList = this.chainUpdates.get(senderNode);
+		// Decode the transactions while skipping sources
+		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
+			List<Block> blocks = new ArrayList<>();
+			entry.getValue().forEach(blockMessage -> blocks.add(blockMessage.toBlockWithoutSources(localStore)));
+			chainUpdates.put(localStore.getNode(entry.getKey()), blocks);
 		}
-		
-//>>>>>>> 4cd4bd3a775e6a841cee6c2ac06d8ea8dcbe443a
-		// Set the transaction from the decoded chain
-		fixPreviousBlockPointersAndOrder();
-		
-		Transaction foundTransaction = null;
-		ChainView cv = new ChainView(senderNode.getChain(), currentDecodedBlockList);
-		Block block = cv.getBlock(proofMessage.getTransactionMessage().getBlockNumber());
-		for (Transaction transactionAux : block.getTransactions()) {
-			if (transactionAux.getNumber() == proofMessage.getTransactionMessage().getNumber()) {
-				foundTransaction = transactionAux;
-				break;
-			}
+		// Fix the sources
+		try {
+			this.fixTransactionSources();
+		} catch(Exception e) {
+			e.printStackTrace();
+			System.exit(1);
 		}
-		this.transaction = foundTransaction;
+
+		// Fix backlinks
+		this.fixPreviousBlockPointersAndOrder();
+
+		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
+		ChainView senderChainView = new ChainView(senderNode.getChain(), this.chainUpdates.get(senderNode));
+		this.transaction = senderChainView.getBlock(proofMessage.getTransactionMessage().getBlockNumber())
+				.getTransaction(proofMessage.getTransactionMessage().getNumber());
 	}
 	
 	private void fixPreviousBlockPointersAndOrder() {
 		for (Entry<Node, List<Block>> entry : this.chainUpdates.entrySet()) {
 			Node node = entry.getKey();
 			List<Block> updates = entry.getValue();
-			
-			System.out.println("Presort = " + updates);
-			updates.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
-			System.out.println("Postsort = " + updates);
+
+			updates.sort(Comparator.comparingInt(Block::getNumber));
 			
 			Block previousBlock = null;
 			for (int i = 0; i < updates.size(); i++) {
@@ -146,7 +94,29 @@ public class Proof {
 			}
 		}
 	}
-	
+
+	private void fixTransactionSources() {
+		HashMap<Integer, ChainView> chainViews = new HashMap<>();
+		// Initialize the chainviews only once
+		for (Node node : this.chainUpdates.keySet()) {
+			chainViews.put(node.getId(),  new ChainView(node.getChain(), this.chainUpdates.get(node)));
+		}
+
+		// For all transactions of all nodes do
+		for (Node node : this.chainUpdates.keySet()) {
+			synchronized (this.chainUpdates.get(node)) {
+				for (Block block : this.chainUpdates.get(node)) {
+					for (Transaction tx : block.getTransactions()) {
+						tx.getMessage().getSource().forEach(entry -> {
+							Block sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
+							tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
+						});
+					}
+				}
+			}
+		}
+	}
+
 	/**
 	 * Add a block to the proof.
 	 * @param block - the block to be added
