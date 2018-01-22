@@ -8,7 +8,7 @@ An in-depth explanation of the system is available as a technical report in the 
 
 ## Running instructions
 ### Setup
-- Place a tendermint executable (V0.14) called `tendermint.exe` in the root folder of the project. The file-extension of the file must also be present on non-Windows systems. [Download here] (https://tendermint.com/downloads)
+- Place a tendermint executable (V0.14) called `tendermint.exe` in the root folder of the project. The file-extension of the file must also be present on non-Windows systems. [Download here](https://tendermint.com/downloads)
 - Install the tracker server
   - In the folder `tracker-server` run `npm install`
 - Determine the master machine (when only using a single machine this must also be the master)
