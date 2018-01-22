@@ -8,15 +8,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidatio
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * Proof class.
@@ -127,10 +120,8 @@ public class Proof {
 		for (Entry<Node, List<Block>> entry : this.chainUpdates.entrySet()) {
 			Node node = entry.getKey();
 			List<Block> updates = entry.getValue();
-			
-			System.out.println("Presort = " + updates);
-			updates.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
-			System.out.println("Postsort = " + updates);
+
+			updates.sort(Comparator.comparingInt(Block::getNumber));
 			
 			Block previousBlock = null;
 			for (int i = 0; i < updates.size(); i++) {
