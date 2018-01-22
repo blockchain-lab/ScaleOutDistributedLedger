@@ -56,11 +56,12 @@ public class Proof {
 			entry.getValue().forEach(blockMessage -> blocks.add(blockMessage.toBlockWithoutSources(localStore)));
 			chainUpdates.put(localStore.getNode(entry.getKey()), blocks);
 		}
-		// Fix the sources
-		this.fixTransactionSources(localStore);
 
 		// Fix backlinks
 		this.fixPreviousBlockPointersAndOrder();
+
+		// Fix the sources
+		this.fixTransactionSources(localStore);
 
 		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
 		ChainView senderChainView = new ChainView(senderNode.getChain(), this.chainUpdates.get(senderNode));

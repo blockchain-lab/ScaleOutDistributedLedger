@@ -101,11 +101,6 @@ public class ChainView implements Iterable<Block> {
 				
 				//TODO we might need a special equality check
 				if (!ownBlock.equals(updatedBlock)) {
-					System.out.println("HERE2");
-					System.out.println(ownBlock);
-					System.out.println(updatedBlock);
-					System.out.println(ownBlock.getClass().getName());
-					System.out.println(updatedBlock.getClass().getName());
 					this.valid = false;
 					return false;
 				}
