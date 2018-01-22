@@ -55,17 +55,26 @@ public class Chain {
 		
 		if (updates.isEmpty()) return;
 		
+		int nextNr;
+		Block previousBlock;
 		if (blocks.isEmpty()) {
-			blocks.addAll(updates);
+			//Should start at 0, there is no previous block
+			nextNr = 0;
+			previousBlock = null;
 		} else {
+			//Should start with the first block after our last block.
 			Block lastBlock = blocks.get(blocks.size() - 1);
-			int nextNr = lastBlock.getNumber() + 1;
-			for (Block block : updates) {
-				//Skip any overlap
-				if (block.getNumber() != nextNr) continue;
-				blocks.add(block);
-				nextNr++;
-			}
+			nextNr = lastBlock.getNumber() + 1;
+			previousBlock = lastBlock;
+		}
+		
+		for (Block block : updates) {
+			//Skip any overlap
+			if (block.getNumber() != nextNr) continue;
+			block.setPreviousBlock(previousBlock);
+			blocks.add(block);
+			nextNr++;
+			previousBlock = block;
 		}
 		
 		for (Block block : ReversedIterator.reversed(this.blocks)) {

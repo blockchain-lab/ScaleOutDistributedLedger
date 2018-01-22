@@ -25,8 +25,8 @@ public class Block {
 	@Getter
 	private final int number;
 
-	@Getter
-	private final Block previousBlock;
+	@Getter @Setter
+	private Block previousBlock;
 
 	@Getter @Setter
 	private Node owner;
