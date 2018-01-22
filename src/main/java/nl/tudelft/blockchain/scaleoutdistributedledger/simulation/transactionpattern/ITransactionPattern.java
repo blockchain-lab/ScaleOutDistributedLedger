@@ -127,6 +127,8 @@ public interface ITransactionPattern extends Serializable {
 			Log.log(Level.SEVERE, "Interrupted while committing blocks!");
 		} catch (Exception ex) {
 			Log.log(Level.SEVERE, "Unable to commit blocks onStop: ", ex);
+		} finally {
+			localStore.getApplication().finishTransactionSending();
 		}
 	}
 

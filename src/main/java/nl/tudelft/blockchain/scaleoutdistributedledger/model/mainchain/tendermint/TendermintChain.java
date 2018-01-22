@@ -111,12 +111,7 @@ public final class TendermintChain implements MainChain {
 	 */
 	protected void updateCache(long height) {
 		if (client == null) return; // If in startup
-		this.threadPool.submit(new Runnable() {
-			@Override
-			public void run() {
-				updateCacheBlocking(height);
-			}
-		});
+		this.threadPool.submit(() -> updateCacheBlocking(height));
 	}
 
 	/**
@@ -141,9 +136,9 @@ public final class TendermintChain implements MainChain {
 				cache.add(abs.getBlockHash());
 			}
 		}
-		if (currentHeight < height && this.app.getLocalStore().getOwnNode().getId() == 0) {
-			Log.log(Level.INFO, "Successfully updated the Tendermint cache from height " + currentHeight + " -> " + height
-					+ ", number of cached hashes of abstracts on main chain is now " + cache.size());
+		if (currentHeight < height) {
+			Log.log(Level.FINE, "Successfully updated the Tendermint cache for node " + this.app.getLocalStore().getOwnNode().getId()
+					+ " from height " + currentHeight + " -> " + height	+ ", number of cached hashes of abstracts on main chain is now " + cache.size());
 		}
 		currentHeight = Math.max(currentHeight, height);	// For concurrency reasons use the maximum
 	}
