@@ -57,21 +57,24 @@ public class Proof {
 		// Start by decoding the chain of the sender
 		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
 		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
-		// Start from the last block
-		BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
-		// Recursively decode the transaction and chainUpdates
-		Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
-		List<Block> currentDecodedBlockList;
-		if (this.chainUpdates.containsKey(senderNode)) {
-			// Add to already created list of blocks
-			currentDecodedBlockList = this.chainUpdates.get(senderNode);
-			currentDecodedBlockList.add(lastBlock);
-		} else {
-			// Create new list of blocks
-			currentDecodedBlockList = new ArrayList<>();
-			currentDecodedBlockList.add(lastBlock);
-			this.chainUpdates.put(senderNode, currentDecodedBlockList);
+
+		List<Block> currentDecodedBlockList = new ArrayList<>();
+		if (senderChain != null){
+			// Start from the last block
+			BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
+			// Recursively decode the transaction and chainUpdates
+			Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
+			if (this.chainUpdates.containsKey(senderNode)) {
+				// Add to already created list of blocks
+				currentDecodedBlockList = this.chainUpdates.get(senderNode);
+				currentDecodedBlockList.add(lastBlock);
+			} else {
+				// Create new list of blocks
+				currentDecodedBlockList.add(lastBlock);
+				this.chainUpdates.put(senderNode, currentDecodedBlockList);
+			}
 		}
+
 		// Set the transaction from the decoded chain
 		// TODO [possible improvement]: is the transaction always in the last block ?
 		Transaction foundTransaction = null;
