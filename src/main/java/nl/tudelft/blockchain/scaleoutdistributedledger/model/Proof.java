@@ -281,33 +281,36 @@ public class Proof {
 	 */
 	public static Proof createProof(LocalStore localStore, Transaction transaction) {
 		Node receiver = transaction.getReceiver();
-		Proof proof = new Proof(transaction);
 		
-		//Step 1: determine what blocks need to be sent
-		int blockRequired = transaction.getBlockNumber().getAsInt();
-		Chain senderChain = transaction.getSender().getChain();
-		
-		Block fromBlock = senderChain.getBlocks().get(blockRequired);
-		Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
-		
-		//Step 2: determine the chains that need to be sent
-		Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
-		
-		//Step 3: add only those blocks that are not yet known
-		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
-		for (Entry<Chain, Integer> entry : chains.entrySet()) {
-			Chain chain = entry.getKey();
-			Node owner = chain.getOwner();
-			if (owner == receiver) continue;
+		synchronized (receiver.getMetaKnowledge()) {
+			Proof proof = new Proof(transaction);
 			
-			int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
-			int requiredKnown = entry.getValue();
-			if (alreadyKnown < requiredKnown) {
-				proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+			//Step 1: determine what blocks need to be sent
+			int blockRequired = transaction.getBlockNumber().getAsInt();
+			Chain senderChain = transaction.getSender().getChain();
+			
+			Block fromBlock = senderChain.getBlocks().get(blockRequired);
+			Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
+			
+			//Step 2: determine the chains that need to be sent
+			Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
+			
+			//Step 3: add only those blocks that are not yet known
+			Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
+			for (Entry<Chain, Integer> entry : chains.entrySet()) {
+				Chain chain = entry.getKey();
+				Node owner = chain.getOwner();
+				if (owner == receiver) continue;
+				
+				int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
+				int requiredKnown = entry.getValue();
+				if (alreadyKnown < requiredKnown) {
+					proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+				}
 			}
+			
+			return proof;
 		}
-		
-		return proof;
 	}
 
 	/**
