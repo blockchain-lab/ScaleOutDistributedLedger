@@ -8,8 +8,14 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidatio
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Proof class.
@@ -378,7 +384,7 @@ public class Proof {
 	public static void appendChains2(Transaction transaction, Node receiver, Map<Chain, Integer> chains) {
 		Node owner = transaction.getSender();
 		if (owner == null || owner == receiver) return;
-
+		
 		//Skip transactions that are already known
 		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
 		int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
