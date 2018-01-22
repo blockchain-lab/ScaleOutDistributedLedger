@@ -386,7 +386,15 @@ public class Proof {
 		if (owner == null || owner == receiver) return;
 		
 		int blockNumber = transaction.getBlockNumber().getAsInt();
-		chains.compute(owner.getChain(), (k, v) -> v == null ? blockNumber : Math.max(v, blockNumber));
+		if (!chains.containsKey(owner.getChain())) {
+			chains.compute(owner.getChain(), (k, v) -> v == null ? blockNumber : Math.max(v, blockNumber));
+			chains.compute(owner.getChain(), (k, v) -> v == null ? blockNumber : Math.max(v, owner.getChain().getLastBlock().getNumber()));
+			for (Block blockAux : owner.getChain().getBlocks()) {
+				for (Transaction transactionAux : blockAux.getTransactions()) {
+					appendChains2(transactionAux, receiver, chains);
+				}
+			}
+		}
 		for (Transaction source : transaction.getSource()) {
 			appendChains2(source, receiver, chains);
 		}
