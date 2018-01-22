@@ -285,6 +285,7 @@ public final class TendermintHelper {
 		script.append("--p2p.laddr=tcp://0.0.0.0:").append(nodeBasePort + 1).append(" ");
 		script.append("--rpc.laddr=tcp://0.0.0.0:").append(nodeBasePort + 2).append(" ");
 		script.append("--proxy_app=tcp://127.0.0.1:").append(nodeBasePort + 3).append(" ");
+		script.append("--moniker=Node").append(nodeNumber).append(" ");
 
 		//add other seeds
 		if (peerAddresses != null && !peerAddresses.isEmpty()) {
