@@ -230,6 +230,7 @@ public class Proof {
 	}
 	
 	/**
+	 * @param localStore  - the local store
 	 * @param transaction - the transaction
 	 * @return the proof for the given transaction
 	 */
@@ -237,29 +238,17 @@ public class Proof {
 		Node receiver = transaction.getReceiver();
 		Proof proof = new Proof(transaction);
 		
-		//Step 0: determine what blocks need to be sent
+		//Step 1: determine what blocks need to be sent
 		int blockRequired = transaction.getBlockNumber().getAsInt();
 		Chain senderChain = transaction.getSender().getChain();
 		
 		Block fromBlock = senderChain.getBlocks().get(blockRequired);
 		Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
 		
-		//Step 1: determine the chains that need to be sent
-		//TODO We might want to do some kind of caching?
-		Map<Chain, Integer> chains = new HashMap<>();
-		Block current = toBlock;
-		while (true) {
-			for (Transaction t : current.getTransactions()) {
-				appendChains2(t, receiver, chains);
-			}
-			
-			if (current == fromBlock) break;
-			current = current.getPreviousBlock();
-		}
+		//Step 2: determine the chains that need to be sent
+		Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
 		
-		appendChains2(transaction, receiver, chains);
-		
-		//Step 2: add only those blocks that are not yet known
+		//Step 3: add only those blocks that are not yet known
 		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
 		for (Entry<Chain, Integer> entry : chains.entrySet()) {
 			Chain chain = entry.getKey();
@@ -274,6 +263,41 @@ public class Proof {
 		}
 		
 		return proof;
+	}
+
+	/**
+	 * @param mainTransaction - the transaction that we want to send
+	 * @param fromBlock       - the first block that we want to send
+	 * @param toBlock         - the last block that we want to send
+	 * @return                - the chains required and the corresponding block number
+	 */
+	private static Map<Chain, Integer> determineChains(Transaction mainTransaction, Block fromBlock, Block toBlock) {
+		//TODO We might want to do some kind of caching?
+		
+		Node receiver = mainTransaction.getReceiver();
+		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
+		
+		//Determine what the sender already knows about us
+		int alreadyKnown = metaKnowledge.getOrDefault(mainTransaction.getSender(), -1);
+		
+		Map<Chain, Integer> chains = new HashMap<>();
+		
+		//Only consider the transactions that the receiver doesn't have yet.
+		Block current = toBlock;
+		while (current.getNumber() > alreadyKnown) {
+			for (Transaction transaction : current.getTransactions()) {
+				appendChains2(transaction, receiver, chains);
+			}
+			
+			if (current == fromBlock) break;
+			current = current.getPreviousBlock();
+		}
+		
+		//Only add the chains of the transaction itself if it isn't in a known block
+		if (mainTransaction.getBlockNumber().getAsInt() > alreadyKnown) {
+			appendChains2(mainTransaction, receiver, chains);
+		}
+		return chains;
 	}
 
 	/**
@@ -322,7 +346,13 @@ public class Proof {
 		Node owner = transaction.getSender();
 		if (owner == null || owner == receiver) return;
 		
+		//Skip transactions that are already known
+		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
+		int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
 		int blockNumber = transaction.getBlockNumber().getAsInt();
+		if (alreadyKnown >= blockNumber) return;
+		
+		//Store the highest block number.
 		chains.compute(owner.getChain(), (k, v) -> v == null ? blockNumber : Math.max(v, blockNumber));
 		for (Transaction source : transaction.getSource()) {
 			appendChains2(source, receiver, chains);

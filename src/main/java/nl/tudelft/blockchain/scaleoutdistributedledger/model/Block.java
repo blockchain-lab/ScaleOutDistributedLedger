@@ -196,7 +196,7 @@ public class Block {
 		Chain chain = getOwner().getChain();
 		synchronized (chain) {
 			BlockAbstract blockAbstract = calculateBlockAbstract();
-			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
+			localStore.getMainChain().commitAbstract(blockAbstract);
 			getOwner().getChain().setLastCommittedBlock(this);
 		}
 		
