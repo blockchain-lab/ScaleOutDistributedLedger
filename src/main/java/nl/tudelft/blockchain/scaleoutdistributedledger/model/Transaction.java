@@ -96,7 +96,7 @@ public class Transaction {
 			Integer nodeId = knownSourceEntry.getKey();
 			Integer transactionId = knownSourceEntry.getValue();
 			//TODO This might need to be done in a certain order
-			this.source.add(localStore.getTransactionFromNode(nodeId, transactionMessage.getBlockNumber(), transactionId));
+			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
 		}
 		// Use chain of updates for new sources
 		for (Entry<Integer, Integer> newSourceEntry : transactionMessage.getNewSource()) {
