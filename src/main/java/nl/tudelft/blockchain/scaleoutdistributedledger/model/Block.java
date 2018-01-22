@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -25,7 +26,7 @@ public class Block {
 	private final int number;
 
 	@Getter
-	private Block previousBlock;
+	private final Block previousBlock;
 
 	@Getter @Setter
 	private Node owner;
@@ -38,6 +39,7 @@ public class Block {
 	
 	private transient boolean onMainChain;
 	private transient boolean hasNoAbstract;
+	private transient volatile boolean finalized;
 
 	/**
 	 * Constructor for a (genesis) block.
@@ -48,20 +50,23 @@ public class Block {
 	public Block(int number, Node owner, List<Transaction> transactions) {
 		this.number = number;
 		this.owner = owner;
-		this.transactions = transactions;
 		this.previousBlock = null;
+		this.transactions = transactions;
+		for (Transaction transaction : this.transactions) {
+			transaction.setBlockNumber(number);
+		}
 	}
-
+	
 	/**
-	 * Constructor.
+	 * Constructor for an empty block.
 	 * @param previousBlock - reference to the previous block in the chain of this block.
-	 * @param transactions - a list of transactions of this block.
+	 * @param owner         - the owner
 	 */
-	public Block(Block previousBlock, List<Transaction> transactions) {
+	public Block(Block previousBlock, Node owner) {
 		this.number = previousBlock.getNumber() + 1;
 		this.previousBlock = previousBlock;
-		this.owner = previousBlock.getOwner();
-		this.transactions = transactions;
+		this.owner = owner;
+		this.transactions = new ArrayList<>();
 		
 		//Our own blocks are guaranteed to have no abstract until we create the abstract.
 		if (this.owner instanceof OwnNode) {
@@ -72,10 +77,13 @@ public class Block {
 	/**
 	 * Constructor to decode a block message.
 	 * @param blockMessage - block message from network.
+	 * @param encodedChainUpdates - received chain of updates
+	 * @param decodedChainUpdates - current decoded chain of updates
 	 * @param localStore - local store.
 	 * @throws IOException - error while getting node from tracker.
 	 */
-	public Block(BlockMessage blockMessage, LocalStore localStore) throws IOException {
+	public Block(BlockMessage blockMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
+			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException {
 		this.number = blockMessage.getNumber();
 		// It's a genesis block
 		if (blockMessage.getOwnerId() == Transaction.GENESIS_SENDER) {
@@ -84,12 +92,26 @@ public class Block {
 			this.owner = localStore.getNode(blockMessage.getOwnerId());
 		}
 		
-		if (blockMessage.getPreviousBlock() != null) {
-			// Convert BlockMessage to Block
-			this.previousBlock = new Block(blockMessage.getPreviousBlock(), localStore);
-		} else if (blockMessage.getPreviousBlockNumber() != -1) {
-			// Get block by number from owner
-			this.previousBlock = this.owner.getChain().getBlocks().get(blockMessage.getPreviousBlockNumber());
+		if (blockMessage.getPreviousBlockNumber() != -1) {
+			// Check if we have it in the local store
+			if (this.owner.getChain().getLastBlock().getNumber() < blockMessage.getPreviousBlockNumber()) {
+				// We don't have it (it should be in the received chain of updates)
+				int currentBlockIndex = encodedChainUpdates.get(this.owner.getId()).indexOf(blockMessage);
+				BlockMessage previousBlockMesssage = encodedChainUpdates.get(this.owner.getId()).get(currentBlockIndex - 1);
+				// Get decoded block list from the owner
+				Block previousBlockLocal = new Block(previousBlockMesssage, encodedChainUpdates, decodedChainUpdates, localStore);
+				if (decodedChainUpdates.containsKey(this.owner)) {
+					decodedChainUpdates.get(this.owner).add(previousBlockLocal);
+				} else {
+					List<Block> currentDecodedBlockList = new ArrayList<>();
+					currentDecodedBlockList.add(previousBlockLocal);
+					decodedChainUpdates.put(this.owner, currentDecodedBlockList);
+				}
+				this.previousBlock = previousBlockLocal;
+			} else {
+				// We have it (we infer it's the lastBlock from the chain)
+				this.previousBlock = this.owner.getChain().getLastBlock();
+			}
 		} else {
 			// It's a genesis block
 			this.previousBlock = null;
@@ -98,10 +120,24 @@ public class Block {
 		// Convert TransactionMessage to Transaction
 		this.transactions = new ArrayList<>();
 		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
-			this.transactions.add(new Transaction(transactionMessage, localStore));
+			this.transactions.add(new Transaction(transactionMessage, encodedChainUpdates, decodedChainUpdates, localStore));
 		}
 		//TODO Do we want to send the hash along?
 		this.hash = blockMessage.getHash();
+	}
+	
+	/**
+	 * Adds the given transaction to this block and sets its block number.
+	 * @param transaction - the transaction to add
+	 * @throws IllegalStateException - If this block has already been committed.
+	 */
+	public synchronized void addTransaction(Transaction transaction) {
+		if (finalized) {
+			throw new IllegalStateException("You cannot add transactions to a block that is already committed.");
+		}
+		
+		transactions.add(transaction);
+		transaction.setBlockNumber(this.getNumber());
 	}
 	
 	/**
@@ -147,6 +183,25 @@ public class Block {
 			throw new IllegalStateException("Unable to sign block abstract", ex);
 		}
 	}
+	
+	/**
+	 * Commits this block to the main chain.
+	 * @param localStore - the local store
+	 */
+	public synchronized void commit(LocalStore localStore) {
+		if (finalized) {
+			throw new IllegalStateException("This block has already been committed!");
+		}
+		
+		Chain chain = getOwner().getChain();
+		synchronized (chain) {
+			BlockAbstract blockAbstract = calculateBlockAbstract();
+			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
+			getOwner().getChain().setLastCommittedBlock(this);
+		}
+		
+		finalized = true;
+	}
 
 	@Override
 	public int hashCode() {
@@ -164,13 +219,12 @@ public class Block {
 
 		Block other = (Block) obj;
 		if (this.number != other.number) return false;
-		if (this.owner != other.owner) return false;
-
+		if (this.owner == null) {
+			if (other.owner != null) return false;
+		} else if (other.owner == null || this.owner.getId() != other.owner.getId()) return false;
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
 		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
-
-		if (!this.getHash().equals(other.getHash())) return false;
 
 		return this.transactions.equals(other.transactions);
 	}

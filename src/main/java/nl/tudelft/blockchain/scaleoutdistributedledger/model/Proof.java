@@ -2,14 +2,19 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidationException;
+import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
+import java.util.Set;
 
 /**
  * Proof class.
@@ -48,18 +53,37 @@ public class Proof {
 	 * @throws IOException - error while getting node info from tracker
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
-		this.transaction = new Transaction(proofMessage.getTransactionMessage(), localStore);
 		this.chainUpdates = new HashMap<>();
-		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
-			Node node = localStore.getNode(entry.getKey());
-			List<BlockMessage> blockMessageList = entry.getValue();
-			// Convert BlockMessage to Block
-			List<Block> blockList = new ArrayList<>();
-			for (BlockMessage blockMessage : blockMessageList) {
-				blockList.add(new Block(blockMessage, localStore));
-			}
-			this.chainUpdates.put(node, blockList);
+		// Start by decoding the chain of the sender
+		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
+		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
+		// Start from the last block
+		BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
+		// Recursively decode the transaction and chainUpdates
+		Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
+		List<Block> currentDecodedBlockList;
+		if (this.chainUpdates.containsKey(senderNode)) {
+			// Add to already created list of blocks
+			currentDecodedBlockList = this.chainUpdates.get(senderNode);
+			currentDecodedBlockList.add(lastBlock);
+		} else {
+			// Create new list of blocks
+			currentDecodedBlockList = new ArrayList<>();
+			currentDecodedBlockList.add(lastBlock);
+			this.chainUpdates.put(senderNode, currentDecodedBlockList);
 		}
+		// Set the transaction from the decoded chain
+		// TODO [possible improvement]: is the transaction always in the last block ?
+		Transaction foundTransaction = null;
+		for (Block block : currentDecodedBlockList) {
+			for (Transaction transactionAux : block.getTransactions()) {
+				if (transactionAux.getNumber() == proofMessage.getTransactionMessage().getNumber()) {
+					foundTransaction = transactionAux;
+					break;
+				}
+			}
+		}
+		this.transaction = foundTransaction;
 	}
 	
 	/**
@@ -91,55 +115,99 @@ public class Proof {
 	/**
 	 * Verifies this proof.
 	 * @param localStore - the local store
-	 * @return - boolean indicating if this proof is valid.
+	 * @throws ProofValidationException - If this proof is invalid.
 	 */
-	public boolean verify(LocalStore localStore) {
-		return verify(this.transaction, localStore);
+	public void verify(LocalStore localStore) throws ProofValidationException {
+		if (this.transaction.getSender() == null) {
+			throw new ProofValidationException("We directly received a transaction with a null sender.");
+		}
+		
+		verify(this.transaction, localStore);
 	}
 
 	/**
 	 * Verifies the given transaction using this proof.
 	 * @param transaction - the transaction to verify
-	 * @return - boolean indicating if this transaction is valid.
+	 * @throws ProofValidationException - If the proof is invalid.
 	 */
-	private boolean verify(Transaction transaction, LocalStore localStore) {
-		// Check genesis transactions
-		if (transaction.getSender() == null && transaction.getBlockNumber().isPresent() && transaction.getBlockNumber().getAsInt() == 0) {
-			Log.log(Level.FINE, "Verfied genesis block");
-			return true;
+	private void verify(Transaction transaction, LocalStore localStore) throws ProofValidationException {
+		int blockNumber = transaction.getBlockNumber().orElse(-1);
+		if (blockNumber == -1) {
+			throw new ProofValidationException("The transaction has no block number, so we cannot validate it.");
+		}
+		
+		if (transaction.getSender() == null) {
+			verifyGenesisTransaction(transaction, localStore);
+			return;
 		}
 
 		int absmark = 0;
 		boolean seen = false;
 
-		ChainView chainView = new ChainView(transaction.getSender().getChain(), chainUpdates.get(transaction.getSender()));
+		//TODO [PERFORMANCE]: We check the same chain views multiple times, even though we don't have to.
+		ChainView chainView = getChainView(transaction.getSender());
 		if (!chainView.isValid()) {
-			Log.log(Level.WARNING, "Invalid ChainView found, proof not verified");
-			return false;
+			throw new ProofValidationException("ChainView of node " + transaction.getSender().getId() + " is invalid.");
 		}
 
 		for (Block block : chainView) {
 			if (block.getTransactions().contains(transaction)) {
 				if (seen) {
-					Log.log(Level.WARNING, "Duplicate transaction found, proof not verified");
-					return false;
+					throw new ProofValidationException("Duplicate transaction found.");
 				}
 				seen = true;
 			}
 			if (block.isOnMainChain(localStore)) absmark = block.getNumber();
 		}
 
-		OptionalInt blockNumber = transaction.getBlockNumber();
-		if (!blockNumber.isPresent() || absmark < blockNumber.getAsInt()) {
-			Log.log(Level.WARNING, "No suitable committed block found, proof not verified");
-			return false;
+		if (absmark < blockNumber) {
+			throw new ProofValidationException("No suitable committed block found");
 		}
 
 		// Verify source transaction
 		for (Transaction sourceTransaction : transaction.getSource()) {
-			if (!verify(sourceTransaction, localStore)) return false;
+			try {
+				verify(sourceTransaction, localStore);
+			} catch (ValidationException ex) {
+				throw new ProofValidationException("Source " + sourceTransaction + " is not valid", ex);
+			}
 		}
-		return true;
+	}
+	
+	/**
+	 * Verifies a genesis transaction.
+	 * @param transaction - the genesis transaction
+	 * @param localStore  - the local store
+	 * @throws ProofValidationException - If the given transaction is not a valid genesis transaction.
+	 */
+	private void verifyGenesisTransaction(Transaction transaction, LocalStore localStore) throws ProofValidationException {
+		int blockNumber = transaction.getBlockNumber().orElse(-1);
+		if (blockNumber != 0) {
+			throw new ProofValidationException("Genesis transaction " + transaction + " is invalid: block number is not 0");
+		}
+		
+		Node receiver = transaction.getReceiver();
+		ChainView chainView = getChainView(receiver);
+		Block genesisBlock;
+		try {
+			genesisBlock = chainView.getBlock(0);
+		} catch (IndexOutOfBoundsException ex) {
+			throw new ProofValidationException("The genesis block for node " + receiver.getId() + " cannot be found!");
+		} catch (IllegalStateException ex) {
+			throw new ProofValidationException("ChainView of node " + receiver.getId() + " is invalid.");
+		}
+		
+		if (!genesisBlock.isOnMainChain(localStore)) {
+			throw new ProofValidationException("The genesis block of node " + receiver.getId() + " is not on the main chain.");
+		}
+	}
+	
+	/**
+	 * @param node - the node
+	 * @return - a chainview for the specified node
+	 */
+	public ChainView getChainView(Node node) {
+		return new ChainView(node.getChain(), chainUpdates.get(node));
 	}
 	
 	/**

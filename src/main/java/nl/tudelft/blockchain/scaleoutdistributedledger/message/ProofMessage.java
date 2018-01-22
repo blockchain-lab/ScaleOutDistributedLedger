@@ -35,7 +35,8 @@ public class ProofMessage extends Message {
 	 * @param proof - original proof 
 	 */
 	public ProofMessage(Proof proof) {
-		this.transactionMessage = new TransactionMessage(proof.getTransaction());
+		Node proofReceiver = proof.getTransaction().getReceiver();
+		this.transactionMessage = new TransactionMessage(proof.getTransaction(), proofReceiver);
 		this.chainUpdates = new HashMap<>();
 		for (Map.Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
 			Node node = entry.getKey();
@@ -43,11 +44,9 @@ public class ProofMessage extends Message {
 			if (!blockList.isEmpty()) {
 				// Convert Block to BlockMessage
 				List<BlockMessage> blockMessageList = new ArrayList<>();
-				// Don't use "previousBlock" pointer in the first block
-				blockMessageList.add(new BlockMessage(blockList.get(0), true));
-				for (int i = 1; i < blockList.size(); i++) {
+				for (int i = 0; i < blockList.size(); i++) {
 					Block block = blockList.get(i);
-					blockMessageList.add(new BlockMessage(block));
+					blockMessageList.add(new BlockMessage(block, proofReceiver));
 				}
 				this.chainUpdates.put(node.getId(), blockMessageList);
 			}

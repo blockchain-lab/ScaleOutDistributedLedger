@@ -54,7 +54,7 @@ public class Application {
 	 * @throws IOException - error while registering node
 	 */
 	public void init(int nodePort, Block genesisBlock, Ed25519Key key, OwnNode ownNode) throws IOException {
-		ownNode.setGenesisBlock(genesisBlock);
+		ownNode.getChain().setGenesisBlock(genesisBlock);
 
 		ownNode.setPrivateKey(key.getPrivateKey());
 
