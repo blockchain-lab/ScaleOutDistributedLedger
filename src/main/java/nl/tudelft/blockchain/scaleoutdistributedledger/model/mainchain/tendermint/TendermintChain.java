@@ -62,6 +62,20 @@ public final class TendermintChain implements MainChain {
 	}
 
 	/**
+	 * Constructor used for testing.
+	 * @param client - the client to use
+	 * @param socket - the socket to use
+	 * @param cache - the cache to use
+	 * @param app - the application to use
+	 */
+	protected TendermintChain(ABCIClient client, TSocket socket, Set<Sha256Hash> cache, Application app) {
+		this.client = client;
+		this.socket = socket;
+		this.cache = cache;
+		this.app = app;
+	}
+
+	/**
 	 * Initializes the tendermint chain.
 	 */
 	@Override
@@ -83,7 +97,7 @@ public final class TendermintChain implements MainChain {
 		Log.log(Level.INFO, "Started ABCI Client on " + DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
 	}
 
-	private void initialUpdateCache() {
+	protected void initialUpdateCache() {
 		boolean updated = false;
 		do {
 			try {
