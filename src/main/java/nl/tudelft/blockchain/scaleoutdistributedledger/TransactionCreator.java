@@ -53,16 +53,18 @@ public class TransactionCreator {
 	 * @return a bitset with the chains the receiver already knows about
 	 */
 	private BitSet calculateKnowledge() {
-		BitSet collected = receiver.getMetaKnowledge()
-				.keySet()
-				.stream()
-				.map(Node::getId)
-				.collect(() -> new BitSet(nodesCount),
-						(bs, i) -> bs.set(i),
-						(bs1, bs2) -> bs1.or(bs2)
-				);
-
-		return collected;
+		synchronized (receiver.getMetaKnowledge()) {
+			BitSet collected = receiver.getMetaKnowledge()
+					.keySet()
+					.stream()
+					.map(Node::getId)
+					.collect(() -> new BitSet(nodesCount),
+							(bs, i) -> bs.set(i),
+							(bs1, bs2) -> bs1.or(bs2)
+					);
+	
+			return collected;
+		}
 	}
 
 	/**

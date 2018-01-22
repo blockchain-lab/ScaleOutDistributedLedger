@@ -241,26 +241,27 @@ public class Proof {
 	 */
 	public static Proof createProof(Transaction transaction) {
 		Node receiver = transaction.getReceiver();
-		Proof proof = new Proof(transaction);
-		
-		//Step 1: determine the chains that need to be sent
-		//TODO We might want to do some kind of caching?
-		Set<Chain> chains = new HashSet<>();
-		appendChains(transaction, receiver, chains);
-		
-		//Step 2: add only those blocks that are not yet known
-		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
-		for (Chain chain : chains) {
-			Node owner = chain.getOwner();
-			if (owner == receiver) continue;
+		synchronized (receiver.getMetaKnowledge()) {
+			Proof proof = new Proof(transaction);
+			//Step 1: determine the chains that need to be sent
+			//TODO We might want to do some kind of caching?
+			Set<Chain> chains = new HashSet<>();
+			appendChains(transaction, receiver, chains);
 			
-			int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
-			int requiredKnown = chain.getLastCommittedBlock().getNumber();
+			//Step 2: add only those blocks that are not yet known
+			Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
+			for (Chain chain : chains) {
+				Node owner = chain.getOwner();
+				if (owner == receiver) continue;
+				
+				int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
+				int requiredKnown = chain.getLastCommittedBlock().getNumber();
+				
+				proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+			}
 			
-			proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+			return proof;
 		}
-		
-		return proof;
 	}
 	
 	/**
