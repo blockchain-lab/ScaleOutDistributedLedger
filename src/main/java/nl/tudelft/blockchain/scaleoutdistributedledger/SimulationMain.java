@@ -30,9 +30,9 @@ public final class SimulationMain {
 
 	//SETTINGS
 	//number of local nodes to generate
-	public static final int LOCAL_NODES_NUMBER = 4;
+	public static final int LOCAL_NODES_NUMBER = 2;
 	//number of total nodes in the system
-	public static final int TOTAL_NODES_NUMBER = 4;
+	public static final int TOTAL_NODES_NUMBER = 2;
 	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 	public static final int NODES_FROM_NUMBER = 0;
 	//Whether this main is the master coordinator of the simulation
@@ -81,7 +81,7 @@ public final class SimulationMain {
 		// --- PHASE 3: start the actual simulation ---
 		Simulation simulation = new Simulation(IS_MASTER);
 //		ITransactionPattern itp = new OnlyNodeZeroTransactionPattern(10, 20, 1000, 2000, 1);
-		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 1);
+		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 2);
 		simulation.setTransactionPattern(itp);
 		simulation.runNodesLocally(nodes, ownNodes, genesisBlock, nodeToKeyPair);
 

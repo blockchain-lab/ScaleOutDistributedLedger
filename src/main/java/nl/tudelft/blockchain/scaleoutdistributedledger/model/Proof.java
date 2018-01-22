@@ -56,31 +56,60 @@ public class Proof {
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
 		this.chainUpdates = new HashMap<>();
-		// Start by decoding the chain of the sender
-		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
-		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
-
-		List<Block> currentDecodedBlockList = new ArrayList<>();
-		if (senderChain != null){
+		
+		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
+			Node node = localStore.getNode(entry.getKey());
+			if (this.chainUpdates.containsKey(node)) {
+				// We have already decoded this chain in a previous iteration
+				continue;
+			}
+			List<BlockMessage> blockMessageList = entry.getValue();
 			// Start from the last block
-			BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
+			BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
 			// Recursively decode the transaction and chainUpdates
 			Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
-			if (this.chainUpdates.containsKey(senderNode)) {
+			if (this.chainUpdates.containsKey(node)) {
 				// Add to already created list of blocks
-				currentDecodedBlockList = this.chainUpdates.get(senderNode);
-				currentDecodedBlockList.add(lastBlock);
+				this.chainUpdates.get(node).add(lastBlock);
 			} else {
 				// Create new list of blocks
-				currentDecodedBlockList.add(lastBlock);
-				this.chainUpdates.put(senderNode, currentDecodedBlockList);
+				List<Block> blockList = new ArrayList<>();
+				blockList.add(lastBlock);
+				this.chainUpdates.put(node, blockList);
 			}
 		}
-
-		// Set the transaction from the decoded chain
-		// TODO [possible improvement]: is the transaction always in the last block ?
-		Transaction foundTransaction = null;
 		
+		// Get decoded chain of sender, if any
+		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
+//<<<<<<< HEAD
+//		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
+//
+//		List<Block> currentDecodedBlockList = new ArrayList<>();
+//		if (senderChain != null){
+//			// Start from the last block
+//			BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
+//			// Recursively decode the transaction and chainUpdates
+//			Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
+//			if (this.chainUpdates.containsKey(senderNode)) {
+//				// Add to already created list of blocks
+//				currentDecodedBlockList = this.chainUpdates.get(senderNode);
+//				currentDecodedBlockList.add(lastBlock);
+//			} else {
+//				// Create new list of blocks
+//				currentDecodedBlockList.add(lastBlock);
+//				this.chainUpdates.put(senderNode, currentDecodedBlockList);
+//			}
+//		}
+
+//=======
+		List<Block> currentDecodedBlockList = new ArrayList<>();
+		if (this.chainUpdates.containsKey(senderNode)) {
+			currentDecodedBlockList = this.chainUpdates.get(senderNode);
+		}
+		
+//>>>>>>> 4cd4bd3a775e6a841cee6c2ac06d8ea8dcbe443a
+		// Set the transaction from the decoded chain
+		Transaction foundTransaction = null;
 		ChainView cv = new ChainView(senderNode.getChain(), currentDecodedBlockList);
 		Block block = cv.getBlock(proofMessage.getTransactionMessage().getBlockNumber());
 		for (Transaction transactionAux : block.getTransactions()) {
