@@ -247,11 +247,13 @@ public class Proof {
 		//Step 1: determine the chains that need to be sent
 		//TODO We might want to do some kind of caching?
 		Map<Chain, Integer> chains = new HashMap<>();
-		for (Block b = toBlock; b != fromBlock; b = b.getPreviousBlock()) {
-			for (Transaction t : toBlock.getTransactions()) {
+		Block current = toBlock;
+		do {
+			for (Transaction t : current.getTransactions()) {
 				appendChains2(t, receiver, chains);
 			}
-		}
+			current = current.getPreviousBlock();
+		} while (current != fromBlock);
 		
 		appendChains2(transaction, receiver, chains);
 		
