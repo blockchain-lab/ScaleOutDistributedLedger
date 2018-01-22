@@ -109,8 +109,8 @@ public class Block {
 				}
 				this.previousBlock = previousBlockLocal;
 			} else {
-				// We have it (we infer it's the lastBlock from the chain)
-				this.previousBlock = this.owner.getChain().getLastBlock();
+				// We have it
+				this.previousBlock = this.owner.getChain().getBlocks().get(blockMessage.getPreviousBlockNumber());
 			}
 		} else {
 			// It's a genesis block
