@@ -1,6 +1,8 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation;
 
 import lombok.Getter;
+import lombok.Setter;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingMessage;
@@ -16,6 +18,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -26,7 +29,7 @@ import java.util.logging.Level;
 public class Simulation {
 
 
-	@Getter
+	@Getter @Setter
 	private ITransactionPattern transactionPattern;
 	
 	@Getter
@@ -45,16 +48,19 @@ public class Simulation {
 	public Simulation(boolean isMaster) {
 		this.socketClient = new SocketClient();
 		this.state = SimulationState.STOPPED;
+		this.nodes = new HashMap<>();
 		this.isMaster = isMaster;
 	}
 	
 	/**
-	 * @param pattern - the new transaction pattern
-	 * @throws NullPointerException - if pattern is null.
+	 * FOR TESTING ONLY.
+	 * @param client - the socket client
 	 */
-	public void setTransactionPattern(ITransactionPattern pattern) {
-		if (pattern == null) throw new NullPointerException("Pattern must not be null!");
-		this.transactionPattern = pattern;
+	protected Simulation(SocketClient client) {
+		this.socketClient = client;
+		this.state = SimulationState.STOPPED;
+		this.nodes = new HashMap<>();
+		this.isMaster = true;
 	}
 	
 	/**
@@ -186,7 +192,7 @@ public class Simulation {
 	public void cleanup() {
 		if (state == SimulationState.RUNNING) throw new IllegalStateException("Cannot cleanup while still running!");
 		
-		this.nodes = null;
+		this.nodes.clear();
 		state = SimulationState.STOPPED;
 	}
 	
@@ -222,5 +228,21 @@ public class Simulation {
 						" at " + node.getAddress() + ":" + node.getPort(), ex);
 			}
 		}
+	}
+	
+	/**
+	 * ONLY USED FOR TESTING.
+	 * @param state - the new state
+	 */
+	protected void setState(SimulationState state) {
+		this.state = state;
+	}
+	
+	/**
+	 * ONLY USED FOR TESTING.
+	 * @param applications - the applications
+	 */
+	protected void setLocalApplications(Application... applications) {
+		this.localApplications = applications;
 	}
 }
