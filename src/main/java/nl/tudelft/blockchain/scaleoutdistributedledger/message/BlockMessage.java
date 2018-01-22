@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
 import lombok.Getter;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
@@ -8,6 +9,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 
 /**
@@ -80,6 +82,8 @@ public class BlockMessage extends Message {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(64);
 		sb.append("BlockMessage<nr=").append(number).append(", owner=").append(ownerId).append(", transactions=[");
+		if (transactions.isEmpty()) return sb.append("]").toString();
+		
 		for (TransactionMessage tm : transactions) {
 			sb.append("\n      ").append(tm);
 		}

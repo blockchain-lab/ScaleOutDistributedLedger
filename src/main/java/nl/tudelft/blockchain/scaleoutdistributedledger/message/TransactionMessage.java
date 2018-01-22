@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
 import lombok.Getter;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
@@ -134,10 +135,15 @@ public class TransactionMessage extends Message {
 		.append(", amount=").append(amount)
 		.append(", remainder=").append(remainder)
 		.append(", source=[");
+		
+		if (source.isEmpty()) {
+			return sb.append("]").toString();
+		}
+		
 		for (Entry<Integer, int[]> entry : source) {
 			sb.append("\n        ").append(entry.getKey())
 			.append(": block=").append(entry.getValue()[0])
-			.append(": id=").append(entry.getValue()[1]);
+			.append(", id=").append(entry.getValue()[1]);
 		}
 		sb.append("\n      ]");
 		return sb.toString();

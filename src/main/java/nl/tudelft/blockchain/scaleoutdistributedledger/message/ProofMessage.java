@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
 import lombok.Getter;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.CommunicationHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
@@ -66,7 +67,11 @@ public class ProofMessage extends Message {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(64);
-		sb.append("ProofMessage {");
+		sb.append("ProofMessage\n  Transaction = ").append(transactionMessage).append("\n{");
+		if (chainUpdates.isEmpty()) {
+			return sb.append("}").toString();
+		}
+		
 		for (Entry<Integer, List<BlockMessage>> entry : chainUpdates.entrySet()) {
 			sb.append("\n  ").append(entry.getKey()).append(": [");
 			for (BlockMessage bm : entry.getValue()) {
