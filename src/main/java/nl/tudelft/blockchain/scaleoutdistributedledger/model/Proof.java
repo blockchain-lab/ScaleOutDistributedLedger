@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -231,28 +233,61 @@ public class Proof {
 	 * @param transaction - the transaction
 	 * @return the proof for the given transaction
 	 */
-	public static Proof createProof(Transaction transaction) {
+	public static Proof createProof(LocalStore localStore, Transaction transaction) {
 		Node receiver = transaction.getReceiver();
 		Proof proof = new Proof(transaction);
 		
+		//Step 0: determine what blocks need to be sent
+		int blockRequired = transaction.getBlockNumber().getAsInt();
+		Chain senderChain = transaction.getSender().getChain();
+		
+		Block fromBlock = senderChain.getBlocks().get(blockRequired);
+		Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
+		
 		//Step 1: determine the chains that need to be sent
 		//TODO We might want to do some kind of caching?
-		Set<Chain> chains = new HashSet<>();
-		appendChains(transaction, receiver, chains);
+		Map<Chain, Integer> chains = new HashMap<>();
+		for (Block b = toBlock; b != fromBlock; b = b.getPreviousBlock()) {
+			for (Transaction t : toBlock.getTransactions()) {
+				appendChains2(t, receiver, chains);
+			}
+		}
+		
+		appendChains2(transaction, receiver, chains);
 		
 		//Step 2: add only those blocks that are not yet known
 		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
-		for (Chain chain : chains) {
+		for (Entry<Chain, Integer> entry : chains.entrySet()) {
+			Chain chain = entry.getKey();
 			Node owner = chain.getOwner();
 			if (owner == receiver) continue;
 			
 			int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
-			int requiredKnown = chain.getLastCommittedBlock().getNumber();
-			
-			proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+			int requiredKnown = entry.getValue();
+			if (alreadyKnown < requiredKnown) {
+				proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+			}
 		}
 		
 		return proof;
+	}
+
+	/**
+	 * @param localStore
+	 * @param blockRequired
+	 * @param senderChain
+	 * @return
+	 */
+	private static Block getNextCommittedBlock(LocalStore localStore, int blockRequired, Chain senderChain) {
+		ListIterator<Block> it = senderChain.getBlocks().listIterator(blockRequired);
+		while (it.hasNext()) {
+			Block block = it.next();
+			if (block.isOnMainChain(localStore)) {
+				return block;
+			}
+		}
+		
+		throw new IllegalStateException("There is no next committed block!");
 	}
 	
 	/**
@@ -269,6 +304,24 @@ public class Proof {
 		chains.add(owner.getChain());
 		for (Transaction source : transaction.getSource()) {
 			appendChains(source, receiver, chains);
+		}
+	}
+	
+	/**
+	 * Recursively calls itself with all the sources of the given transaction. Transactions which
+	 * are in the chain of {@code receiver} are ignored.
+	 * @param transaction - the transaction to check the sources of
+	 * @param receiver    - the node receiving the transaction
+	 * @param chains      - the map of chains to append to
+	 */
+	public static void appendChains2(Transaction transaction, Node receiver, Map<Chain, Integer> chains) {
+		Node owner = transaction.getSender();
+		if (owner == null || owner == receiver) return;
+		
+		int blockNumber = transaction.getBlockNumber().getAsInt();
+		chains.compute(owner.getChain(), (k, v) -> v == null ? blockNumber : Math.max(v, blockNumber));
+		for (Transaction source : transaction.getSource()) {
+			appendChains2(source, receiver, chains);
 		}
 	}
 	
