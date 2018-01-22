@@ -46,8 +46,6 @@ public class Transaction {
 	// Custem getter
 	private Sha256Hash hash;
 	
-	// Custom getter
-	@Setter
 	private OptionalInt blockNumber;
 
 	/**
@@ -80,6 +78,8 @@ public class Transaction {
 	public Transaction(TransactionMessage transactionMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
 			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException  {
 		this.number = transactionMessage.getNumber();
+		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
+		
 		// It's a genesis transaction
 		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
 			this.sender = null;
@@ -95,7 +95,8 @@ public class Transaction {
 		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
 			Integer nodeId = knownSourceEntry.getKey();
 			Integer transactionId = knownSourceEntry.getValue();
-			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
+			//TODO This might need to be done in a certain order
+			this.source.add(localStore.getTransactionFromNode(nodeId, transactionMessage.getBlockNumber(), transactionId));
 		}
 		// Use chain of updates for new sources
 		for (Entry<Integer, Integer> newSourceEntry : transactionMessage.getNewSource()) {
@@ -136,7 +137,6 @@ public class Transaction {
 			}
 		}
 		this.hash = transactionMessage.getHash();
-		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
 	}
 	
 	/**
@@ -159,6 +159,14 @@ public class Transaction {
 			}
 		}
 		return this.blockNumber;
+	}
+	
+	/**
+	 * Sets the block number of this transaction.
+	 * @param number - the block number
+	 */
+	public void setBlockNumber(int number) {
+		this.blockNumber = OptionalInt.of(number);
 	}
 
 	/**
@@ -217,8 +225,8 @@ public class Transaction {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + number;
-		result = prime * result + ((receiver == null) ? 0 : receiver.hashCode());
-		result = prime * result + ((sender == null) ? 0 : sender.hashCode());
+		result = prime * result + receiver.getId();
+		result = prime * result + ((sender == null) ? -1 : sender.getId());
 		return result;
 	}
 

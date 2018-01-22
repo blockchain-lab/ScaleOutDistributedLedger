@@ -8,6 +8,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint.TendermintChain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.validation.Verification;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -62,7 +63,12 @@ public class LocalStore {
 		}
 		
 		if (genesisBlock != null) {
-			this.addUnspentTransaction(genesisBlock.getTransactions().get(ownNode.getId()));
+			this.transactionId = genesisBlock.getTransactions().size();
+			
+			Transaction genesisTransaction = ownNode.getChain().getGenesisTransaction();
+			if (genesisTransaction != null) {
+				this.addUnspentTransaction(genesisTransaction);
+			}
 		}
 	}
 	
@@ -83,21 +89,22 @@ public class LocalStore {
 	public void updateNodes() {
 		try {
 			TrackerHelper.updateNodes(nodes, ownNode);
+			normalizeGenesis();
 		} catch (IOException ex) {
 			throw new IllegalStateException("Tracker update failed!", ex);
 		}
 	}
-
+	
 	/**
 	 * Get transaction from a specific node with a transaction id.
-	 * @param nodeId - identifier of the node
+	 * @param nodeId        - identifier of the node
 	 * @param transactionId - identifier of the transaction
-	 * @return transaction
+	 * @return              - the transaction
 	 */
 	public Transaction getTransactionFromNode(int nodeId, int transactionId) {
 		if (nodeId == Transaction.GENESIS_SENDER) {
 			// It's a genesis transaction
-			Block genesisBlock = ((Node) this.ownNode).getChain().getBlocks().get(0);
+			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
 			return genesisBlock.getTransactions().get(transactionId);
 		}
 		
@@ -110,6 +117,33 @@ public class LocalStore {
 		
 		throw new IllegalStateException("Transaction with id " + transactionId + " from node " + nodeId + " not found.");
 	}
+
+	/**
+	 * Get transaction from a specific node with a transaction id.
+	 * @param nodeId        - identifier of the node
+	 * @param blockId       - identifier of the block
+	 * @param transactionId - identifier of the transaction
+	 * @return              - the transaction
+	 */
+	public Transaction getTransactionFromNode(int nodeId, int blockId, int transactionId) {
+		if (nodeId == Transaction.GENESIS_SENDER) {
+			// It's a genesis transaction
+			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
+			return genesisBlock.getTransactions().get(transactionId);
+		}
+		
+		Node node = getNode(nodeId);
+		try {
+			Block block = node.getChain().getBlocks().get(blockId);
+			for (Transaction transaction : block.getTransactions()) {
+				if (transaction.getNumber() == transactionId) return transaction;
+			}
+		} catch (IndexOutOfBoundsException ex) {
+			throw new IllegalStateException("Block with id " + blockId + " from node " + nodeId + " not found.");
+		}
+		
+		throw new IllegalStateException("Transaction with id " + transactionId + " in block " + blockId + " from node " + nodeId + " not found.");
+	}
 	
 	/**
 	 * Adds the given transaction as unspent.
@@ -118,11 +152,11 @@ public class LocalStore {
 	public void addUnspentTransaction(Transaction transaction) {
 		if (!unspent.add(transaction)) return;
 
-		if (transaction.getReceiver().getId() == ownNode.getId()) {
+		if (ownNode.equals(transaction.getReceiver())) {
 			availableMoney += transaction.getAmount();
-			if (transaction.getReceiver() != ownNode) transaction.setReceiver(ownNode);
 		}
-		if (transaction.getSender() == ownNode) {
+		
+		if (ownNode.equals(transaction.getSender())) {
 			availableMoney += transaction.getRemainder();
 		}
 	}
@@ -134,10 +168,10 @@ public class LocalStore {
 		for (Transaction transaction : toRemove) {
 			if (!unspent.remove(transaction)) continue;
 			
-			if (transaction.getReceiver() == ownNode) {
+			if (ownNode.equals(transaction.getReceiver())) {
 				availableMoney -= transaction.getAmount();
 			}
-			if (transaction.getSender() == ownNode) {
+			if (ownNode.equals(transaction.getSender())) {
 				availableMoney -= transaction.getRemainder();
 			}
 		}
@@ -146,8 +180,8 @@ public class LocalStore {
 	/**
 	 * @return a new transaction id
 	 */
-	public int getNewTransactionId() {
-		return ++transactionId;
+	public synchronized int getNewTransactionId() {
+		return transactionId++;
 	}
 
 	/**
@@ -155,5 +189,17 @@ public class LocalStore {
 	 */
 	public void initMainChain() {
 		this.mainChain.init();
+	}
+	
+	/**
+	 * Fixes all the transactions in the genesis block to use the correct receiver nodes.
+	 */
+	private void normalizeGenesis() {
+		for (Transaction transaction : ownNode.getChain().getGenesisBlock().getTransactions()) {
+			Node receiver = getNode(transaction.getReceiver().getId());
+			if (receiver != transaction.getReceiver()) {
+				transaction.setReceiver(receiver);
+			}
+		}
 	}
 }

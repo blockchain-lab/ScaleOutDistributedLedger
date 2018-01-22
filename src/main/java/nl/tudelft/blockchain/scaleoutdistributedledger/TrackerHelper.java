@@ -97,7 +97,7 @@ public final class TrackerHelper {
 					Node node = new Node(i, publicKey, address, port);
 					
 					if (ownNode != null) {
-						node.setGenesisBlock(ownNode.getChain().getGenesisBlock());
+						node.getChain().setGenesisBlock(ownNode.getChain().getGenesisBlock());
 					}
 					
 					nodes.put(i, node);

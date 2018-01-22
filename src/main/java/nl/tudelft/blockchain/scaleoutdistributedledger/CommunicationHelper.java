@@ -4,6 +4,7 @@ import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 /**
  * Helper class for communication.
@@ -19,15 +20,15 @@ public final class CommunicationHelper {
 	 * @return               true if the transaction was accepted, false otherwise
 	 */
 	public static boolean receiveTransaction(Proof proof, LocalStore localStore) {
-		//If we have seen this transaction before, reject it
-//		if (localStore.getVerification().isCached(proof.getTransaction())) {
-//			Log.log(Level.WARNING, "Received a transaction we already received before!");
-//			return false;
-//		}
-
-
-		if (!localStore.getVerification().isValid(proof.getTransaction(), proof, localStore)) {
-			Log.log(Level.WARNING, "Received an invalid transaction/proof: " + proof.getTransaction());
+		if (proof.getTransaction().getReceiver().getId() != localStore.getOwnNode().getId()) {
+			Log.log(Level.WARNING, "Received a transaction that isn't for us: " + proof.getTransaction());
+			return false;
+		}
+		
+		try {
+			localStore.getVerification().validateNewMessage(proof, localStore);
+		} catch (ValidationException ex) {
+			Log.log(Level.WARNING, "Received an invalid transaction/proof.", ex);
 			return false;
 		}
 		
