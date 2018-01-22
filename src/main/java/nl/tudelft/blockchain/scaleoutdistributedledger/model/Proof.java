@@ -196,6 +196,7 @@ public class Proof {
 		}
 
 		if (absmark < blockNumber) {
+			System.out.println(this.getTransaction());
 			throw new ProofValidationException("No suitable committed block found");
 		}
 
@@ -251,13 +252,14 @@ public class Proof {
 	/**
 	 * Applies the updates in this proof.
 	 * This method also updates the meta knowledge of the sender of the transaction.
+	 * @param localStore - the localStore
 	 */
-	public void applyUpdates() {
+	public void applyUpdates(LocalStore localStore) {
 		for (Entry<Node, List<Block>> entry : chainUpdates.entrySet()) {
 			Node node = entry.getKey();
 			
 			List<Block> updates = entry.getValue();
-			node.getChain().update(updates);
+			node.getChain().update(updates, localStore);
 		}
 		
 		//Update the meta knowledge of the sender

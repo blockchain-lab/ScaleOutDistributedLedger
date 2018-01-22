@@ -25,8 +25,8 @@ public class Block {
 	@Getter
 	private final int number;
 
-	@Getter
-	private final Block previousBlock;
+	@Getter @Setter
+	private Block previousBlock;
 
 	@Getter @Setter
 	private Node owner;
@@ -251,7 +251,7 @@ public class Block {
 	
 	@Override
 	public String toString() {
-		return "Block<" + number + ", " + owner + ">";
+		return "Block<nr=" + number + ", owner=" + owner + ", transactions=" + transactions + ">";
 	}
 
 	/**
@@ -288,13 +288,13 @@ public class Block {
 	public Block genesisCopy() {
 		if (this.number != GENESIS_BLOCK_NUMBER) throw new UnsupportedOperationException("You can only copy genesis blocks");
 		
-		ArrayList<Transaction> transactionsCopy = new ArrayList<>();
+		Block block = new Block(this.number, this.owner, new ArrayList<>());
 		for (Transaction transaction : transactions) {
-			transactionsCopy.add(transaction.genesisCopy());
+			block.addTransaction(transaction.genesisCopy());
 		}
-		Block block = new Block(this.number, this.owner, transactionsCopy);
 		
 		block.onMainChain = true;
+		block.finalized = true;
 		return block;
 	}
 	

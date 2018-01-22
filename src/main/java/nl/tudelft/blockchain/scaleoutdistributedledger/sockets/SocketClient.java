@@ -8,9 +8,12 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.logging.Level;
 

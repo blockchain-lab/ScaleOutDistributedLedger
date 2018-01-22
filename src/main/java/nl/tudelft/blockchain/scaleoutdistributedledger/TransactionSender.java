@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import java.io.IOException;
 import java.util.ListIterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,7 +36,7 @@ public class TransactionSender {
 	 * The number of blocks (with the same or higher block number) that need to be committed before
 	 * we send a certain block.
 	 */
-	public static final int REQUIRED_COMMITS = 2;
+	public static final int REQUIRED_COMMITS = 1;
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
@@ -163,7 +164,7 @@ public class TransactionSender {
 	 * @return            - if the sending succeeded
 	 * @throws InterruptedException - If the current thread was interrupted while sending.
 	 */
-	private boolean sendTransaction(Transaction transaction) throws InterruptedException {
+	private boolean sendTransaction(Transaction transaction) throws InterruptedException, IOException {
 		Node to = transaction.getReceiver();
 		Proof proof = Proof.createProof(localStore, transaction);
 		if (socketClient.sendMessage(to, new ProofMessage(proof))) {
