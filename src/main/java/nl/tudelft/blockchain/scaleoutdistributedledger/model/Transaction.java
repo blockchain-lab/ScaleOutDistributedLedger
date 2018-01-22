@@ -235,13 +235,12 @@ public class Transaction {
 		
 		Transaction other = (Transaction) obj;
 		if (number != other.number) return false;
-		if (receiver.getId() != other.receiver.getId()) return false;
+		if (!receiver.equals(other.receiver)) return false;
 		if (sender == null) {
 			if (other.sender != null) return false;
-		} else if (other.sender == null || sender.getId() != other.sender.getId()) return false;
+		} else if (!sender.equals(other.sender)) return false;
 		if (amount != other.amount) return false;
 		if (remainder != other.remainder) return false;
-		if (!hash.equals(other.hash)) return false;
 		if (!source.equals(other.source)) return false;
 		if (!blockNumber.equals(other.blockNumber)) return false;
 		return true;

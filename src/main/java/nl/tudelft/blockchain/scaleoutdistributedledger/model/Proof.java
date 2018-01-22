@@ -109,6 +109,8 @@ public class Proof {
 		
 //>>>>>>> 4cd4bd3a775e6a841cee6c2ac06d8ea8dcbe443a
 		// Set the transaction from the decoded chain
+		fixPreviousBlockPointersAndOrder();
+		
 		Transaction foundTransaction = null;
 		ChainView cv = new ChainView(senderNode.getChain(), currentDecodedBlockList);
 		Block block = cv.getBlock(proofMessage.getTransactionMessage().getBlockNumber());
@@ -119,6 +121,30 @@ public class Proof {
 			}
 		}
 		this.transaction = foundTransaction;
+	}
+	
+	private void fixPreviousBlockPointersAndOrder() {
+		for (Entry<Node, List<Block>> entry : this.chainUpdates.entrySet()) {
+			Node node = entry.getKey();
+			List<Block> updates = entry.getValue();
+			
+			System.out.println("Presort = " + updates);
+			updates.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
+			System.out.println("Postsort = " + updates);
+			
+			Block previousBlock = null;
+			for (int i = 0; i < updates.size(); i++) {
+				Block block = updates.get(i);
+				block.setPreviousBlock(previousBlock);
+				previousBlock = block;
+			}
+			
+			Block firstBlock = updates.get(0);
+			if (firstBlock.getNumber() != 0) {
+				previousBlock = node.getChain().getBlocks().get(firstBlock.getNumber() - 1);
+				firstBlock.setPreviousBlock(previousBlock);
+			}
+		}
 	}
 	
 	/**
