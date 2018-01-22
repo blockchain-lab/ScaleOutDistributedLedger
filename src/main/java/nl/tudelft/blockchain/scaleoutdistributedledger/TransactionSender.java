@@ -168,7 +168,7 @@ public class TransactionSender {
 		Node to = transaction.getReceiver();
 		Proof proof = Proof.createProof(localStore, transaction);
 		ProofMessage msg = new ProofMessage(proof);
-		Log.debug("{0}: {1}", localStore.getOwnNode().getId(), msg);
+//		Log.debug("{0}: {1}", localStore.getOwnNode().getId(), msg);
 		if (socketClient.sendMessage(to, msg)) {
 			to.updateMetaKnowledge(proof);
 			return true;
