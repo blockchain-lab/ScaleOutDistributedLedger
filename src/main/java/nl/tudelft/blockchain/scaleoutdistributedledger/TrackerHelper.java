@@ -99,8 +99,7 @@ public final class TrackerHelper {
 				return;
 			}
 			Log.log(Level.SEVERE, "Error while updating the running status of the node");
-			//TODO: Create new excepton for this
-			throw new NodeRegisterFailedException();
+			throw new NodeStateChangeFailedException(id, running);
 		}
 	}
 
