@@ -53,7 +53,8 @@ public class Proof {
 	 * @throws IOException - error while getting node info from tracker
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
-		this.chainUpdates = new HashMap<>();		
+		this.chainUpdates = new HashMap<>();
+		
 		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
 			Node node = localStore.getNode(entry.getKey());
 			if (this.chainUpdates.containsKey(node)) {
@@ -65,23 +66,26 @@ public class Proof {
 			BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
 			// Recursively decode the transaction and chainUpdates
 			Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
-			List<Block> currentDecodedBlockList;
-			if (this.chainUpdates.containsKey(senderNode)) {
+			if (this.chainUpdates.containsKey(node)) {
 				// Add to already created list of blocks
-				currentDecodedBlockList = this.chainUpdates.get(senderNode);
-				currentDecodedBlockList.add(lastBlock);
+				this.chainUpdates.get(node).add(lastBlock);
 			} else {
 				// Create new list of blocks
-				currentDecodedBlockList = new ArrayList<>();
-				currentDecodedBlockList.add(lastBlock);
-				this.chainUpdates.put(senderNode, currentDecodedBlockList);
+				List<Block> blockList = new ArrayList<>();
+				blockList.add(lastBlock);
+				this.chainUpdates.put(node, blockList);
 			}
 		}
 		
-		// Set the transaction from the decoded chain
-		// TODO [possible improvement]: is the transaction always in the last block ?
-		Transaction foundTransaction = null;
+		// Get decoded chain of sender, if any
+		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
+		List<Block> currentDecodedBlockList = new ArrayList<>();
+		if (this.chainUpdates.containsKey(senderNode)) {
+			currentDecodedBlockList = this.chainUpdates.get(senderNode);
+		}
 		
+		// Set the transaction from the decoded chain
+		Transaction foundTransaction = null;
 		ChainView cv = new ChainView(senderNode.getChain(), currentDecodedBlockList);
 		Block block = cv.getBlock(proofMessage.getTransactionMessage().getBlockNumber());
 		for (Transaction transactionAux : block.getTransactions()) {
