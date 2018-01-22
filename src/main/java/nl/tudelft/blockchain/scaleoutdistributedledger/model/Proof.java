@@ -105,18 +105,16 @@ public class Proof {
 
 		// For all transactions of all nodes do
 		for (Node node : this.chainUpdates.keySet()) {
-			synchronized (this.chainUpdates.get(node)) {
-				for (Block block : this.chainUpdates.get(node)) {
-					for (Transaction tx : block.getTransactions()) {
-						tx.getMessage().getSource().forEach(entry -> {
+			for (Block block : this.chainUpdates.get(node)) {
+				for (Transaction tx : block.getTransactions()) {
+					tx.getMessage().getSource().forEach(entry -> {
 //							System.out.println(chainViews.get(entry.getKey()));
 //							System.out.println(entry.getKey());
 //							System.out.println(entry.getValue()[0]);
 //							System.out.println(entry.getValue()[1]);
-							Block sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
-							tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
-						});
-					}
+						Block sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
+						tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
+					});
 				}
 			}
 		}
