@@ -11,7 +11,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
