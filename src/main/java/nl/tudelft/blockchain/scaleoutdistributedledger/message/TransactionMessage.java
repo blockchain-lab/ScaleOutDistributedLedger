@@ -124,4 +124,22 @@ public class TransactionMessage extends Message {
 		result = prime * result + this.blockNumber;
 		return result;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(64);
+		sb.append("TransactionMessage<nr=").append(number)
+		.append(", sender=").append(senderId)
+		.append(", receiver=").append(receiverId)
+		.append(", amount=").append(amount)
+		.append(", remainder=").append(remainder)
+		.append(", source=[");
+		for (Entry<Integer, int[]> entry : source) {
+			sb.append("\n        ").append(entry.getKey())
+			.append(": block=").append(entry.getValue()[0])
+			.append(": id=").append(entry.getValue()[1]);
+		}
+		sb.append("\n      ]");
+		return sb.toString();
+	}
 }

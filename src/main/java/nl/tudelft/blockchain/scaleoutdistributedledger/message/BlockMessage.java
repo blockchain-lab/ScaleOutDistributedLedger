@@ -75,4 +75,15 @@ public class BlockMessage extends Message {
 		}
 		return new Block(this.number, localStore.getNode(this.ownerId), transactions);
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(64);
+		sb.append("BlockMessage<nr=").append(number).append(", owner=").append(ownerId).append(", transactions=[");
+		for (TransactionMessage tm : transactions) {
+			sb.append("\n      ").append(tm);
+		}
+		sb.append("\n    ]");
+		return sb.toString();
+	}
 }
