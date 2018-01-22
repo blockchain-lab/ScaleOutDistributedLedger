@@ -57,12 +57,7 @@ public class Proof {
 			chainUpdates.put(localStore.getNode(entry.getKey()), blocks);
 		}
 		// Fix the sources
-		try {
-			this.fixTransactionSources();
-		} catch(Exception e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+		this.fixTransactionSources(localStore);
 
 		// Fix backlinks
 		this.fixPreviousBlockPointersAndOrder();
@@ -95,7 +90,7 @@ public class Proof {
 		}
 	}
 
-	private void fixTransactionSources() {
+	private void fixTransactionSources(LocalStore localStore) {
 		HashMap<Integer, ChainView> chainViews = new HashMap<>();
 		// Initialize the chainviews only once
 		for (Node node : this.chainUpdates.keySet()) {
@@ -108,11 +103,12 @@ public class Proof {
 			for (Block block : this.chainUpdates.get(node)) {
 				for (Transaction tx : block.getTransactions()) {
 					tx.getMessage().getSource().forEach(entry -> {
-//							System.out.println(chainViews.get(entry.getKey()));
-//							System.out.println(entry.getKey());
-//							System.out.println(entry.getValue()[0]);
-//							System.out.println(entry.getValue()[1]);
-						Block sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
+						Block sourceBlock;
+						if (!chainViews.containsKey(entry.getKey())) {
+							sourceBlock = localStore.getNode(entry.getKey()).getChain().getBlocks().get(entry.getValue()[0]);
+						} else {
+							sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
+						}
 						tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
 					});
 				}
