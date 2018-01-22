@@ -204,6 +204,9 @@ public class Proof {
 			try {
 				verify(sourceTransaction, localStore);
 			} catch (ValidationException ex) {
+				ex.printStackTrace();
+				System.out.println(this);
+				System.exit(1);
 				throw new ProofValidationException("Source " + sourceTransaction + " is not valid", ex);
 			}
 		}

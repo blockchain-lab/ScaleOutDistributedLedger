@@ -215,16 +215,36 @@ public class Block {
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) return true;
-		if (!(obj instanceof Block)) return false;
+		if (!(obj instanceof Block)) {
+			System.out.println("HEREEQUALS1");
+			System.out.println(this);
+			System.out.println(obj);
+			return false;
+		}
 
 		Block other = (Block) obj;
-		if (this.number != other.number) return false;
+		if (this.number != other.number){
+			System.out.println("HEREEQUALS2");
+			return false;
+		}
 		if (this.owner == null) {
-			if (other.owner != null) return false;
-		} else if (other.owner == null || this.owner.getId() != other.owner.getId()) return false;
+			if (other.owner != null) {
+				System.out.println("HEREEQUALS3");
+				return false;
+			}
+		} else if (other.owner == null || this.owner.getId() != other.owner.getId()) {
+			System.out.println("HEREEQUALS4");
+			return false;
+		}
 		if (this.previousBlock == null) {
-			if (other.previousBlock != null) return false;
-		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
+			if (other.previousBlock != null) {
+				System.out.println("HEREEQUALS5");
+				return false;
+			}
+		} else if (!this.previousBlock.equals(other.previousBlock)) {
+			System.out.println("HEREEQUALS6");
+			return false;
+		}
 
 		return this.transactions.equals(other.transactions);
 	}

@@ -87,6 +87,7 @@ public class ChainView implements Iterable<Block> {
 		int lastOwnNumber = blocks.get(blocks.size() - 1).getNumber();
 		if (firstUpdateNumber - lastOwnNumber > 1) {
 			//We are missing blocks between what we know and what we were sent! Can never happen with an honest node.
+			System.out.println("HERE1");
 			this.valid = false;
 			return false;
 		} else if (lastOwnNumber >= firstUpdateNumber) {
@@ -100,13 +101,18 @@ public class ChainView implements Iterable<Block> {
 				
 				//TODO we might need a special equality check
 				if (!ownBlock.equals(updatedBlock)) {
+					System.out.println("HERE2");
+					System.out.println(ownBlock);
+					System.out.println(updatedBlock);
+					System.out.println(ownBlock.getClass().getName());
+					System.out.println(updatedBlock.getClass().getName());
 					this.valid = false;
 					return false;
 				}
 				
 				updates.remove(0);
 			}
-			
+
 			return checkNoGaps(0, lastOwnNumber);
 		} else {
 			//The first updated block number follows directly after the last block we knew about.

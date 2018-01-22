@@ -82,7 +82,7 @@ public final class SimulationMain {
 		Simulation simulation = new Simulation(IS_MASTER);
 //		ITransactionPattern itp = new OnlyNodeZeroTransactionPattern(10, 20, 1000, 2000, 1);
 //		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 2);
-		UniformRandomTransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 2);
+		UniformRandomTransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 1);
 		itp.setSeed(1);
 		simulation.setTransactionPattern(itp);
 		simulation.runNodesLocally(nodes, ownNodes, genesisBlock, nodeToKeyPair);
