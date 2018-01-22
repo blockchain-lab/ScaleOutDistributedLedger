@@ -29,7 +29,9 @@ public final class TestHelper {
 		nodeList.put(ownNode.getId(), ownNode);
 		Block genesisBlock = TendermintHelper.generateGenesisBlock(amount, nodeList);
 		
-		ownNode.getChain().setGenesisBlock(genesisBlock);
+		for (Node node : nodeList.values()) {
+			node.getChain().setGenesisBlock(genesisBlock);
+		}
 		return genesisBlock;
 	}
 	
