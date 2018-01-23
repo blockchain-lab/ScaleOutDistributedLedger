@@ -110,7 +110,7 @@ public class ChainView implements Iterable<Block> {
 			//At the same time, we will remove the overlapping elements
 			int overlap = lastOwnNumber + 1 - firstUpdateNumber;
 			int baseI = blocks.size() - overlap;
-			for (int i = 0; i < overlap && !updates.isEmpty(); i++) {
+			for (int i = 0; i < overlap && !updates.isEmpty() && startIndex < updates.size(); i++) {
 				Block ownBlock = blocks.get(baseI + i);
 				Block updatedBlock = updates.get(startIndex);
 				
