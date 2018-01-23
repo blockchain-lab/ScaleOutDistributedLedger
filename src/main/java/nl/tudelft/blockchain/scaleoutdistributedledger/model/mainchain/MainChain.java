@@ -22,16 +22,16 @@ public interface MainChain {
 	 * @param block - the block to query for
 	 * @return - true when present, false otherwise
 	 */
-	public default boolean isPresent(Block block) {
-		return isPresent(block.getHash());
-	}
+//	public default boolean isPresent(Block block) {
+//		return isPresent(block.getHash());
+//	}
 
 	/**
 	 * Check whether the block (from a local chain) is on the main chain (in a form of BlockAbstract).
-	 * @param blockHash the hash of the block
+	 * @param block the hash of the block
 	 * @return true if there is a block abstract of the given block, false otherwise.
 	 */
-	public boolean isPresent(Sha256Hash blockHash);
+	public boolean isPresent(Block block);
 
 	/**
 	 * Initializes the tendermint chain.
