@@ -262,7 +262,7 @@ public class Block {
 		if (this.onMainChain) return true;
 		
 		//It is present, so store it and return
-		if (localStore.getMainChain().isPresent(this.getHash())) {
+		if (localStore.getMainChain().isPresent(this)) {
 			this.onMainChain = true;
 			return true;
 		}
