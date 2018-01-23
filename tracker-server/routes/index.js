@@ -73,6 +73,10 @@ router.get('/node', (req, res) => {
 	}
 });
 
+router.get('/demo', (req, res) => {
+	res.render('demo');
+});
+
 /**
  * Reset the nodelist on the tracker server.
  */

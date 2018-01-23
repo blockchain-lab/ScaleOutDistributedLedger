@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
+    "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./public,./views--copy-files",
     "start": "npm run build && node dist/app.js"
   },
   "author": "Bart de Jonge",
@@ -22,6 +22,7 @@
     "debug": "latest",
     "ejs": "^2.5.7",
     "express": "^4.16.2",
+    "jsnetworkx": "^0.3.4",
     "morgan": "^1.9.0"
   }
 }
