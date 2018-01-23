@@ -106,7 +106,7 @@ public class Block {
 	 * @return Hash SHA256
 	 */
 	public synchronized Sha256Hash getHash() {
-		if (this.hash == null) {
+		if (true || this.hash == null) {
 			this.hash = this.calculateHash();
 		}
 		return this.hash;
@@ -252,6 +252,7 @@ public class Block {
 	 * @return - boolean identifying if an abstract of this block is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
+		if(true) return true;
 		//TODO Remove hack?
 		if (this.number == GENESIS_BLOCK_NUMBER) return true;
 		
@@ -262,7 +263,7 @@ public class Block {
 		if (this.onMainChain) return true;
 		
 		//It is present, so store it and return
-		if (localStore.getMainChain().isPresent(this.getHash())) {
+		if (localStore.getMainChain().isPresent(this)) {
 			this.onMainChain = true;
 			return true;
 		}

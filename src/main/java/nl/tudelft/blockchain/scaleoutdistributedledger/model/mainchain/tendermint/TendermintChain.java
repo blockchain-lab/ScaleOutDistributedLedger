@@ -150,8 +150,8 @@ public final class TendermintChain implements MainChain {
 		if (currentHeight < height) {
 			Log.log(Level.FINE, "Successfully updated the Tendermint cache for node " + this.app.getLocalStore().getOwnNode().getId()
 					+ " from height " + currentHeight + " -> " + height	+ ", number of cached hashes of abstracts on main chain is now " + cache.size());
-			Log.log(Level.INFO, "Node " + this.getApp().getLocalStore().getOwnNode().getId() + " current view of cache is " + this.getCurrentCache());
-			Log.log(Level.INFO, "Node " + this.getApp().getLocalStore().getOwnNode().getId() + " current view of super cache is " + this.getSuperExtraCache());
+			Log.log(Level.FINE, "Node " + this.getApp().getLocalStore().getOwnNode().getId() + " current view of cache is " + this.getCurrentCache());
+			Log.log(Level.FINE, "Node " + this.getApp().getLocalStore().getOwnNode().getId() + " current view of super cache is " + this.getSuperExtraCache());
 		}
 		currentHeight = Math.max(currentHeight, height);	// For concurrency reasons use the maximum
 	}
