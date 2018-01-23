@@ -4,6 +4,7 @@ import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidationException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
@@ -16,6 +17,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Proof class.
@@ -110,7 +113,7 @@ public class Proof {
 		for (Node node : this.chainUpdates.keySet()) {
 			for (Block block : this.chainUpdates.get(node)) {
 				for (Transaction tx : block.getTransactions()) {
-					tx.getMessage().getSource().forEach(entry -> {
+					for (Entry<Integer, int[]> entry : tx.getMessage().getSource()) {
 						Block sourceBlock;
 						if (!lightViews.containsKey(entry.getKey())) {
 							sourceBlock = localStore.getNode(entry.getKey()).getChain().getBlocks().get(entry.getValue()[0]);
@@ -118,7 +121,7 @@ public class Proof {
 							sourceBlock = lightViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
 						}
 						tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
-					});
+					}
 				}
 			}
 		}
@@ -283,24 +286,42 @@ public class Proof {
 		Node receiver = transaction.getReceiver();
 		
 		synchronized (receiver.getMetaKnowledge()) {
+			Log.debug("Creating proof based on " + receiver.getMetaKnowledge());
 			Proof proof = new Proof(transaction);
-			
+
 			//Step 1: determine what blocks need to be sent
 			int blockRequired = transaction.getBlockNumber().getAsInt();
 			Chain senderChain = transaction.getSender().getChain();
 			
 			Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
 			
-			//The from block is the already known
-			int alreadyKnownBlock = metaKnowledge.getOrDefault(transaction.getSender(), -1) + 1;
-			blockRequired = Math.min(blockRequired, alreadyKnownBlock);
+			//The from block is the first unknown block
+			int firstUnknownBlock = metaKnowledge.getOrDefault(transaction.getSender(), -1) + 1;
+			blockRequired = Math.min(blockRequired, firstUnknownBlock);
 			
 			Block fromBlock = senderChain.getBlocks().get(blockRequired);
 			Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
-			
+
+			List<Block> blocksToSend = senderChain.getBlocks().subList(fromBlock.getNumber(), toBlock.getNumber());
+
 			//Step 2: determine the chains that need to be sent
+//			Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
+			List<Transaction> sources = blocksToSend.stream().flatMap(block -> block.getTransactions().get(0).getSource().stream()).collect(Collectors.toList());
+			Log.debug("Sources of from block: " + fromBlock.getTransactions().get(0).getSource());
+			Set<Integer> expected = sources.stream().map(Transaction::getSender).map(n -> n == null ? -1 : n.getId()).collect(Collectors.toSet());
+
 			Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
-			
+			Set<Integer> actual = chains.keySet().stream().map(Chain::getOwner).map(n -> n == null ? -1 : n.getId()).collect(Collectors.toSet());
+			expected.removeAll(actual);
+			expected.remove(-1);
+			Log.debug("Removing receiver id from expected: " + receiver.getId());
+			Log.debug("Removed? " + expected.remove(receiver.getId()));
+			if (!expected.isEmpty()) {
+				System.out.println("badddd");
+			} else {
+				Log.debug("actual set of node numbers required: " + actual);
+			}
+
 			//Step 3: add only those blocks that are not yet known
 			for (Entry<Chain, Integer> entry : chains.entrySet()) {
 				Chain chain = entry.getKey();
@@ -311,6 +332,8 @@ public class Proof {
 				int requiredKnown = entry.getValue();
 				if (alreadyKnown < requiredKnown) {
 					proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+				} else {
+					Log.debug("Already known " + alreadyKnown + ", required known " + requiredKnown);
 				}
 			}
 			

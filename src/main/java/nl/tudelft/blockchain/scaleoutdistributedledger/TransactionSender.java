@@ -36,7 +36,7 @@ public class TransactionSender {
 	 * The number of blocks (with the same or higher block number) that need to be committed before
 	 * we send a certain block.
 	 */
-	public static final int REQUIRED_COMMITS = 2;
+	public static final int REQUIRED_COMMITS = 1;
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
@@ -166,7 +166,13 @@ public class TransactionSender {
 	 */
 	private boolean sendTransaction(Transaction transaction) throws InterruptedException, IOException {
 		Node to = transaction.getReceiver();
-		Proof proof = Proof.createProof(localStore, transaction);
+		Proof proof;
+		synchronized (localStore.getOwnNode().getChain()) {
+			proof = Proof.createProof(localStore, transaction);
+			Log.debug("Proof created " + proof);
+			Log.debug("Metaknowledge it's based on " + to.getMetaKnowledge());
+
+		}
 		ProofMessage msg = new ProofMessage(proof);
 //		Log.debug("{0}: {1}", localStore.getOwnNode().getId(), msg);
 		if (socketClient.sendMessage(to, msg)) {
