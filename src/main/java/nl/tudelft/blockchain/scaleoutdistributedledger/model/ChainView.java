@@ -15,6 +15,8 @@ public class ChainView implements Iterable<Block> {
 	private Chain chain;
 	private List<Block> updates;
 	private Boolean valid;
+	private boolean trim;
+	private int startIndex;
 	
 	/**
 	 * @param chain
@@ -26,6 +28,19 @@ public class ChainView implements Iterable<Block> {
 		this.chain = chain;
 		this.updates = updates;
 		if (this.updates == null) this.updates = new ArrayList<>();
+		this.trim = true;
+	}
+	
+	/**
+	 * @param chain   - the chain
+	 * @param updates - the blocks of this chain that were sent with the proof
+	 * @param trim    - if this chainview should trim
+	 */
+	public ChainView(Chain chain, List<Block> updates, boolean trim) {
+		this.chain = chain;
+		this.updates = updates;
+		if (this.updates == null) this.updates = new ArrayList<>();
+		this.trim = trim;
 	}
 	
 	/**
@@ -95,9 +110,9 @@ public class ChainView implements Iterable<Block> {
 			//At the same time, we will remove the overlapping elements
 			int overlap = lastOwnNumber + 1 - firstUpdateNumber;
 			int baseI = blocks.size() - overlap;
-			for (int i = 0; i < overlap && !updates.isEmpty(); i++) {
+			for (int i = 0; i < overlap && !updates.isEmpty() && startIndex < updates.size(); i++) {
 				Block ownBlock = blocks.get(baseI + i);
-				Block updatedBlock = updates.get(0);
+				Block updatedBlock = updates.get(startIndex);
 				
 				//TODO we might need a special equality check
 				if (ownBlock.getNumber() != updatedBlock.getNumber()) {
@@ -105,10 +120,14 @@ public class ChainView implements Iterable<Block> {
 					return false;
 				}
 				
-				updates.remove(0);
+				if (trim) {
+					updates.remove(0);
+				} else {
+					startIndex++;
+				}
 			}
 
-			return checkNoGaps(0, lastOwnNumber);
+			return checkNoGaps(startIndex, lastOwnNumber);
 		} else {
 			//The first updated block number follows directly after the last block we knew about.
 			return checkNoGaps(0, lastOwnNumber);
@@ -157,7 +176,7 @@ public class ChainView implements Iterable<Block> {
 		if (number < chain.getBlocks().size()) {
 			return chain.getBlocks().get(number);
 		} else if (isValid()) {
-			int index = number - chain.getBlocks().size();
+			int index = number - chain.getBlocks().size() + startIndex;
 			return updates.get(index);
 		} else {
 			throw new IllegalStateException(
@@ -200,7 +219,7 @@ public class ChainView implements Iterable<Block> {
 		
 		ChainViewIterator() {
 			chainIterator = chain.getBlocks().listIterator();
-			updatesIterator = updates.listIterator();
+			updatesIterator = updates.subList(startIndex, updates.size()).listIterator();
 			currentIndex = -1;
 		}
 		
@@ -208,10 +227,10 @@ public class ChainView implements Iterable<Block> {
 			int chainLength = chain.getBlocks().size();
 			if (number < chainLength) {
 				chainIterator = chain.getBlocks().listIterator(number);
-				updatesIterator = updates.listIterator();
+				updatesIterator = updates.subList(startIndex, updates.size()).listIterator();
 			} else {
 				int index = number - chainLength;
-				updatesIterator = updates.listIterator(index);
+				updatesIterator = updates.subList(startIndex, updates.size()).listIterator(index);
 				chainIterator = chain.getBlocks().listIterator(chainLength);
 				updatesReached = true;
 			}

@@ -5,6 +5,7 @@ import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
+import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionSender;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -109,6 +110,20 @@ public interface ITransactionPattern extends Serializable {
 			}
 		}
 	}
+	
+	/**
+	 * Commits extra empty blocks.
+	 * @param localStore - the local store
+	 */
+	public default void commitExtraEmpty(LocalStore localStore) {
+		Chain ownChain = localStore.getOwnNode().getChain();
+		for (int i = 0; i < TransactionSender.REQUIRED_COMMITS; i++) {
+			synchronized (ownChain) {
+				Block block = ownChain.appendNewBlock();
+				block.commit(localStore);
+			}
+		}
+	}
 
 	/**
 	 * @param localStore - the local store
@@ -123,6 +138,7 @@ public interface ITransactionPattern extends Serializable {
 	public default void onStop(LocalStore localStore) {
 		try {
 			commitBlocks(localStore, true);
+			commitExtraEmpty(localStore);
 		} catch (InterruptedException ex) {
 			Log.log(Level.SEVERE, "Interrupted while committing blocks!");
 		} catch (Exception ex) {

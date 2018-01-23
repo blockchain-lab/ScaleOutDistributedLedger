@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
 import lombok.Getter;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.CommunicationHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 
 /**
@@ -60,5 +62,24 @@ public class ProofMessage extends Message {
 		} catch (IOException e) {
 			Log.log(Level.SEVERE, "Exception while handling proof message", e);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(64);
+		sb.append("ProofMessage\n  Transaction = ").append(transactionMessage).append("\n{");
+		if (chainUpdates.isEmpty()) {
+			return sb.append("}").toString();
+		}
+		
+		for (Entry<Integer, List<BlockMessage>> entry : chainUpdates.entrySet()) {
+			sb.append("\n  ").append(entry.getKey()).append(": [");
+			for (BlockMessage bm : entry.getValue()) {
+				sb.append("\n    ").append(bm);
+			}
+			sb.append("\n  ]");
+		}
+		sb.append("\n}");
+		return sb.toString();
 	}
 }
