@@ -115,7 +115,7 @@ public class Proof {
 						if (!lightViews.containsKey(entry.getKey())) {
 							sourceBlock = localStore.getNode(entry.getKey()).getChain().getBlocks().get(entry.getValue()[0]);
 						} else {
-							sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
+							sourceBlock = lightViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
 						}
 						tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
 					});
