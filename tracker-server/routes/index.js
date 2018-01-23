@@ -7,6 +7,7 @@ import NodeList from '../model/NodeList';
  * Gets all nodes.
  */
 router.get('/', (req, res) => {
+    updateS
 	res.json({
 		nodes: app.nodeList.getNodes()
 	});
@@ -95,5 +96,38 @@ router.get('/status', (req, res) => {
 function isPresent(arg) {
 	return !!(arg || arg === 0 || arg === "" || arg === false);
 }
+
+var sseClients = new sseMW.Topic();
+// initial registration of SSE Client Connection
+app.get('/topn/updates', function(req,res){
+    var sseConnection = res.sseConnection;
+    sseConnection.setup();
+    sseClients.add(sseConnection);
+} );
+var m;
+//send message to all registered SSE clients
+alrighfunction updateSseClients(message) {
+    var msg = message;
+    this.m=message;
+    sseClients.forEach(
+        function(sseConnection) {
+            sseConnection.send(this.m);
+        }
+        , this // this second argument to forEach is the thisArg (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach)
+    ); //forEach
+}// updateSseClients
+
+// send a heartbeat signal to all SSE clients, once every interval seconds (or every 3 seconds if no interval is specified)
+initHeartbeat = function(interval) {
+    setInterval(function()  {
+            var msg = {"label":"The latest", "time":new Date()};
+            updateSseClients( JSON.stringify(msg));
+        }//interval function
+        , interval?interval*1000:3000
+    ); // setInterval
+}//initHeartbeat
+
+// initialize heartbeat at 10 second interval
+initHeartbeat(10);
 
 export default router;

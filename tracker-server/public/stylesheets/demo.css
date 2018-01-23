@@ -3,4 +3,11 @@
     height: 600px;
     display: block;
     border: 2px solid black;
+    margin-top: 30px;
 }
+
+.odometer {
+    font-size: 50px;
+    margin-left: 20px;
+}
+

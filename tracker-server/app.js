@@ -7,9 +7,12 @@ import http from 'http';
 import index from './routes/index';
 import NodeList from './model/NodeList';
 import path from "path";
+const sseMW = require('./helpers/sse');
 
 const app = express();
 const debug = Debug('test:app');
+
+app.use(sseMW.sseMiddleware);
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
