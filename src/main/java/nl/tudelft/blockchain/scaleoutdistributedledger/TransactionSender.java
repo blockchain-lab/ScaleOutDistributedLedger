@@ -36,7 +36,7 @@ public class TransactionSender {
 	 * The number of blocks (with the same or higher block number) that need to be committed before
 	 * we send a certain block.
 	 */
-	public static final int REQUIRED_COMMITS = 6;
+	public static final int REQUIRED_COMMITS = 4;
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;

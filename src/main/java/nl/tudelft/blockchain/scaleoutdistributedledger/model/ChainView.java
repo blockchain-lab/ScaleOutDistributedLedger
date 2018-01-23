@@ -115,7 +115,7 @@ public class ChainView implements Iterable<Block> {
 				Block updatedBlock = updates.get(startIndex);
 				
 				//TODO we might need a special equality check
-				if (ownBlock.getNumber() != updatedBlock.getNumber()) {
+				if (!ownBlock.equals(updatedBlock)) {
 					this.valid = false;
 					return false;
 				}
