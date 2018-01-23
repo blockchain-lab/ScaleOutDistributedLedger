@@ -185,7 +185,7 @@ public class Block {
 		if (this.number != other.number) return false;
 		if (this.owner == null) {
 			if (other.owner != null) return false;
-		} else if (other.owner == null || this.owner.getId() != other.owner.getId()) return false;
+		} else if (!this.owner.equals(other.owner)) return false;
 
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;

@@ -100,10 +100,10 @@ public class Proof {
 	}
 
 	private void fixTransactionSources(LocalStore localStore) {
-		HashMap<Integer, ChainView> chainViews = new HashMap<>();
+		HashMap<Integer, LightView> lightViews = new HashMap<>();
 		// Initialize the chainviews only once
 		for (Node node : this.chainUpdates.keySet()) {
-			chainViews.put(node.getId(), getChainView(node));
+			lightViews.put(node.getId(), new LightView(node.getChain(), chainUpdates.get(node)));
 		}
 
 		// For all transactions of all nodes do
@@ -112,7 +112,7 @@ public class Proof {
 				for (Transaction tx : block.getTransactions()) {
 					tx.getMessage().getSource().forEach(entry -> {
 						Block sourceBlock;
-						if (!chainViews.containsKey(entry.getKey())) {
+						if (!lightViews.containsKey(entry.getKey())) {
 							sourceBlock = localStore.getNode(entry.getKey()).getChain().getBlocks().get(entry.getValue()[0]);
 						} else {
 							sourceBlock = chainViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
