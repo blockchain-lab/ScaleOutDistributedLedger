@@ -5,6 +5,9 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.ReversedIterator;
+
 /**
  * Chain class.
  */
@@ -44,23 +47,46 @@ public class Chain {
 	 * Updates this chain with the given updates.
 	 * This method is used for updating a chain belonging to a different node.
 	 * @param updates - the new blocks to append
+	 * @param localStore - the localStore
 	 * @throws UnsupportedOperationException - If this chain is owned by us.
 	 */
-	public synchronized void update(List<Block> updates) {
+	public synchronized void update(List<Block> updates, LocalStore localStore) {
 		if (owner instanceof OwnNode) throw new UnsupportedOperationException("You cannot use update to update your own chain");
 		
 		if (updates.isEmpty()) return;
 		
+		ArrayList<Block> copy = new ArrayList<>(updates);
+		copy.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
+		if (!copy.equals(updates)) {
+			throw new IllegalArgumentException("The blocks are not ordered correctly :(");
+		}
+		
+		int nextNr;
+		Block previousBlock;
 		if (blocks.isEmpty()) {
-			blocks.addAll(updates);
+			//Should start at 0, there is no previous block
+			nextNr = 0;
+			previousBlock = null;
 		} else {
+			//Should start with the first block after our last block.
 			Block lastBlock = blocks.get(blocks.size() - 1);
-			int nextNr = lastBlock.getNumber() + 1;
-			for (Block block : updates) {
-				//Skip any overlap
-				if (block.getNumber() != nextNr) continue;
-				blocks.add(block);
-				nextNr++;
+			nextNr = lastBlock.getNumber() + 1;
+			previousBlock = lastBlock;
+		}
+		
+		for (Block block : updates) {
+			//Skip any overlap
+			if (block.getNumber() != nextNr) continue;
+			block.setPreviousBlock(previousBlock);
+			blocks.add(block);
+			nextNr++;
+			previousBlock = block;
+		}
+		
+		for (Block block : ReversedIterator.reversed(this.blocks)) {
+			if (block.isOnMainChain(localStore)) {
+				setLastCommittedBlock(block);
+				return;
 			}
 		}
 	}

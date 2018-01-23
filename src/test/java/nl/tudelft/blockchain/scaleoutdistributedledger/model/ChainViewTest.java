@@ -32,7 +32,7 @@ public class ChainViewTest {
 		chainMock = mock(Chain.class);
 		when(chainMock.getBlocks()).thenReturn(blocks);
 		
-		chainview = new ChainView(chainMock, updatedBlocks);
+		chainview = new ChainView(chainMock, updatedBlocks, false);
 	}
 	
 	/**

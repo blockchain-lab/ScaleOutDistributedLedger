@@ -2,11 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import static org.junit.Assert.*;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -78,8 +74,10 @@ public class TransactionCreatorTest {
 	 * @return            the transaction
 	 */
 	public Transaction addUnspent(Node sender, Node receiver, long amount, long remainder) {
-		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new HashSet<>());
-		Transaction transaction = new Transaction(localStore.getNewTransactionId(), sender, receiver, amount, remainder, Collections.singleton(genesis));
+		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new TreeSet<>());
+		TreeSet<Transaction> source = new TreeSet<>();
+		source.add(genesis);
+		Transaction transaction = new Transaction(localStore.getNewTransactionId(), sender, receiver, amount, remainder, source);
 		localStore.addUnspentTransaction(transaction);
 		return transaction;
 	}

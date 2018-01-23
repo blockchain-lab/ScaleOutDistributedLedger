@@ -9,10 +9,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -31,6 +28,9 @@ public final class TendermintChain implements MainChain {
 	private TSocket socket;
 	private ExecutorService threadPool;
 	private Set<Sha256Hash> cache;
+	private final Object cacheLock;
+	private Map<Integer, Set<Integer>> extraCache;
+	private Map<String, Sha256Hash> superExtraCache;
 	@Getter
 	private long currentHeight;
 	@Getter
@@ -53,6 +53,9 @@ public final class TendermintChain implements MainChain {
 	public TendermintChain(final int port, Block genesisBlock, Application app) {
 		this.abciServerPort = port;
 		this.cache = new HashSet<>();
+		this.cacheLock = new Object();
+		this.extraCache = new HashMap<>();
+		this.superExtraCache = new HashMap<>();
 		this.app = app;
 
 		this.socket = new TSocket();
@@ -132,13 +135,23 @@ public final class TendermintChain implements MainChain {
 				Log.log(Level.WARNING, "Could not get block at height " + i + ", perhaps the tendermint rpc is not (yet) running (or broken)");
 				return;
 			}
-			for (BlockAbstract abs : abstractsAtCurrentHeight) {
-				cache.add(abs.getBlockHash());
+			synchronized (cacheLock) {
+				for (BlockAbstract abs : abstractsAtCurrentHeight) {
+					cache.add(abs.getBlockHash());
+					int blockNum = abs.getBlockNumber();
+					int owner = abs.getOwnerNodeId();
+					Set<Integer> setOfBlockNums = extraCache.getOrDefault(owner, new HashSet<>());
+					setOfBlockNums.add(blockNum);
+					extraCache.put(owner, setOfBlockNums);
+					superExtraCache.putIfAbsent(owner + "-" + blockNum, abs.getBlockHash());
+				}
 			}
 		}
 		if (currentHeight < height) {
 			Log.log(Level.FINE, "Successfully updated the Tendermint cache for node " + this.app.getLocalStore().getOwnNode().getId()
 					+ " from height " + currentHeight + " -> " + height	+ ", number of cached hashes of abstracts on main chain is now " + cache.size());
+			Log.log(Level.FINE, "Node " + this.getApp().getLocalStore().getOwnNode().getId() + " current view of cache is " + this.getCurrentCache());
+			Log.log(Level.FINE, "Node " + this.getApp().getLocalStore().getOwnNode().getId() + " current view of super cache is " + this.getSuperExtraCache());
 		}
 		currentHeight = Math.max(currentHeight, height);	// For concurrency reasons use the maximum
 	}
@@ -165,12 +178,15 @@ public final class TendermintChain implements MainChain {
 	}
 
 	@Override
-	public boolean isPresent(Sha256Hash blockHash) {
+	public boolean isPresent(Block block) {
+		Sha256Hash blockHash = block.getHash();
 		if (cache.contains(blockHash)) {
 			return true;
 		} else {
+//			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " checking cache for " + block.getOwner().getId() + "-" + block.getNumber() + ": " + blockHash + ", the set is " + this.cache);
 			// We could miss some blocks in our cache, so update and wait for the results
 			updateCacheBlocking(-1);
+//			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " did not find " + blockHash + ", so updated the cache and now the set is " + this.cache);
 			return cache.contains(blockHash);
 			//TODO: We might want to check the actual main chain in the false case
 			//      For when an abstract is in a block that is not yet closed by an ENDBLOCK
@@ -185,6 +201,18 @@ public final class TendermintChain implements MainChain {
 	 */
 	boolean addToCache(Sha256Hash genesisBlockHash) {
 		return cache.add(genesisBlockHash);
+	}
+
+	public Map<Integer, Set<Integer>> getCurrentCache() {
+		synchronized (cacheLock) {
+			return new HashMap<>(this.extraCache);
+		}
+	}
+
+	public Map<String, Sha256Hash> getSuperExtraCache() {
+		synchronized (cacheLock) {
+			return new HashMap<>(this.superExtraCache);
+		}
 	}
 
 }
