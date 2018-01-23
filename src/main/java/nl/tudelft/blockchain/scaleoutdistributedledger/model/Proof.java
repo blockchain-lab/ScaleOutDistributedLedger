@@ -289,6 +289,12 @@ public class Proof {
 			int blockRequired = transaction.getBlockNumber().getAsInt();
 			Chain senderChain = transaction.getSender().getChain();
 			
+			Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
+			
+			//The from block is the already known
+			int alreadyKnownBlock = metaKnowledge.getOrDefault(transaction.getSender(), -1) + 1;
+			blockRequired = Math.min(blockRequired, alreadyKnownBlock);
+			
 			Block fromBlock = senderChain.getBlocks().get(blockRequired);
 			Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
 			
@@ -296,7 +302,6 @@ public class Proof {
 			Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
 			
 			//Step 3: add only those blocks that are not yet known
-			Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
 			for (Entry<Chain, Integer> entry : chains.entrySet()) {
 				Chain chain = entry.getKey();
 				Node owner = chain.getOwner();
