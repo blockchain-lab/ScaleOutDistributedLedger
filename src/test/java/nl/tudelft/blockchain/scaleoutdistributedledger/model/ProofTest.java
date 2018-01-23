@@ -4,10 +4,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.security.KeyPair;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -59,14 +56,14 @@ public class ProofTest {
 		Chain ownChain = ownNode.getChain();
 		
 		//3: 0 --> 1, source = GENESIS 0
-		HashSet<Transaction> source0to1 = new HashSet<>();
+		TreeSet<Transaction> source0to1 = new TreeSet<>();
 		source0to1.add(ownChain.getGenesisTransaction());
 		Transaction transaction0to1 = new Transaction(3, ownNode, node1, 100, 900, source0to1);
 		Block block1node0 = ownChain.appendNewBlock();
 		block1node0.addTransaction(transaction0to1);
 		
 		//3: 1 --> 0, source = [3: 0 --> 1]
-		HashSet<Transaction> source1to0 = new HashSet<>();
+		TreeSet<Transaction> source1to0 = new TreeSet<>();
 		source1to0.add(transaction0to1);
 		Transaction transaction1to0 = new Transaction(3, node1, ownNode, 100, 0, source1to0);
 		Block block1node1 = new Block(genesisBlock, node1);
@@ -74,7 +71,7 @@ public class ProofTest {
 		node1.getChain().getBlocks().add(block1node1);
 		
 		//4: 0 --> 2, source = [3: 1 --> 0]
-		HashSet<Transaction> source0to2 = new HashSet<>();
+		TreeSet<Transaction> source0to2 = new TreeSet<>();
 		source0to2.add(transaction1to0);
 		Transaction transaction0to2 = new Transaction(4, ownNode, node2, 100, 0, source0to2);
 		Block block2node0 = ownChain.appendNewBlock();

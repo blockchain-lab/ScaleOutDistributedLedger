@@ -9,11 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -129,7 +125,7 @@ public class SerializationTest {
 	 */
 	public Transaction generateTransaction(Node sender, Node receiver, long amount, Transaction transactionSource) {
 		// Create transaction
-		Set<Transaction> sources = new HashSet<>();
+		TreeSet<Transaction> sources = new TreeSet<>();
 		sources.add(transactionSource);
 		long remainder = transactionSource.getAmount() - amount;
 		Transaction newtTransaction = new Transaction(this.transactionNumber++, sender, receiver, amount, remainder, sources);

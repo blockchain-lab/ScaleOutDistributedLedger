@@ -1,12 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -81,7 +75,7 @@ public class TransactionCreator {
 		TransactionTuple sources = bestSources();
 		if (sources == null) throw new NotEnoughMoneyException();
 		
-		Set<Transaction> sourceSet = sources.getTransactions();
+		TreeSet<Transaction> sourceSet = sources.getTransactions();
 		long remainder = sources.getAmount() - amount;
 
 		//Mark sources as spent.

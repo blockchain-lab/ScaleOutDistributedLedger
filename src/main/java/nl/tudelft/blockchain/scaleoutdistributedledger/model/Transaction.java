@@ -9,20 +9,15 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.OptionalInt;
-import java.util.Set;
 import java.util.logging.Level;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 
 /**
  * Transaction class.
  */
-public class Transaction {
+public class Transaction implements Comparable<Transaction> {
 
 	// Represent the sender of a genesis transaction
 	public static final int GENESIS_SENDER = -1;
@@ -41,7 +36,7 @@ public class Transaction {
 	private final long amount, remainder;
 
 	@Getter
-	private final Set<Transaction> source;
+	private final TreeSet<Transaction> source;
 
 	// Custem getter
 	private Sha256Hash hash;
@@ -61,7 +56,7 @@ public class Transaction {
 	 * @param remainder - the remaining amount.
 	 * @param source - set of transactions that are used as source for this transaction.
 	 */
-	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, Set<Transaction> source) {
+	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, TreeSet<Transaction> source) {
 		this.sender = sender;
 		this.receiver = receiver;
 		this.amount = amount;
@@ -147,7 +142,7 @@ public class Transaction {
 	 */
 	public Transaction genesisCopy() {
 		if (!source.isEmpty()) throw new UnsupportedOperationException("Only genesis transactions can be copied");
-		return new Transaction(number, sender, receiver, amount, remainder, new HashSet<>(0));
+		return new Transaction(number, sender, receiver, amount, remainder, new TreeSet<>());
 	}
 
 	@Override
@@ -187,4 +182,13 @@ public class Transaction {
 		}
 	}
 
+	@Override
+	public int compareTo(Transaction o) {
+		if (this.sender == null && o.getSender() != null) return -1;
+		if (this.sender != null && o.getSender() == null) return 1;
+		if (this.sender == null && o.getSender() == null) return 0;
+		int senderCompare = Integer.compare(this.sender.getId(), o.getSender().getId());
+		if (senderCompare != 0) return senderCompare;
+		return Integer.compare(this.getNumber(), o.getNumber());
+	}
 }

@@ -7,12 +7,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
 
 /**
  * Transaction message for netty.
@@ -85,7 +82,7 @@ public class TransactionMessage extends Message {
 
 	public Transaction toTransactionWithoutSources(LocalStore localStore) {
 		Transaction tx = new Transaction(this.number, localStore.getNode(this.senderId),
-				localStore.getNode(this.receiverId), this.amount, this.remainder, new HashSet<>());
+				localStore.getNode(this.receiverId), this.amount, this.remainder, new TreeSet<>());
 		tx.setMessage(this);
 		return tx;
 	}
