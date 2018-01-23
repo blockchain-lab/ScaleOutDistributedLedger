@@ -111,4 +111,13 @@ public final class Utils {
 			return new byte[0];
 		}
 	}
+
+	/**
+	 * Convert a byte array to a base 64 string.
+	 * @param bytes	- The bytes to convert
+	 * @return 		- The resulting base 64 string, or an empty one if the conversion fails
+	 */
+	public static String bytesToBas64String(byte[] bytes) {
+		return Base64.getEncoder().encodeToString(bytes);
+	}
 }

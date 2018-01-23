@@ -50,6 +50,14 @@ public final class Log {
 	public static void setLogLevel(Level level) {
 		PARENT_LOGGER.setLevel(level);
 	}
+
+	/**
+	 * Get the current log level.
+	 * @return - the current log level
+	 */
+	public static Level getLogLevel() {
+		return PARENT_LOGGER.getLevel();
+	}
 	
 	/**
 	 * Handle logging of an exception.
