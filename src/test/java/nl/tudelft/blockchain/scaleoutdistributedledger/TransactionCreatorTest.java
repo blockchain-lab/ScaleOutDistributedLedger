@@ -7,6 +7,7 @@ import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -40,6 +41,7 @@ public class TransactionCreatorTest {
 	public void createNodes(int from, int to) {
 		for (int i = from; i <= to; i++) {
 			nodes.put(i, new Node(i));
+			localStore.getNewTransactionId();
 		}
 	}
 	
@@ -74,10 +76,16 @@ public class TransactionCreatorTest {
 	 * @return            the transaction
 	 */
 	public Transaction addUnspent(Node sender, Node receiver, long amount, long remainder) {
+		//Create genesis block
 		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new TreeSet<>());
-		TreeSet<Transaction> source = new TreeSet<>();
-		source.add(genesis);
-		Transaction transaction = new Transaction(localStore.getNewTransactionId(), sender, receiver, amount, remainder, source);
+		Block genesisBlock = new Block(0, null, Arrays.asList(genesis));
+		sender.getChain().getBlocks().add(genesisBlock);
+		
+		//Create transaction and block
+		Transaction transaction = new Transaction(localStore.getNewTransactionId(), sender, receiver, amount, remainder, genesis);
+		Block block1 = new Block(1, sender, Arrays.asList(transaction));
+		sender.getChain().getBlocks().add(block1);
+		
 		localStore.addUnspentTransaction(transaction);
 		return transaction;
 	}

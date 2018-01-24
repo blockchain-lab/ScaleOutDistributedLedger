@@ -126,6 +126,16 @@ public class Chain {
 	}
 	
 	/**
+	 * @return - the number of the last block
+	 */
+	public int getLastBlockNumber() {
+		//TODO Remove
+		Block last;
+		assert blocks.size() - 1 == ((last = getLastBlock()) == null ? -1 : last.getNumber());
+		return blocks.size() - 1;
+	}
+	
+	/**
 	 * @return - the last block that was committed to the main chain
 	 */
 	public synchronized Block getLastCommittedBlock() {

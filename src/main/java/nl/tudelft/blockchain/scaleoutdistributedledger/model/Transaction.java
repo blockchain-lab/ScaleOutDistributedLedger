@@ -49,12 +49,12 @@ public class Transaction implements Comparable<Transaction> {
 
 	/**
 	 * Constructor.
-	 * @param number - the number of this transaction.
-	 * @param sender - the sender of this transaction.
-	 * @param receiver - the receiver of this transaction.
-	 * @param amount - the amount to be transferred.
+	 * @param number    - the number of this transaction.
+	 * @param sender    - the sender of this transaction.
+	 * @param receiver  - the receiver of this transaction.
+	 * @param amount    - the amount to be transferred.
 	 * @param remainder - the remaining amount.
-	 * @param source - set of transactions that are used as source for this transaction.
+	 * @param source    - set of transactions that are used as source for this transaction.
 	 */
 	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, TreeSet<Transaction> source) {
 		this.sender = sender;
@@ -64,6 +64,20 @@ public class Transaction implements Comparable<Transaction> {
 		this.source = source;
 		this.number = number;
 		this.blockNumber = OptionalInt.empty();
+	}
+	
+	/**
+	 * Convenience constructor. The given sources are converted to a TreeSet with
+	 * <pre>new TreeSet<>(Arrays.asList(source))</pre>.
+	 * @param number    - the number of this transaction.
+	 * @param sender    - the sender of this transaction.
+	 * @param receiver  - the receiver of this transaction.
+	 * @param amount    - the amount to be transferred.
+	 * @param remainder - the remaining amount.
+	 * @param source    - the transaction that are used as sources for this transaction.
+	 */
+	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, Transaction... source) {
+		this(number, sender, receiver, amount, remainder, new TreeSet<>(Arrays.asList(source)));
 	}
 
 	/**
