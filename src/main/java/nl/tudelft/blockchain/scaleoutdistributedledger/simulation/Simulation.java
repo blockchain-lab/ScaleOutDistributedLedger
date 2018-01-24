@@ -142,12 +142,10 @@ public class Simulation {
 		}
 
 		//Broadcast transaction pattern
-		if (this.isMaster) {
-			broadcastMessage(new TransactionPatternMessage(transactionPattern));
-		}
-		
+		broadcastMessage(new TransactionPatternMessage(transactionPattern));
 		//Have everyone update their nodes list
 		broadcastMessage(new UpdateNodesMessage());
+
 		
 		Log.log(Level.INFO, "[Simulation] Initialized");
 		state = SimulationState.INITIALIZED;
@@ -162,9 +160,7 @@ public class Simulation {
 	public void start() {
 		checkState(SimulationState.INITIALIZED, "start");
 
-		if (isMaster) {
-			broadcastMessage(new StartTransactingMessage());
-		}
+		broadcastMessage(new StartTransactingMessage());
 		Log.log(Level.INFO, "[Simulation] Running");
 		state = SimulationState.RUNNING;
 	}
@@ -207,6 +203,7 @@ public class Simulation {
 	 * @param msg - the message to send
 	 */
 	public void broadcastMessage(Message msg) {
+		if(!isMaster) return;
 		Log.log(Level.INFO, "[Simulation] Sending " + msg + " to all nodes...");
 		
 		for (Node node : nodes.values()) {
