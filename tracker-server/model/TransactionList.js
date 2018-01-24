@@ -37,9 +37,11 @@ class TransactionList {
 
     getGraphEdges() {
         const edges = [];
-        for (let key in this.transactions) {
+        for (const key of Object.keys(this.transactions)) {
+            console.log(key);
+            const keyArray = key.split(",");
             const weight = this.getEdgeWeightWithKey(key);
-            edges.push({from: key[0], to: key[1], value: weight});
+            edges.push({from: keyArray[0], to: keyArray[1], value: weight});
         }
         return edges;
     }

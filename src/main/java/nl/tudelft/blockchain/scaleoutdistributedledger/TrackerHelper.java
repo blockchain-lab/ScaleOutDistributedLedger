@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -205,5 +206,36 @@ public final class TrackerHelper {
 			res[i] = (byte) json.getInt(i);
 		}
 		return res;
+	}
+
+	/**
+	 * Registers a transaction to the tracker server.
+	 * @param proof - the proof used to send the transaction
+	 * @return - whether the registration was successful
+	 * @throws IOException - exception while registering
+	 */
+	public static boolean registerTransaction(Proof proof) throws IOException {
+		JSONObject json = new JSONObject();
+		json.put("from", proof.getTransaction().getSender().getId());
+		json.put("to", proof.getTransaction().getReceiver().getId());
+		json.put("amount", proof.getTransaction().getAmount());
+		json.put("remainder", proof.getTransaction().getRemainder());
+		json.put("numberOfChains", proof.getChainUpdates().size());
+		json.put("numberOfBlocks", 1);
+
+		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+			HttpPost request = new HttpPost(String.format("http://%s:%d/register-transaction",
+					Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			request.setEntity(requestEntity);
+			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+			if (response.getBoolean("success")) {
+				Log.log(Level.INFO, "Successfully registered transaction to tracker server");
+				return true;
+			} else {
+				Log.log(Level.WARNING, "Error while registering transaction " + proof.getTransaction());
+				return false;
+			}
+		}
 	}
 }

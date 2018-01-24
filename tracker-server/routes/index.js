@@ -3,11 +3,13 @@ const router = express.Router();
 import app from '../app';
 import NodeList from '../model/NodeList';
 const sseMW = require('./../helpers/sse');
+import Transaction from '../model/Transaction';
+import TransactionList from '../model/TransactionList';
+
 /**
  * Gets all nodes.
  */
 router.get('/', (req, res) => {
-    updateSseClients("hoi");
 	res.json({
 		nodes: app.nodeList.getNodes()
 	});
@@ -39,8 +41,21 @@ router.post('/register-node', (req, res) => {
         res.json({success: false, err: 'Specify id, address, port and publicKey'});
     } else {
         const id = app.nodeList.registerNode(req.body.id, req.body.address, req.body.port, req.body.publicKey);
+        updateSseClients();
         res.json({success: true, id: id});
     }
+});
+
+router.post('/register-transaction', (req, res) => {
+	if(!isPresent(req.body.from) || !isPresent(req.body.to) || !isPresent(req.body.amount)|| !isPresent(req.body.remainder)|| !isPresent(req.body.numberOfChains) || !isPresent(req.body.numberOfBlocks)) {
+		res.status(403);
+		res.json({success: false, err: 'Specify from, to, amount, remainder, remainder, numberOfChains and numberOfBlocks'});
+	} else {
+		const tx = new Transaction(req.body.from, req.body.to, req.body.amount, req.body.remainder, req.body.numberOfChains, req.body.numberOfBlocks);
+		app.transactionList.addTransaction(tx);
+		updateSseClients();
+        res.json({success: true});
+	}
 });
 
 /**
@@ -51,7 +66,7 @@ router.post('/set-node-status', (req, res) => {
         res.status(403);
         res.json({success: false, err: 'Specify node ID and running status'});
     } else {
-        app.nodeList.setNodeStatus(req.body.id, req.body.running)
+        app.nodeList.setNodeStatus(req.body.id, req.body.running);
         res.json({success: true, id: req.body.id});
     }
 });
@@ -83,6 +98,7 @@ router.get('/demo', (req, res) => {
  */
 router.post('/reset', (req, res) => {
 	app.nodeList = new NodeList();
+	app.transactionList = new TransactionList();
 	res.json({success: true});
 });
 
