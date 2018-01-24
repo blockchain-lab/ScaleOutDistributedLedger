@@ -1,9 +1,7 @@
 $(document).ready(function() {
     var source = new EventSource("../topn/updates");
     source.onmessage = function(event) {
-        console.log("Got message");
         var data = JSON.parse(event.data);
-        console.log(data);
         // $(".odometer").text(counter);
         network.setData({nodes: data.nodes, edges: data.edges});
         network.redraw();
