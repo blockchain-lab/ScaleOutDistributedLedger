@@ -6,6 +6,7 @@ import express from 'express';
 import http from 'http';
 import index from './routes/index';
 import NodeList from './model/NodeList';
+import TransactionList from './model/TransactionList';
 import path from "path";
 const sseMW = require('./helpers/sse');
 
@@ -30,6 +31,7 @@ const server = http.createServer(app);
 app.use(cookieParser());
 
 app.nodeList = new NodeList();
+app.transactionList = new TransactionList();
 app.use('/', index);
 
 server.listen(port);

@@ -2,12 +2,12 @@ import express from 'express';
 const router = express.Router();
 import app from '../app';
 import NodeList from '../model/NodeList';
-
+const sseMW = require('./../helpers/sse');
 /**
  * Gets all nodes.
  */
 router.get('/', (req, res) => {
-    updateS
+    updateSseClients("hoi");
 	res.json({
 		nodes: app.nodeList.getNodes()
 	});
@@ -97,36 +97,35 @@ function isPresent(arg) {
 	return !!(arg || arg === 0 || arg === "" || arg === false);
 }
 
-var sseClients = new sseMW.Topic();
+/////////////////////////// TOPN stuff //////////////////////////
+
+const sseClients = new sseMW.Topic();
 // initial registration of SSE Client Connection
-app.get('/topn/updates', function(req,res){
-    var sseConnection = res.sseConnection;
+router.get('/topn/updates', function(req,res){
+    const sseConnection = res.sseConnection;
     sseConnection.setup();
     sseClients.add(sseConnection);
 } );
-var m;
-//send message to all registered SSE clients
-alrighfunction updateSseClients(message) {
-    var msg = message;
-    this.m=message;
-    sseClients.forEach(
-        function(sseConnection) {
-            sseConnection.send(this.m);
-        }
-        , this // this second argument to forEach is the thisArg (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach)
-    ); //forEach
-}// updateSseClients
 
-// send a heartbeat signal to all SSE clients, once every interval seconds (or every 3 seconds if no interval is specified)
-initHeartbeat = function(interval) {
-    setInterval(function()  {
-            var msg = {"label":"The latest", "time":new Date()};
+/**
+ * send message to all registered SSE clients
+ */
+function updateSseClients() {
+	const nodes = app.nodeList.getGraphNodes();
+	const edges = app.transactionList.getGraphEdges();
+    sseClients.forEach(sseConnection => sseConnection.send({nodes: nodes, edges: edges}));
+}
+
+/**
+ * send a heartbeat signal to all SSE clients, once every interval seconds (or every 3 seconds if no interval is specified)
+ * @param interval - interval in seconds
+ */
+function initHeartbeat(interval) {
+    setInterval(() => {
+            const msg = {"label":"The latest", "time":new Date()};
             updateSseClients( JSON.stringify(msg));
-        }//interval function
-        , interval?interval*1000:3000
-    ); // setInterval
-}//initHeartbeat
-
+        }, interval?interval*1000:3000);
+}
 // initialize heartbeat at 10 second interval
 initHeartbeat(10);
 
