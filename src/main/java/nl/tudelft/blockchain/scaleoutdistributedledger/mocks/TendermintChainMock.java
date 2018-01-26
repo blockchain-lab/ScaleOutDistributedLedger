@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
@@ -36,7 +38,7 @@ public class TendermintChainMock implements MainChain {
 	}
 
 	@Override
-	public boolean isPresent(Sha256Hash blockHash) {
+	public boolean isPresent(Block block) {
 		return true;
 	}
 	

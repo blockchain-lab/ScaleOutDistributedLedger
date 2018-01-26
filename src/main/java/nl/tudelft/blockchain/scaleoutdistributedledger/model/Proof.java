@@ -4,17 +4,21 @@ import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidationException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Proof class.
@@ -26,6 +30,8 @@ public class Proof {
 
 	@Getter
 	private final Map<Node, List<Block>> chainUpdates;
+	
+	private final Map<Node, ChainView> chainViews = new HashMap<>();
 
 	/**
 	 * Constructor.
@@ -54,39 +60,73 @@ public class Proof {
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
 		this.chainUpdates = new HashMap<>();
-		// Start by decoding the chain of the sender
+
+		// Decode the transactions while skipping sources
+		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
+			List<Block> blocks = new ArrayList<>();
+			entry.getValue().forEach(blockMessage -> blocks.add(blockMessage.toBlockWithoutSources(localStore)));
+			chainUpdates.put(localStore.getNode(entry.getKey()), blocks);
+		}
+
+		// Fix backlinks
+		this.fixPreviousBlockPointersAndOrder();
+
+		// Fix the sources
+		this.fixTransactionSources(localStore);
+
 		Node senderNode = localStore.getNode(proofMessage.getTransactionMessage().getSenderId());
-		List<BlockMessage> senderChain = proofMessage.getChainUpdates().get(senderNode.getId());
-		// Start from the last block
-		BlockMessage lastBlockMessage = senderChain.get(senderChain.size() - 1);
-		// Recursively decode the transaction and chainUpdates
-		Block lastBlock = new Block(lastBlockMessage, proofMessage.getChainUpdates(), this.chainUpdates, localStore);
-		List<Block> currentDecodedBlockList;
-		if (this.chainUpdates.containsKey(senderNode)) {
-			// Add to already created list of blocks
-			currentDecodedBlockList = this.chainUpdates.get(senderNode);
-			currentDecodedBlockList.add(lastBlock);
-		} else {
-			// Create new list of blocks
-			currentDecodedBlockList = new ArrayList<>();
-			currentDecodedBlockList.add(lastBlock);
-			this.chainUpdates.put(senderNode, currentDecodedBlockList);
-		}
-		// Set the transaction from the decoded chain
-		// TODO [possible improvement]: is the transaction always in the last block ?
-		Transaction foundTransaction = null;
-		
-		ChainView cv = new ChainView(senderNode.getChain(), currentDecodedBlockList);
-		Block block = cv.getBlock(proofMessage.getTransactionMessage().getBlockNumber());
-		for (Transaction transactionAux : block.getTransactions()) {
-			if (transactionAux.getNumber() == proofMessage.getTransactionMessage().getNumber()) {
-				foundTransaction = transactionAux;
-				break;
-			}
-		}
-		this.transaction = foundTransaction;
+		ChainView senderChainView = getChainView(senderNode);
+		this.transaction = senderChainView.getBlock(proofMessage.getTransactionMessage().getBlockNumber())
+				.getTransaction(proofMessage.getTransactionMessage().getNumber());
 	}
 	
+	private void fixPreviousBlockPointersAndOrder() {
+		for (Entry<Node, List<Block>> entry : this.chainUpdates.entrySet()) {
+			Node node = entry.getKey();
+			List<Block> updates = entry.getValue();
+
+			updates.sort(Comparator.comparingInt(Block::getNumber));
+			
+			Block previousBlock = null;
+			for (int i = 0; i < updates.size(); i++) {
+				Block block = updates.get(i);
+				block.setPreviousBlock(previousBlock);
+				previousBlock = block;
+			}
+			
+			Block firstBlock = updates.get(0);
+			if (firstBlock.getNumber() != 0) {
+				previousBlock = node.getChain().getBlocks().get(firstBlock.getNumber() - 1);
+				firstBlock.setPreviousBlock(previousBlock);
+			}
+		}
+	}
+
+	private void fixTransactionSources(LocalStore localStore) {
+		HashMap<Integer, LightView> lightViews = new HashMap<>();
+		// Initialize the chainviews only once
+		for (Node node : this.chainUpdates.keySet()) {
+			lightViews.put(node.getId(), new LightView(node.getChain(), chainUpdates.get(node)));
+		}
+
+		// For all transactions of all nodes do
+		for (Node node : this.chainUpdates.keySet()) {
+			for (Block block : this.chainUpdates.get(node)) {
+				for (Transaction tx : block.getTransactions()) {
+					for (Entry<Integer, int[]> entry : tx.getMessage().getSource()) {
+						Block sourceBlock;
+						if (!lightViews.containsKey(entry.getKey())) {
+							sourceBlock = localStore.getNode(entry.getKey()).getChain().getBlocks().get(entry.getValue()[0]);
+						} else {
+							sourceBlock = lightViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
+						}
+						tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
+					}
+				}
+			}
+		}
+	}
+
 	/**
 	 * Add a block to the proof.
 	 * @param block - the block to be added
@@ -145,7 +185,6 @@ public class Proof {
 		int absmark = 0;
 		boolean seen = false;
 
-		//TODO [PERFORMANCE]: We check the same chain views multiple times, even though we don't have to.
 		ChainView chainView = getChainView(transaction.getSender());
 		if (!chainView.isValid()) {
 			throw new ProofValidationException("ChainView of node " + transaction.getSender().getId() + " is invalid.");
@@ -162,6 +201,7 @@ public class Proof {
 		}
 
 		if (absmark < blockNumber) {
+			System.out.println(this.getTransaction());
 			throw new ProofValidationException("No suitable committed block found");
 		}
 
@@ -170,6 +210,9 @@ public class Proof {
 			try {
 				verify(sourceTransaction, localStore);
 			} catch (ValidationException ex) {
+				ex.printStackTrace();
+				System.out.println(this);
+				System.exit(1);
 				throw new ProofValidationException("Source " + sourceTransaction + " is not valid", ex);
 			}
 		}
@@ -207,20 +250,27 @@ public class Proof {
 	 * @param node - the node
 	 * @return - a chainview for the specified node
 	 */
-	public ChainView getChainView(Node node) {
-		return new ChainView(node.getChain(), chainUpdates.get(node));
+	public synchronized ChainView getChainView(Node node) {
+		ChainView chainView = chainViews.get(node);
+		if (chainView == null) {
+			chainView = new ChainView(node.getChain(), chainUpdates.get(node), false);
+			chainView.isValid();
+			chainViews.put(node, chainView);
+		}
+		return chainView;
 	}
 	
 	/**
 	 * Applies the updates in this proof.
 	 * This method also updates the meta knowledge of the sender of the transaction.
+	 * @param localStore - the localStore
 	 */
-	public void applyUpdates() {
+	public void applyUpdates(LocalStore localStore) {
 		for (Entry<Node, List<Block>> entry : chainUpdates.entrySet()) {
 			Node node = entry.getKey();
 			
 			List<Block> updates = entry.getValue();
-			node.getChain().update(updates);
+			node.getChain().update(updates, localStore);
 		}
 		
 		//Update the meta knowledge of the sender
@@ -228,31 +278,120 @@ public class Proof {
 	}
 	
 	/**
+	 * @param localStore  - the local store
 	 * @param transaction - the transaction
 	 * @return the proof for the given transaction
 	 */
-	public static Proof createProof(Transaction transaction) {
+	public static Proof createProof(LocalStore localStore, Transaction transaction) {
 		Node receiver = transaction.getReceiver();
-		Proof proof = new Proof(transaction);
 		
-		//Step 1: determine the chains that need to be sent
+		synchronized (receiver.getMetaKnowledge()) {
+			Log.debug("Creating proof based on " + receiver.getMetaKnowledge());
+			Proof proof = new Proof(transaction);
+
+			//Step 1: determine what blocks need to be sent
+			int blockRequired = transaction.getBlockNumber().getAsInt();
+			Chain senderChain = transaction.getSender().getChain();
+			
+			Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
+			
+			//The from block is the first unknown block
+			int firstUnknownBlock = metaKnowledge.getOrDefault(transaction.getSender(), -1) + 1;
+			blockRequired = Math.min(blockRequired, firstUnknownBlock);
+			
+			Block fromBlock = senderChain.getBlocks().get(blockRequired);
+			Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
+
+			List<Block> blocksToSend = senderChain.getBlocks().subList(fromBlock.getNumber(), toBlock.getNumber());
+
+			//Step 2: determine the chains that need to be sent
+//			Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
+			List<Transaction> sources = blocksToSend.stream().flatMap(block -> block.getTransactions().get(0).getSource().stream()).collect(Collectors.toList());
+			Log.debug("Sources of from block: " + fromBlock.getTransactions().get(0).getSource());
+			Set<Integer> expected = sources.stream().map(Transaction::getSender).map(n -> n == null ? -1 : n.getId()).collect(Collectors.toSet());
+
+			Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
+			Set<Integer> actual = chains.keySet().stream().map(Chain::getOwner).map(n -> n == null ? -1 : n.getId()).collect(Collectors.toSet());
+			expected.removeAll(actual);
+			expected.remove(-1);
+			Log.debug("Removing receiver id from expected: " + receiver.getId());
+			Log.debug("Removed? " + expected.remove(receiver.getId()));
+			if (!expected.isEmpty()) {
+				System.out.println("badddd");
+			} else {
+				Log.debug("actual set of node numbers required: " + actual);
+			}
+
+			//Step 3: add only those blocks that are not yet known
+			for (Entry<Chain, Integer> entry : chains.entrySet()) {
+				Chain chain = entry.getKey();
+				Node owner = chain.getOwner();
+				if (owner == receiver) continue;
+				
+				int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
+				int requiredKnown = entry.getValue();
+				if (alreadyKnown < requiredKnown) {
+					proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+				} else {
+					Log.debug("Already known " + alreadyKnown + ", required known " + requiredKnown);
+				}
+			}
+			
+			return proof;
+		}
+	}
+
+	/**
+	 * @param mainTransaction - the transaction that we want to send
+	 * @param fromBlock       - the first block that we want to send
+	 * @param toBlock         - the last block that we want to send
+	 * @return                - the chains required and the corresponding block number
+	 */
+	private static Map<Chain, Integer> determineChains(Transaction mainTransaction, Block fromBlock, Block toBlock) {
 		//TODO We might want to do some kind of caching?
-		Set<Chain> chains = new HashSet<>();
-		appendChains(transaction, receiver, chains);
 		
-		//Step 2: add only those blocks that are not yet known
+		Node receiver = mainTransaction.getReceiver();
 		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
-		for (Chain chain : chains) {
-			Node owner = chain.getOwner();
-			if (owner == receiver) continue;
+		
+		//Determine what the sender already knows about us
+		int alreadyKnown = metaKnowledge.getOrDefault(mainTransaction.getSender(), -1);
+		
+		Map<Chain, Integer> chains = new HashMap<>();
+		
+		//Only consider the transactions that the receiver doesn't have yet.
+		Block current = toBlock;
+		while (current.getNumber() > alreadyKnown) {
+			for (Transaction transaction : current.getTransactions()) {
+				appendChains2(transaction, receiver, chains);
+			}
 			
-			int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
-			int requiredKnown = chain.getLastCommittedBlock().getNumber();
-			
-			proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
+			if (current == fromBlock) break;
+			current = current.getPreviousBlock();
 		}
 		
-		return proof;
+		//Only add the chains of the transaction itself if it isn't in a known block
+		if (mainTransaction.getBlockNumber().getAsInt() > alreadyKnown) {
+			appendChains2(mainTransaction, receiver, chains);
+		}
+		return chains;
+	}
+
+	/**
+	 * @param localStore
+	 * @param blockRequired
+	 * @param senderChain
+	 * @return
+	 */
+	private static Block getNextCommittedBlock(LocalStore localStore, int blockRequired, Chain senderChain) {
+		ListIterator<Block> it = senderChain.getBlocks().listIterator(blockRequired);
+		while (it.hasNext()) {
+			Block block = it.next();
+			if (block.isOnMainChain(localStore)) {
+				return block;
+			}
+		}
+		
+		throw new IllegalStateException("There is no next committed block!");
 	}
 	
 	/**
@@ -270,6 +409,40 @@ public class Proof {
 		for (Transaction source : transaction.getSource()) {
 			appendChains(source, receiver, chains);
 		}
+	}
+	
+	/**
+	 * Recursively calls itself with all the sources of the given transaction. Transactions which
+	 * are in the chain of {@code receiver} are ignored.
+	 * @param transaction - the transaction to check the sources of
+	 * @param receiver    - the node receiving the transaction
+	 * @param chains      - the map of chains to append to
+	 */
+	public static void appendChains2(Transaction transaction, Node receiver, Map<Chain, Integer> chains) {
+		Node owner = transaction.getSender();
+		if (owner == null || owner == receiver) return;
+		
+		//Skip transactions that are already known
+		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
+		int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
+		int blockNumber = transaction.getBlockNumber().getAsInt();
+		if (alreadyKnown >= blockNumber) return;
+		
+		//Store the highest block number.
+		chains.compute(owner.getChain(), (k, v) -> v == null ? blockNumber : Math.max(v, blockNumber));
+		for (Transaction source : transaction.getSource()) {
+			appendChains2(source, receiver, chains);
+		}
+	}
+
+	/**
+	 * Gets the number of blocks used in the proof.
+	 * @return - the number of blocks;
+	 */
+	public int getNumberOfBlocks() {
+		final int[] res = {0};
+		chainUpdates.values().forEach(blocks -> res[0] += blocks.size());
+		return res[0];
 	}
 	
 	@Override

@@ -25,8 +25,8 @@ public class Block {
 	@Getter
 	private final int number;
 
-	@Getter
-	private final Block previousBlock;
+	@Getter @Setter
+	private Block previousBlock;
 
 	@Getter @Setter
 	private Node owner;
@@ -75,57 +75,18 @@ public class Block {
 	}
 
 	/**
-	 * Constructor to decode a block message.
-	 * @param blockMessage - block message from network.
-	 * @param encodedChainUpdates - received chain of updates
-	 * @param decodedChainUpdates - current decoded chain of updates
-	 * @param localStore - local store.
-	 * @throws IOException - error while getting node from tracker.
+	 * Gets the transaction with the correct number in this block.
+	 * @param transactionNumber - the number of the transaction to get.
+	 * @return - the transaction.
 	 */
-	public Block(BlockMessage blockMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
-			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException {
-		this.number = blockMessage.getNumber();
-		// It's a genesis block
-		if (blockMessage.getOwnerId() == Transaction.GENESIS_SENDER) {
-			this.owner = null;
-		} else {
-			this.owner = localStore.getNode(blockMessage.getOwnerId());
+	public Transaction getTransaction(int transactionNumber) {
+		for (Transaction transaction : this.transactions) {
+			if (transaction.getNumber() == transactionNumber)
+				return transaction;
 		}
-		
-		if (blockMessage.getPreviousBlockNumber() != -1) {
-			// Check if we have it in the local store
-			if (this.owner.getChain().getLastBlock().getNumber() < blockMessage.getPreviousBlockNumber()) {
-				// We don't have it (it should be in the received chain of updates)
-				int currentBlockIndex = encodedChainUpdates.get(this.owner.getId()).indexOf(blockMessage);
-				BlockMessage previousBlockMesssage = encodedChainUpdates.get(this.owner.getId()).get(currentBlockIndex - 1);
-				// Get decoded block list from the owner
-				Block previousBlockLocal = new Block(previousBlockMesssage, encodedChainUpdates, decodedChainUpdates, localStore);
-				if (decodedChainUpdates.containsKey(this.owner)) {
-					decodedChainUpdates.get(this.owner).add(previousBlockLocal);
-				} else {
-					List<Block> currentDecodedBlockList = new ArrayList<>();
-					currentDecodedBlockList.add(previousBlockLocal);
-					decodedChainUpdates.put(this.owner, currentDecodedBlockList);
-				}
-				this.previousBlock = previousBlockLocal;
-			} else {
-				// We have it (we infer it's the lastBlock from the chain)
-				this.previousBlock = this.owner.getChain().getLastBlock();
-			}
-		} else {
-			// It's a genesis block
-			this.previousBlock = null;
-		}
-		
-		// Convert TransactionMessage to Transaction
-		this.transactions = new ArrayList<>();
-		for (TransactionMessage transactionMessage : blockMessage.getTransactions()) {
-			this.transactions.add(new Transaction(transactionMessage, encodedChainUpdates, decodedChainUpdates, localStore));
-		}
-		//TODO Do we want to send the hash along?
-		this.hash = blockMessage.getHash();
+		throw new IllegalStateException("Invalid transaction number");
 	}
-	
+
 	/**
 	 * Adds the given transaction to this block and sets its block number.
 	 * @param transaction - the transaction to add
@@ -145,7 +106,7 @@ public class Block {
 	 * @return Hash SHA256
 	 */
 	public synchronized Sha256Hash getHash() {
-		if (this.hash == null) {
+		if (true || this.hash == null) {
 			this.hash = this.calculateHash();
 		}
 		return this.hash;
@@ -196,7 +157,7 @@ public class Block {
 		Chain chain = getOwner().getChain();
 		synchronized (chain) {
 			BlockAbstract blockAbstract = calculateBlockAbstract();
-			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
+			localStore.getMainChain().commitAbstract(blockAbstract);
 			getOwner().getChain().setLastCommittedBlock(this);
 		}
 		
@@ -215,23 +176,30 @@ public class Block {
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) return true;
-		if (!(obj instanceof Block)) return false;
+		if (!(obj instanceof Block)) {
+			System.out.println("Block not equal because one is null");
+			return false;
+		}
 
 		Block other = (Block) obj;
 		if (this.number != other.number) return false;
 		if (this.owner == null) {
 			if (other.owner != null) return false;
-		} else if (other.owner == null || this.owner.getId() != other.owner.getId()) return false;
+		} else if (!this.owner.equals(other.owner)) return false;
+
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
-		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
+		} else if (!this.previousBlock.equals(other.previousBlock)) {
+			System.out.println("Blocks not equals because of previousBlockPointer");
+			return false;
+		}
 
 		return this.transactions.equals(other.transactions);
 	}
 	
 	@Override
 	public String toString() {
-		return "Block<" + number + ", " + owner + ">";
+		return "Block<nr=" + number + ", owner=" + owner + ", transactions=" + transactions + ">";
 	}
 
 	/**
@@ -268,13 +236,13 @@ public class Block {
 	public Block genesisCopy() {
 		if (this.number != GENESIS_BLOCK_NUMBER) throw new UnsupportedOperationException("You can only copy genesis blocks");
 		
-		ArrayList<Transaction> transactionsCopy = new ArrayList<>();
+		Block block = new Block(this.number, this.owner, new ArrayList<>());
 		for (Transaction transaction : transactions) {
-			transactionsCopy.add(transaction.genesisCopy());
+			block.addTransaction(transaction.genesisCopy());
 		}
-		Block block = new Block(this.number, this.owner, transactionsCopy);
 		
 		block.onMainChain = true;
+		block.finalized = true;
 		return block;
 	}
 	
@@ -284,6 +252,7 @@ public class Block {
 	 * @return - boolean identifying if an abstract of this block is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
+		if(true) return true;
 		//TODO Remove hack?
 		if (this.number == GENESIS_BLOCK_NUMBER) return true;
 		
@@ -294,7 +263,7 @@ public class Block {
 		if (this.onMainChain) return true;
 		
 		//It is present, so store it and return
-		if (localStore.getMainChain().isPresent(this.getHash())) {
+		if (localStore.getMainChain().isPresent(this)) {
 			this.onMainChain = true;
 			return true;
 		}

@@ -64,8 +64,8 @@ class NodeList {
 	 * @returns {int} - the number of nodes that is initialized
 	 */
 	getRunning() {
-		var count = 0;
-		for (var i = 0; i < this.nodes.length; ++i) {
+        let count = 0;
+		for (let i = 0; i < this.nodes.length; ++i) {
 			if (!!this.nodes[i] && this.nodes[i].running) {
 				count ++;
 			}
@@ -94,12 +94,12 @@ class NodeList {
 	}
 
 	/** Get the number of registered nodes.
-	 * @returns {integer} - the number of registered nodes on the server
+	 * @returns {number} - the number of registered nodes on the server
 	 */
 	getSize() {
 		if (this.nodes) {
-			var count = 0;
-			for (var i = 0; i < this.nodes.length; ++i) {
+			let count = 0;
+			for (let i = 0; i < this.nodes.length; ++i) {
 				if (this.nodes[i]) {
 					count ++;
 				}
@@ -108,6 +108,14 @@ class NodeList {
 		} else {
 			return 0;
 		}
+	}
+
+	getGraphNodes() {
+		const nodes = [];
+		this.nodes.forEach(node => {
+			nodes.push({id: node.id, label: node.id.toString()});
+		});
+		return nodes;
 	}
 }
 
