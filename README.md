@@ -81,6 +81,9 @@ BitSets are used as a convenient and efficient way to represent the chains that 
 ## Tracker Server
 The tracker server can be installed by installing NodeJS and running `npm install` in the tracker-server folder. After this it can be run by running `npm start` in that same folder.
 
+### Live demo view
+A live demo view is available at http://localhost:3000/demo if the trackerserver is running. This demo view shows a live graph and counters for the total number of transactions and the average amount of blocks and chains sent per proof.
+
 ## Main Chain
 For the main chain we use [Tendermint](https://tendermint.com/). We can communicate to this chain using the provided ABCI interface. 
 
