@@ -150,7 +150,7 @@ public class Block {
 	 * @param localStore - the local store
 	 */
 	public synchronized void commit(LocalStore localStore) {
-		Log.debug("{0}: Committing block {1}", localStore.getOwnNode().getId(), this.getNumber());
+//		Log.debug("{0}: Committing block {1}", localStore.getOwnNode().getId(), this.getNumber());
 		if (finalized) {
 			throw new IllegalStateException("This block has already been committed!");
 		}

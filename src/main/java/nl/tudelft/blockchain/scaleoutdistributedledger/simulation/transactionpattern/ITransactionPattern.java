@@ -1,18 +1,14 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
-import java.io.Serializable;
-import java.util.logging.Level;
-
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionSender;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
+import java.io.Serializable;
+import java.util.logging.Level;
 
 /**
  * Interface for a transaction pattern.
@@ -71,6 +67,7 @@ public interface ITransactionPattern extends Serializable {
 			//Add block to local chain
 			newBlock = ownNode.getChain().appendNewBlock();
 			newBlock.addTransaction(transaction);
+			Log.log(Level.FINE, "Node " + ownNode.getId() + " added transaction " + transaction.getNumber() + " in block " + newBlock.getNumber());
 		}
 		
 		//Ensure that the block is sent at some point

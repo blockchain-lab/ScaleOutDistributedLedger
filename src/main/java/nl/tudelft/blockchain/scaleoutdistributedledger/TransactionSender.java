@@ -1,5 +1,10 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
+import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
 import java.io.IOException;
 import java.util.ListIterator;
 import java.util.concurrent.Executors;
@@ -8,15 +13,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
-import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Class which handles sending of transactions.
@@ -165,6 +161,8 @@ public class TransactionSender {
 	 * @throws InterruptedException - If the current thread was interrupted while sending.
 	 */
 	private boolean sendTransaction(Transaction transaction) throws InterruptedException, IOException {
+		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " starting sending transaction: " + transaction);
+		long startingTime = System.currentTimeMillis();
 		Node to = transaction.getReceiver();
 		
 		ProofConstructor proofConstructor = new ProofConstructor(transaction);
@@ -174,8 +172,14 @@ public class TransactionSender {
 		}
 		
 		ProofMessage msg = new ProofMessage(proof);
+		long timeDelta = System.currentTimeMillis() - startingTime;
+		if(timeDelta > 5 * 1000) {
+			Log.log(Level.WARNING, "Proof creation took " + timeDelta + " ms for transaction: " + transaction);
+		}
+		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " now actually sending transaction: " + transaction);
 		if (socketClient.sendMessage(to, msg)) {
 			to.updateMetaKnowledge(proof);
+			Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " done sending transaction: " + transaction);
 			return true;
 		}
 		

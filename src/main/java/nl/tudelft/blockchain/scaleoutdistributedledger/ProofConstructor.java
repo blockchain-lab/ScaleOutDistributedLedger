@@ -1,18 +1,8 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import java.util.*;
 
 /**
  * Class for constructing proofs.
@@ -124,7 +114,7 @@ public class ProofConstructor {
 			//TODO Temp
 			Integer old = checked2.put(owner, block.getNumber());
 			if (old != null && old > block.getNumber()) {
-				System.out.println("CHECKED 2 problem: old was higher (1)");
+//				System.out.println("CHECKED 2 problem: old was higher (1)");
 			}
 			//ENDTODO
 			
@@ -149,7 +139,7 @@ public class ProofConstructor {
 			if (checkedSet.contains(blockNumber)) {
 				Integer checked22 = checked2.get(owner);
 				if (checked22 == null || checked22 < blockNumber) {
-					System.out.println("CHECKED 2 problem: null or less than block number (" + checked22 + ")");
+//					System.out.println("CHECKED 2 problem: null or less than block number (" + checked22 + ")");
 				}
 				
 				continue;
@@ -158,11 +148,11 @@ public class ProofConstructor {
 			Block block = owner.getChain().getBlocks().get(blockNumber);
 			int nextCommittedBlockNr = block.getNextCommittedBlock().getNumber();
 			if (checkedSet.contains(nextCommittedBlockNr)) {
-				System.out.println("I don't think this should be possible");
+//				System.out.println("I don't think this should be possible");
 				//TODO Temp
 				Integer checked22 = checked2.get(owner);
 				if (checked22 == null || checked22 < nextCommittedBlockNr) {
-					System.out.println("CHECKED 2 problem: null or less than committed block number (" + checked22 + ")");
+//					System.out.println("CHECKED 2 problem: null or less than committed block number (" + checked22 + ")");
 				}
 				//ENDTODO
 				continue;
@@ -179,7 +169,7 @@ public class ProofConstructor {
 				//TODO Temp
 				Integer old = checked2.put(owner, nextCommittedBlockNr);
 				if (old != null && old > nextCommittedBlockNr) {
-					System.out.println("CHECKED 2 problem: old was higher (2)");
+//					System.out.println("CHECKED 2 problem: old was higher (2)");
 				}
 				//ENDTODO
 				continue;
