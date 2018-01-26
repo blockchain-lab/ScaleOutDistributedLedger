@@ -25,8 +25,8 @@ public class ChainViewTest {
 	 */
 	@Before
 	public void setUp() {
-		blocks = new ArrayList<Block>();
-		updatedBlocks = new ArrayList<Block>();
+		blocks = new ArrayList<>();
+		updatedBlocks = new ArrayList<>();
 		
 		nodeMock = mock(Node.class);
 		chainMock = mock(Chain.class);
@@ -46,7 +46,7 @@ public class ChainViewTest {
 	 * 		the block that was added
 	 */
 	protected Block addBlock(int nr, boolean toChain) {
-		Block block = new Block(nr, nodeMock, new ArrayList<Transaction>());
+		Block block = new Block(nr, nodeMock, new ArrayList<>());
 		
 		if (toChain) {
 			blocks.add(block);
@@ -78,6 +78,17 @@ public class ChainViewTest {
 		addBlock(1, true);
 		
 		assertTrue(chainview.isValid());
+	}
+	
+	/**
+	 * Test for {@link ChainView#isValid()}.
+	 */
+	@Test
+	public void testIsValid_EmptyChain() {
+		addBlock(0, false);
+		addBlock(1, false);
+		
+		assertTrue(this.chainview.isValid());
 	}
 	
 	/**
@@ -173,6 +184,23 @@ public class ChainViewTest {
 	}
 	
 	/**
+	 * Test for {@link ChainView#getBlock()}.
+	 */
+	@Test
+	public void testGetBlock_Exception() {
+		addBlock(0, true);
+		addBlock(1, true);
+		addBlock(2, false);
+		addBlock(4, false);
+		try {
+			this.chainview.getBlock(4);
+			fail();
+		} catch (IllegalStateException ex) {
+			// Good
+		}
+	}
+	
+	/**
 	 * Test for {@link ChainView#iterator()}, for next and nextIndex.
 	 */
 	@Test
@@ -251,4 +279,106 @@ public class ChainViewTest {
 		assertEquals(0, it.previous().getNumber());
 		assertEquals(-1, it.previousIndex());
 	}
+	
+	/**
+	 * Test for {@link ChainView#listIterator(int)}.
+	 */
+	@Test
+	public void testListIterator_EmptyChainAndUpdate() {
+		ListIterator<Block> it = chainview.listIterator(0);
+		
+		assertFalse(it.hasPrevious());
+		assertFalse(it.hasNext());
+	}
+	
+	/**
+	 * Test for {@link ChainView#listIterator(int)}.
+	 */
+	@Test
+	public void testListIteratorHasNext() {
+		addBlock(0, true);
+		addBlock(1, false);
+		addBlock(2, false);
+		
+		ListIterator<Block> it = chainview.listIterator(0);
+		assertTrue(it.hasNext());
+		it.next(); // Get 0
+		it.next(); // Get 1
+		assertTrue(it.hasNext());
+	}
+	
+	/**
+	 * Test for {@link ChainView#listIterator(int)}.
+	 */
+	@Test
+	public void testListIteratorHasNext_FromChainToUpdate() {
+		addBlock(0, true);
+		addBlock(1, false);
+		addBlock(2, false);
+		
+		ListIterator<Block> it = chainview.listIterator(1);
+		it.next(); // Get 1
+		assertTrue(it.hasNext());
+	}
+	
+	/**
+	 * Test for {@link ChainView#listIterator(int)}.
+	 */
+	@Test
+	public void testListIteratorHasPrevious() {
+		addBlock(0, true);
+		addBlock(1, false);
+		
+		ListIterator<Block> it = chainview.listIterator(0);
+		assertFalse(it.hasPrevious());
+		it.next(); // Get 0
+		it.next(); // Get 1
+		assertFalse(it.hasNext());
+		assertTrue(it.hasPrevious());
+	}
+	
+	/**
+	 * Test for {@link ChainView#listIterator(int)}.
+	 */
+	@Test
+	public void testListIteratorOneBlock() {
+		addBlock(0, false);
+		
+		ListIterator<Block> it = chainview.listIterator(1);
+		assertFalse(it.hasNext());
+	}
+	
+	/**
+	 * Test for {@link ChainView#resetValidation()}.
+	 */
+	@Test
+	public void testResetValidation() {
+		addBlock(0, true);
+		addBlock(1, true);
+		addBlock(2, false);
+		
+		// Is valid
+		assertTrue(this.chainview.isValid());
+		// Make invalid
+		addBlock(4, false);
+		// Check "valid" cached
+		assertTrue(this.chainview.isValid());
+		// Reset validation
+		this.chainview.resetValidation();
+		// It's now really invalid
+		assertFalse(this.chainview.isValid());
+	}
+	
+	/**
+	 * Test for {@link ChainView#isRedundant()}.
+	 */
+	@Test
+	public void testResetIsRedundant_Valid() {
+		addBlock(0, true);
+		addBlock(1, true);
+		addBlock(1, false);
+		
+		assertTrue(this.chainview.isRedundant());
+	}
+	
 }
