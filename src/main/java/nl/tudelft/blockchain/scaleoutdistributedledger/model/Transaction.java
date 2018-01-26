@@ -1,18 +1,18 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import lombok.Getter;
-import lombok.Setter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.OptionalInt;
+import java.util.TreeSet;
+import java.util.logging.Level;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.logging.Level;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Transaction class.

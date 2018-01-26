@@ -185,6 +185,7 @@ public final class TendermintChain implements MainChain {
 		} else {
 //			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " checking cache for " + block.getOwner().getId() + "-" + block.getNumber() + ": " + blockHash + ", the set is " + this.cache);
 			// We could miss some blocks in our cache, so update and wait for the results
+			//TODO We might not want to update here. The cache should be enough
 			updateCacheBlocking(-1);
 //			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " did not find " + blockHash + ", so updated the cache and now the set is " + this.cache);
 			return cache.contains(blockHash);

@@ -2,12 +2,16 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import static org.junit.Assert.*;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -28,7 +32,7 @@ public class TransactionCreatorTest {
 	@Before
 	public void setUp() {
 		ownNode = new OwnNode(0);
-		
+		//TestHelper.generateGenesis(ownNode, 5, 100);
 		localStore = new LocalStore(ownNode, null, null, false);
 		nodes = localStore.getNodes();
 	}
@@ -60,9 +64,9 @@ public class TransactionCreatorTest {
 	 * @param chains - the chains to add to the meta knowledge
 	 */
 	public void addMetaKnowledge(Node node, int... chains) {
-		Map<Node, Integer> meta = node.getMetaKnowledge();
+		MetaKnowledge meta = node.getMetaKnowledge();
 		for (int chain : chains) {
-			meta.put(getNode(chain), 0);
+			meta.updateLastKnownBlockNumber(chain, 2);
 		}
 	}
 	
@@ -117,7 +121,7 @@ public class TransactionCreatorTest {
 	 */
 	public void checkTransactionSources(Transaction transaction, Transaction... expectedSources) {
 		Set<Transaction> actualSet = transaction.getSource();
-		Set<Transaction> expectedSet = new HashSet<>();
+		Set<Transaction> expectedSet = new TreeSet<>();
 		expectedSet.addAll(Arrays.asList(expectedSources));
 		
 		assertEquals(expectedSet, actualSet);

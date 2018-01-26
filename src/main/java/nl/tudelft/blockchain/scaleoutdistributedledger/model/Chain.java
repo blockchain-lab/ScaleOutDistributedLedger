@@ -55,10 +55,15 @@ public class Chain {
 		
 		if (updates.isEmpty()) return;
 		
-		ArrayList<Block> copy = new ArrayList<>(updates);
-		copy.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
-		if (!copy.equals(updates)) {
-			throw new IllegalArgumentException("The blocks are not ordered correctly :(");
+		//TODO remove
+		boolean asserts = false;
+		assert asserts = true;
+		if (asserts) {
+			ArrayList<Block> copy = new ArrayList<>(updates);
+			copy.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
+			if (!copy.equals(updates)) {
+				throw new IllegalArgumentException("The blocks are not ordered correctly :(");
+			}
 		}
 		
 		int nextNr;
@@ -74,15 +79,19 @@ public class Chain {
 			previousBlock = lastBlock;
 		}
 		
+		//The last block in the updates must be a committed block
+		Block lastCommitted = updates.get(updates.size() - 1);
 		for (Block block : updates) {
 			//Skip any overlap
 			if (block.getNumber() != nextNr) continue;
 			block.setPreviousBlock(previousBlock);
+			block.setNextCommittedBlock(lastCommitted);
 			blocks.add(block);
 			nextNr++;
 			previousBlock = block;
 		}
 		
+		//TODO Set last committed block
 		for (Block block : ReversedIterator.reversed(this.blocks)) {
 			if (block.isOnMainChain(localStore)) {
 				setLastCommittedBlock(block);
@@ -130,8 +139,10 @@ public class Chain {
 	 */
 	public int getLastBlockNumber() {
 		//TODO Remove
-		Block last;
-		assert blocks.size() - 1 == ((last = getLastBlock()) == null ? -1 : last.getNumber());
+		{
+			Block last;
+			assert blocks.size() - 1 == ((last = getLastBlock()) == null ? -1 : last.getNumber());
+		}
 		return blocks.size() - 1;
 	}
 	

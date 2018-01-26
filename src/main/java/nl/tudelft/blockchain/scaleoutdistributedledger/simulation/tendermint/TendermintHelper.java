@@ -363,7 +363,9 @@ public final class TendermintHelper {
 			initialTransactions.add(t);
 		}
 		
-		return new Block(0, null, initialTransactions);
+		Block block = new Block(0, null, initialTransactions);
+		block.setNextCommittedBlock(block);
+		return block;
 	}
 	
 	/**

@@ -21,7 +21,8 @@ import java.util.logging.Level;
  * Proof message for netty.
  */
 public class ProofMessage extends Message {
-	
+	private static final long serialVersionUID = 1L;
+
 	@Getter
 	private final TransactionMessage transactionMessage;
 
@@ -40,7 +41,7 @@ public class ProofMessage extends Message {
 		Node proofReceiver = proof.getTransaction().getReceiver();
 		this.transactionMessage = new TransactionMessage(proof.getTransaction(), proofReceiver);
 		this.chainUpdates = new HashMap<>();
-		for (Map.Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
+		for (Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
 			Node node = entry.getKey();
 			List<Block> blockList = entry.getValue();
 			if (!blockList.isEmpty()) {

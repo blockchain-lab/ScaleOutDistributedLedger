@@ -3,8 +3,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import lombok.Getter;
 import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
@@ -12,7 +10,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -27,6 +24,9 @@ public class Block {
 
 	@Getter @Setter
 	private Block previousBlock;
+	
+	@Getter @Setter
+	private Block nextCommittedBlock;
 
 	@Getter @Setter
 	private Node owner;
@@ -150,6 +150,7 @@ public class Block {
 	 * @param localStore - the local store
 	 */
 	public synchronized void commit(LocalStore localStore) {
+		Log.debug("{0}: Committing block {1}", localStore.getOwnNode().getId(), this.getNumber());
 		if (finalized) {
 			throw new IllegalStateException("This block has already been committed!");
 		}
@@ -162,6 +163,13 @@ public class Block {
 		}
 		
 		finalized = true;
+		
+		nextCommittedBlock = this;
+		Block prev = getPreviousBlock();
+		while (prev.nextCommittedBlock == null) {
+			prev.nextCommittedBlock = this;
+			prev = prev.getPreviousBlock();
+		}
 	}
 
 	@Override
@@ -243,6 +251,7 @@ public class Block {
 		
 		block.onMainChain = true;
 		block.finalized = true;
+		block.nextCommittedBlock = block;
 		return block;
 	}
 	
@@ -252,7 +261,6 @@ public class Block {
 	 * @return - boolean identifying if an abstract of this block is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
-		if(true) return true;
 		//TODO Remove hack?
 		if (this.number == GENESIS_BLOCK_NUMBER) return true;
 		

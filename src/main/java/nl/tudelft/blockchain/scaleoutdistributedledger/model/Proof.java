@@ -160,6 +160,7 @@ public class Proof {
 			throw new ProofValidationException("We directly received a transaction with a null sender.");
 		}
 		
+		//TODO [BFT] all the blocks that were sent but not required for the proof are not validated at all.
 		verify(this.transaction, localStore);
 	}
 
@@ -273,85 +274,6 @@ public class Proof {
 		//Update the meta knowledge of the sender
 		transaction.getSender().updateMetaKnowledge(this);
 	}
-	
-	/**
-	 * @param localStore  - the local store
-	 * @param transaction - the transaction
-	 * @return the proof for the given transaction
-	 */
-	public static Proof createProof(LocalStore localStore, Transaction transaction) {
-		Node receiver = transaction.getReceiver();
-		
-		synchronized (receiver.getMetaKnowledge()) {
-			Proof proof = new Proof(transaction);
-			
-			//Step 1: determine what blocks need to be sent
-			int blockRequired = transaction.getBlockNumber().getAsInt();
-			Chain senderChain = transaction.getSender().getChain();
-			
-			Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
-			
-			//The from block is the already known
-			int alreadyKnownBlock = metaKnowledge.getOrDefault(transaction.getSender(), -1) + 1;
-			blockRequired = Math.min(blockRequired, alreadyKnownBlock);
-			
-			Block fromBlock = senderChain.getBlocks().get(blockRequired);
-			Block toBlock = getNextCommittedBlock(localStore, blockRequired, senderChain);
-			
-			//Step 2: determine the chains that need to be sent
-			Map<Chain, Integer> chains = determineChains(transaction, fromBlock, toBlock);
-			
-			//Step 3: add only those blocks that are not yet known
-			for (Entry<Chain, Integer> entry : chains.entrySet()) {
-				Chain chain = entry.getKey();
-				Node owner = chain.getOwner();
-				if (owner == receiver) continue;
-				
-				int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
-				int requiredKnown = entry.getValue();
-				if (alreadyKnown < requiredKnown) {
-					proof.addBlocksOfChain(chain, alreadyKnown + 1, requiredKnown + 1);
-				}
-			}
-			
-			return proof;
-		}
-	}
-
-	/**
-	 * @param mainTransaction - the transaction that we want to send
-	 * @param fromBlock       - the first block that we want to send
-	 * @param toBlock         - the last block that we want to send
-	 * @return                - the chains required and the corresponding block number
-	 */
-	private static Map<Chain, Integer> determineChains(Transaction mainTransaction, Block fromBlock, Block toBlock) {
-		//TODO We might want to do some kind of caching?
-		
-		Node receiver = mainTransaction.getReceiver();
-		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
-		
-		//Determine what the sender already knows about us
-		int alreadyKnown = metaKnowledge.getOrDefault(mainTransaction.getSender(), -1);
-		
-		Map<Chain, Integer> chains = new HashMap<>();
-		
-		//Only consider the transactions that the receiver doesn't have yet.
-		Block current = toBlock;
-		while (current.getNumber() > alreadyKnown) {
-			for (Transaction transaction : current.getTransactions()) {
-				appendChains2(transaction, receiver, chains);
-			}
-			
-			if (current == fromBlock) break;
-			current = current.getPreviousBlock();
-		}
-		
-		//Only add the chains of the transaction itself if it isn't in a known block
-		if (mainTransaction.getBlockNumber().getAsInt() > alreadyKnown) {
-			appendChains2(mainTransaction, receiver, chains);
-		}
-		return chains;
-	}
 
 	/**
 	 * @param localStore
@@ -374,41 +296,54 @@ public class Proof {
 	/**
 	 * Recursively calls itself with all the sources of the given transaction. Transactions which
 	 * are in the chain of {@code receiver} are ignored.
+	 * @param nrOfNodes   - the total number of nodes
 	 * @param transaction - the transaction to check the sources of
 	 * @param receiver    - the node receiving the transaction
 	 * @param chains      - the list of chains to append to
 	 */
-	public static void appendChains(Transaction transaction, Node receiver, Set<Chain> chains) {
+	public static void appendChains(int nrOfNodes, Transaction transaction, Node receiver, MetaKnowledge metaKnowledge, Set<Chain> chains) {
 		Node owner = transaction.getSender();
 		if (owner == null || owner == receiver) return;
 		
+		//TODO Do we want to cut off at known blocks?
+		int alreadyKnown = metaKnowledge.getFirstUnknownBlockNumber(owner);
+		int blockNumber = transaction.getBlockNumber().getAsInt();
+		if (alreadyKnown >= blockNumber) return;
+		
 		chains.add(owner.getChain());
+		if (chains.size() >= nrOfNodes - 1) return;
+		
 		for (Transaction source : transaction.getSource()) {
-			appendChains(source, receiver, chains);
+			appendChains(nrOfNodes, source, receiver, metaKnowledge, chains);
 		}
 	}
 	
 	/**
 	 * Recursively calls itself with all the sources of the given transaction. Transactions which
 	 * are in the chain of {@code receiver} are ignored.
+	 * @param nrOfNodes   - the total number of nodes
 	 * @param transaction - the transaction to check the sources of
 	 * @param receiver    - the node receiving the transaction
 	 * @param chains      - the map of chains to append to
 	 */
-	public static void appendChains2(Transaction transaction, Node receiver, Map<Chain, Integer> chains) {
+	public static void appendChains2(int nrOfNodes, Transaction transaction, Node receiver, Map<Node, Integer> chains) {
 		Node owner = transaction.getSender();
 		if (owner == null || owner == receiver) return;
 		
 		//Skip transactions that are already known
-		Map<Node, Integer> metaKnowledge = receiver.getMetaKnowledge();
-		int alreadyKnown = metaKnowledge.getOrDefault(owner, -1);
+		MetaKnowledge metaKnowledge = receiver.getMetaKnowledge();
+		int lastKnown = metaKnowledge.getLastKnownBlockNumber(owner);
 		int blockNumber = transaction.getBlockNumber().getAsInt();
-		if (alreadyKnown >= blockNumber) return;
+		if (lastKnown >= blockNumber) return;
 		
 		//Store the highest block number.
-		chains.compute(owner.getChain(), (k, v) -> v == null ? blockNumber : Math.max(v, blockNumber));
+		//Now consider this chain up to the last committed block
+		chains.merge(owner, blockNumber, Math::max);
+		if (chains.size() >= nrOfNodes - 1) return;
+		
+		//Check all the sources
 		for (Transaction source : transaction.getSource()) {
-			appendChains2(source, receiver, chains);
+			appendChains2(nrOfNodes, source, receiver, chains);
 		}
 	}
 	

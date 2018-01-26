@@ -3,7 +3,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,11 +27,8 @@ public class Node {
 	@Getter @Setter
 	private int port;
 	
-	/**
-	 * @return a map containing what we know that this node knows
-	 */
 	@Getter
-	private Map<Node, Integer> metaKnowledge = new HashMap<>();
+	private MetaKnowledge metaKnowledge = new MetaKnowledge(this);
 
 	/**
 	 * Constructor.
@@ -82,7 +78,7 @@ public class Node {
 			
 			int lastBlockNr = getLastBlockNumber(entry.getValue());
 			if (lastBlockNr == -1) continue;
-			metaKnowledge.merge(entry.getKey(), lastBlockNr, Math::max);
+			metaKnowledge.updateLastKnownBlockNumber(entry.getKey(), lastBlockNr);
 		}
 	}
 	

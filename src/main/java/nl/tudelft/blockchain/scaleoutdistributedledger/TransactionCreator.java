@@ -2,7 +2,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.util.*;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -51,7 +50,6 @@ public class TransactionCreator {
 			BitSet collected = receiver.getMetaKnowledge()
 					.keySet()
 					.stream()
-					.map(Node::getId)
 					.collect(() -> new BitSet(nodesCount),
 							(bs, i) -> bs.set(i),
 							(bs1, bs2) -> bs1.or(bs2)
@@ -224,18 +222,18 @@ public class TransactionCreator {
 	 */
 	public BitSet chainsRequired(Transaction transaction) {
 		//TODO Verify that this collection of chains is correct.
-		Set<Chain> chains = new HashSet<>();
-		Proof.appendChains(transaction, receiver, chains);
-		BitSet bitset = chains.stream()
-				.map(Chain::getOwner)
+		Map<Node, Integer> chains = new HashMap<>();
+		
+		int nrOfNodes = localStore.getNodes().size();
+		Proof.appendChains2(nrOfNodes, transaction, receiver, chains);
+		BitSet bitset = chains
+				.keySet()
+				.stream()
 				.map(Node::getId)
 				.collect(() -> new BitSet(nodesCount),
 						(bs, i) -> bs.set(i),
 						(bs1, bs2) -> bs1.or(bs2)
 				);
-
-		//Remove all chains that are already known
-		bitset.andNot(known);
 
 		return bitset;
 	}

@@ -4,13 +4,17 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.security.KeyPair;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.ProofConstructor;
 import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.TestHelper;
 
 /**
@@ -69,6 +73,7 @@ public class ProofTest {
 		Block block1node1 = new Block(genesisBlock, node1);
 		block1node1.addTransaction(transaction1to0);
 		node1.getChain().getBlocks().add(block1node1);
+		block1node1.setNextCommittedBlock(block1node1);
 		
 		//4: 0 --> 2, source = [3: 1 --> 0]
 		TreeSet<Transaction> source0to2 = new TreeSet<>();
@@ -79,6 +84,9 @@ public class ProofTest {
 		
 		//commit block 2 of node 0
 		block2node0.commit(storeSpy);
+		
+		block1node0.setNextCommittedBlock(block2node0);
+		block2node0.setNextCommittedBlock(block2node0);
 		
 		return transaction0to2;
 	}
@@ -113,6 +121,7 @@ public class ProofTest {
 		Block block1node1 = new Block(genesisBlock, node1);
 		block1node1.addTransaction(transaction1to0);
 		node1.getChain().getBlocks().add(block1node1);
+		block1node1.setNextCommittedBlock(block1node1);
 		
 		//5: 0 --> 3, source = [4: 0 --> 1]
 		TreeSet<Transaction> source0to3 = new TreeSet<>();
@@ -132,6 +141,10 @@ public class ProofTest {
 		//commit block 3 of node 0
 		block3node0.commit(storeSpy);
 		
+		block1node0.setNextCommittedBlock(block3node0);
+		block2node0.setNextCommittedBlock(block3node0);
+		block3node0.setNextCommittedBlock(block3node0);
+		
 		return transaction0to2;
 	}
 	
@@ -147,7 +160,7 @@ public class ProofTest {
 		
 		Transaction transaction = basicScenario();
 		
-		Proof proof = Proof.createProof(storeSpy, transaction);
+		Proof proof = new ProofConstructor(transaction).constructProof();
 		
 		//Proof should contain all the blocks of our own chain
 		List<Block> ownNodeUpdates = proof.getChainUpdates().get(ownNode);
@@ -171,10 +184,10 @@ public class ProofTest {
 		Transaction transaction = basicScenario();
 		
 		//Node 2 knows about the genesis of node 1 already
-		node2.getMetaKnowledge().put(node1, 0);
+		node2.getMetaKnowledge().updateLastKnownBlockNumber(node1, 0);
 		
 		//send to node 2
-		Proof proof = Proof.createProof(storeSpy, transaction);
+		Proof proof = new ProofConstructor(transaction).constructProof();
 		
 		//Proof should contain the first 3 blocks of the ownNode
 		List<Block> ownNodeUpdates = proof.getChainUpdates().get(ownNode);
@@ -198,11 +211,11 @@ public class ProofTest {
 		Transaction transaction = basicScenario();
 		
 		//Node 2 knows about block 1 of node 0 and of block 1 of node 1
-		node2.getMetaKnowledge().put(ownNode, 1);
-		node2.getMetaKnowledge().put(node1, 1);
+		node2.getMetaKnowledge().updateLastKnownBlockNumber(ownNode, 1);
+		node2.getMetaKnowledge().updateLastKnownBlockNumber(node1, 1);
 		
 		//send to node 2
-		Proof proof = Proof.createProof(storeSpy, transaction);
+		Proof proof = new ProofConstructor(transaction).constructProof();
 		
 		//Proof should contain only the last block of node 0
 		List<Block> ownNodeUpdates = proof.getChainUpdates().get(ownNode);
@@ -227,11 +240,11 @@ public class ProofTest {
 		
 		//Node 2 knows about block 1 of node 0 and of block 1 of node 1
 		
-		node1.getMetaKnowledge().put(ownNode, 1);
-		node3.getMetaKnowledge().put(ownNode, 2);
+		node1.getMetaKnowledge().updateLastKnownBlockNumber(ownNode, 1);
+		node3.getMetaKnowledge().updateLastKnownBlockNumber(ownNode, 2);
 		
 		//send to node 2
-		Proof proof = Proof.createProof(storeSpy, transaction);
+		Proof proof = new ProofConstructor(transaction).constructProof();
 		
 		//Proof should contain only the last block of node 0
 		List<Block> ownNodeUpdates = proof.getChainUpdates().get(ownNode);
