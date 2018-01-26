@@ -221,7 +221,7 @@ public final class TrackerHelper {
 		json.put("amount", proof.getTransaction().getAmount());
 		json.put("remainder", proof.getTransaction().getRemainder());
 		json.put("numberOfChains", proof.getChainUpdates().size());
-		json.put("numberOfBlocks", 1);
+		json.put("numberOfBlocks", proof.getNumberOfBlocks());
 
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
 			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);

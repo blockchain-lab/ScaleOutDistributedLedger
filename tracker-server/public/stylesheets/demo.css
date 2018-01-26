@@ -3,11 +3,43 @@
     height: 600px;
     display: block;
     border: 2px solid black;
-    margin-top: 30px;
+    margin: 30px auto auto;
 }
 
 .odometer {
     font-size: 50px;
-    margin-left: 20px;
+    margin: auto;
 }
 
+.odometer_wrapper {
+    text-align: center;
+}
+
+body {
+    text-align: center;
+}
+
+.numbers_table {
+    margin: auto;
+}
+
+.numbers_table tr.labels {
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.numbers_table tr td {
+    padding: 10px 20px;
+}
+
+h1 {
+    font-size: 45px;
+}
+
+html {
+    background: rgba(0, 0, 0, 0.1) url(/images/background.png) no-repeat fixed center center;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}

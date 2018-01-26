@@ -434,6 +434,16 @@ public class Proof {
 			appendChains2(source, receiver, chains);
 		}
 	}
+
+	/**
+	 * Gets the number of blocks used in the proof.
+	 * @return - the number of blocks;
+	 */
+	public int getNumberOfBlocks() {
+		final int[] res = {0};
+		chainUpdates.values().forEach(blocks -> res[0] += blocks.size());
+		return res[0];
+	}
 	
 	@Override
 	public String toString() {

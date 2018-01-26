@@ -129,7 +129,8 @@ router.get('/topn/updates', function(req,res){
 function updateSseClients() {
 	const nodes = app.nodeList.getGraphNodes();
 	const edges = app.transactionList.getGraphEdges();
-    sseClients.forEach(sseConnection => sseConnection.send({nodes: nodes, edges: edges}));
+    sseClients.forEach(sseConnection => sseConnection.send(
+    	{nodes: nodes, edges: edges, numbers: app.transactionList.getNumbers()}));
 }
 
 /**
