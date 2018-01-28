@@ -3,7 +3,11 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Class for our own node.
+ */
 public class OwnNode extends Node {
+	
 	/**
 	 * Only used by the node himself.
 	 * @return private key
@@ -11,10 +15,21 @@ public class OwnNode extends Node {
 	@Getter @Setter
 	private transient byte[] privateKey;
 
+	/**
+	 * Constructor.
+	 * @param id - id of the node
+	 */
 	public OwnNode(int id) {
 		super(id);
 	}
 
+	/**
+	 * Constructor.
+	 * @param id - id of the node
+	 * @param publicKey - public key of the node
+	 * @param address - IP address of the node
+	 * @param port - port in which the node is listening
+	 */
 	public OwnNode(int id, byte[] publicKey, String address, int port) {
 		super(id, publicKey, address, port);
 	}
@@ -32,4 +47,5 @@ public class OwnNode extends Node {
 	public String toString() {
 		return "(OwnNode) " + super.toString();
 	}
+	
 }

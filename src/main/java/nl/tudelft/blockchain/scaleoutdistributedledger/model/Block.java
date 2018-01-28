@@ -161,17 +161,8 @@ public class Block {
 			throw new UnsupportedOperationException("You cannot calculate the block abstract of a block you do not own!");
 		}
 		
-		// Convert attributes of abstract into an array of bytes, for the signature
-		// Important to keep the order of writings
-		byte[] attrInBytes;
-		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-			outputStream.write(Utils.intToByteArray(this.owner.getId()));
-			outputStream.write(Utils.intToByteArray(this.number));
-			outputStream.write(this.getHash().getBytes());
-			attrInBytes = outputStream.toByteArray();
-		} catch (IOException ex) {
-			throw new IllegalStateException("Unable to write to outputstream", ex);
-		}
+		// Calculate bytes for the signature
+		byte[] attrInBytes = BlockAbstract.calculateBytesForSignature(this.owner.getId(), this.number, this.getHash());
 
 		// Sign the attributes
 		try {
@@ -189,18 +180,18 @@ public class Block {
 	 * @param localStore - the local store
 	 */
 	public synchronized void commit(LocalStore localStore) {
-		if (finalized) {
+		if (this.finalized) {
 			throw new IllegalStateException("This block has already been committed!");
 		}
 		
-		Chain chain = getOwner().getChain();
+		Chain chain = this.getOwner().getChain();
 		synchronized (chain) {
-			BlockAbstract blockAbstract = calculateBlockAbstract();
-			localStore.getApplication().getMainChain().commitAbstract(blockAbstract);
-			getOwner().getChain().setLastCommittedBlock(this);
+			BlockAbstract blockAbstract = this.calculateBlockAbstract();
+			localStore.getMainChain().commitAbstract(blockAbstract);
+			chain.setLastCommittedBlock(this);
 		}
 		
-		finalized = true;
+		this.finalized = true;
 	}
 
 	@Override
@@ -294,7 +285,7 @@ public class Block {
 		if (this.onMainChain) return true;
 		
 		//It is present, so store it and return
-		if (localStore.getMainChain().isPresent(this.getHash())) {
+		if (localStore.getMainChain().isPresent(this)) {
 			this.onMainChain = true;
 			return true;
 		}
