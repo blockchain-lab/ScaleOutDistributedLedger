@@ -1,7 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
@@ -11,60 +11,86 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
+/**
+ * Class to test {@link Application}.
+ */
 public class ApplicationTest {
+	
 	private Application instance;
 	private Thread serverMock;
 	private TransactionSender transactionSenderMock;
 	private LocalStore localStoreMock;
 
+	/**
+	 * Setup method.
+	 */
 	@Before
 	public void setUp() {
-		localStoreMock = mock(LocalStore.class);
-		serverMock = mock(Thread.class);
-		transactionSenderMock = mock(TransactionSender.class);
+		this.localStoreMock = mock(LocalStore.class);
+		this.serverMock = mock(Thread.class);
+		this.transactionSenderMock = mock(TransactionSender.class);
 
-		this.instance = new Application(localStoreMock, serverMock, transactionSenderMock);
-		when(localStoreMock.getMainChain()).thenReturn(spy(new TendermintChainMock()));
-		when(localStoreMock.getOwnNode()).thenReturn(new OwnNode(0));
+		this.instance = new Application(this.localStoreMock, this.serverMock, this.transactionSenderMock);
+		when(this.localStoreMock.getMainChain()).thenReturn(spy(new TendermintChainMock()));
+		when(this.localStoreMock.getOwnNode()).thenReturn(new OwnNode(0));
 	}
 
+	/**
+	 * Test for {@link Application#kill()}.
+	 */
 	@Test
 	public void testKill() {
-		instance.kill();
+		this.instance.kill();
 
-		verify(transactionSenderMock, times(1)).shutdownNow();
-		verify(instance.getMainChain(), times(1)).stop();
+		verify(this.transactionSenderMock, times(1)).shutdownNow();
+		verify(this.instance.getMainChain(), times(1)).stop();
 	}
 
+	/**
+	 * Test for {@link Application#startTransacting()}.
+	 * @throws java.lang.InterruptedException - interrupted while sleeping
+	 */
 	@Test
-	public void testStartTransacting() {
-		CancellableInfiniteRunnable<LocalStore> runnableMock = setTransactionPattern();
+	public void testStartTransacting() throws InterruptedException {
+		CancellableInfiniteRunnable<LocalStore> runnableMock = this.setTransactionPattern();
 
-		instance.startTransacting();
-		verify(runnableMock, times(1)).run();
+		this.instance.startTransacting();
+		// Wait for thread to start
+		verify(runnableMock, timeout(2000).times(1)).run();
 	}
 
+	/**
+	 * Test for {@link Application#getMainChain()}.
+	 */
 	@Test
 	public void testGetMainChain() {
 		MainChain chain = mock(MainChain.class);
-		when(localStoreMock.getMainChain()).thenReturn(chain);
-		assertEquals(chain, instance.getMainChain());
+		when(this.localStoreMock.getMainChain()).thenReturn(chain);
+		assertEquals(chain, this.instance.getMainChain());
 	}
 
+	/**
+	 * Test for {@link Application#finishTransactionSending()}.
+	 * @throws InterruptedException - interrupted while sleeping
+	 */
 	@Test
-	public void testFinishTransactionSending() throws Exception {
-		instance.finishTransactionSending();
+	public void testFinishTransactionSending() throws InterruptedException {
+		this.instance.finishTransactionSending();
 
-		verify(transactionSenderMock, times(1)).stop();
-		verify(transactionSenderMock, times(1)).waitUntilDone();
+		verify(this.transactionSenderMock, times(1)).stop();
+		verify(this.transactionSenderMock, times(1)).waitUntilDone();
 	}
 
-	@SuppressWarnings("unchecked")
-	public CancellableInfiniteRunnable<LocalStore> setTransactionPattern() {
+	/**
+	 * Set a transaction pattern.
+	 * @return cancellable infinite runnable
+	 */
+	private CancellableInfiniteRunnable<LocalStore> setTransactionPattern() {
 		ITransactionPattern transactionPatternMock = mock(ITransactionPattern.class);
 		CancellableInfiniteRunnable<LocalStore> runnableMock = mock(CancellableInfiniteRunnable.class);
 		when(transactionPatternMock.getRunnable(any(LocalStore.class))).thenReturn(runnableMock);
-		instance.setTransactionPattern(transactionPatternMock);
+		this.instance.setTransactionPattern(transactionPatternMock);
 		return runnableMock;
 	}
+	
 }
