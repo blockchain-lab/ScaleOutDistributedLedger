@@ -159,6 +159,8 @@ public class Proof {
 	 * @throws ProofValidationException - If the proof is invalid.
 	 */
 	private void verify(Transaction transaction, LocalStore localStore) throws ProofValidationException {
+		if (transaction.isLocallyVerified()) return;
+
 		int blockNumber = transaction.getBlockNumber().orElse(-1);
 		if (blockNumber == -1) {
 			throw new ProofValidationException("The transaction has no block number, so we cannot validate it.");
@@ -166,6 +168,7 @@ public class Proof {
 		
 		if (transaction.getSender() == null) {
 			verifyGenesisTransaction(transaction, localStore);
+			transaction.setLocallyVerified(true);
 			return;
 		}
 
@@ -203,6 +206,7 @@ public class Proof {
 				throw new ProofValidationException("Source " + sourceTransaction + " is not valid", ex);
 			}
 		}
+		transaction.setLocallyVerified(true);
 	}
 	
 	/**
