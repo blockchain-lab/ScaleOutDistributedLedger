@@ -263,19 +263,19 @@ public class Block {
 	public boolean isOnMainChain(LocalStore localStore) {
 		//TODO Remove hack?
 		if (this.number == GENESIS_BLOCK_NUMBER) return true;
-		
+
 		//Definitely has no abstract
 		if (this.hasNoAbstract) return false;
-		
+
 		//We already determined before what the result should be
 		if (this.onMainChain) return true;
-		
+
 		//It is present, so store it and return
 		if (localStore.getMainChain().isPresent(this)) {
 			this.onMainChain = true;
 			return true;
 		}
-		
+
 		//Not present (yet)
 		return false;
 	}

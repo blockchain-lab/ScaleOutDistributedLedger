@@ -37,7 +37,15 @@ public final class SimulationMain {
 	//Note that the master should always be started first
 	public static final boolean IS_MASTER = true;
 	//The duration of the simulation in seconds. Only has an effect when IS_MASTER == true.
-	public static final int SIMULATION_DURATION = 180;
+	public static final int SIMULATION_DURATION = 600;
+	// Maximum number of blocks waiting to be sent (no new transaction created in the mean time
+	public static final int MAX_BLOCKS_PENDING = 30;
+	// The initial delay in milliseconds to wait before checking for the first time.
+	public static final long INITIAL_SENDING_DELAY = 15000;
+	// The time in milliseconds to wait before checking again.
+	public static final long SENDING_WAIT_TIME = 15000;
+	// The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
+	public static final int REQUIRED_COMMITS = 2;
 
 	/**
 	 * @param args - the program arguments

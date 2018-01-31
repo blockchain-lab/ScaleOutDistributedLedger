@@ -18,21 +18,6 @@ import java.util.logging.Level;
  * Class which handles sending of transactions.
  */
 public class TransactionSender {
-	/**
-	 * The initial delay in milliseconds to wait before checking for the first time.
-	 */
-	public static final long INITIAL_DELAY = 2000;
-	
-	/**
-	 * The time in milliseconds to wait before checking again.
-	 */
-	public static final long WAIT_TIME = 5000;
-	
-	/**
-	 * The number of blocks (with the same or higher block number) that need to be committed before
-	 * we send a certain block.
-	 */
-	public static final int REQUIRED_COMMITS = 1;
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
@@ -51,7 +36,7 @@ public class TransactionSender {
 	
 	/**
 	 * Schedules the {@code toSend} block to be sent.
-	 * The block will only be sent when at least {@link TransactionSender#REQUIRED_COMMITS} have
+	 * The block will only be sent when at least {@link SimulationMain#REQUIRED_COMMITS} have
 	 * been committed.
 	 * @param toSend - the block to send
 	 */
@@ -68,7 +53,7 @@ public class TransactionSender {
 					//We iterate over all the blocks since the last checked block and count how many are on the main chain.
 					//We have to check the same parts of the chain every time, since blocks can get committed after we checked them.
 					ListIterator<Block> lit = chain.getBlocks().listIterator(lastCheckedBlock.getNumber() - Block.GENESIS_BLOCK_NUMBER + 1);
-					while (lit.hasNext() && committedBlocks < REQUIRED_COMMITS) {
+					while (lit.hasNext() && committedBlocks < SimulationMain.REQUIRED_COMMITS) {
 						Block block = lit.next();
 						if (block.isOnMainChain(localStore)) {
 							committedBlocks++;
@@ -89,7 +74,7 @@ public class TransactionSender {
 			}
 		};
 		taskCounter.incrementAndGet();
-		executor.schedule(runnable, INITIAL_DELAY, TimeUnit.MILLISECONDS);
+		executor.schedule(runnable, SimulationMain.INITIAL_SENDING_DELAY, TimeUnit.MILLISECONDS);
 	}
 	
 	/**
@@ -101,7 +86,7 @@ public class TransactionSender {
 			return true;
 		}
 		
-		return committedBlocks >= REQUIRED_COMMITS;
+		return committedBlocks >= SimulationMain.REQUIRED_COMMITS;
 	}
 	
 	/**
@@ -164,7 +149,7 @@ public class TransactionSender {
 		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " starting sending transaction: " + transaction);
 		long startingTime = System.currentTimeMillis();
 		Node to = transaction.getReceiver();
-		
+
 		ProofConstructor proofConstructor = new ProofConstructor(transaction);
 		Proof proof;
 		synchronized (localStore.getOwnNode().getChain()) {
@@ -191,6 +176,6 @@ public class TransactionSender {
 	 * @return         - the ScheduledFuture
 	 */
 	private ScheduledFuture<?> schedule(Runnable runnable) {
-		return executor.schedule(runnable, WAIT_TIME, TimeUnit.MILLISECONDS);
+		return executor.schedule(runnable, SimulationMain.SENDING_WAIT_TIME, TimeUnit.MILLISECONDS);
 	}
 }

@@ -164,8 +164,6 @@ public final class TendermintHelper {
 		return generatePrivValidatorFiles(range);
 	}
 
-
-
 	/**
 	 * Method to generate a genesis.json file for tendermint. If the file is already in the given location, it is overridden.
 	 * @param genesisTime - the time of genesis
@@ -175,8 +173,6 @@ public final class TendermintHelper {
 	 * @return true if succeeded; false otherwise
 	 */
 	public static boolean generateGenesisFile(Date genesisTime, Map<Integer, String> publicKeys, byte[] appHash, int nodeNumber) {
-
-
 		JSONObject genesis = new JSONObject();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 		genesis.put("genesis_time", dateFormat.format(genesisTime));
@@ -378,5 +374,4 @@ public final class TendermintHelper {
 			Log.log(Level.WARNING, "Could not delete Tendermint folder");
 		}
 	}
-	
 }

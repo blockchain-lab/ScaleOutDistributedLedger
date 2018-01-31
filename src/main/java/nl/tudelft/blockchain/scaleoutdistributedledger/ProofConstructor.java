@@ -13,8 +13,6 @@ public class ProofConstructor {
 	private final Node receiver;
 	private final Node sender;
 	private final Map<Node, List<Block>> toSend;
-	private final Map<Node, Set<Integer>> checked = new HashMap<>();
-	private final Map<Node, Integer> checked2 = new HashMap<>();
 	private final Proof proof;
 	
 	/*
@@ -109,15 +107,6 @@ public class ProofConstructor {
 	protected void processBlocks(Node owner, List<Block> blocks) {
 		List<Block> newlyAdded = addBlocksToSend(owner, blocks);
 		for (Block block : newlyAdded) {
-			checked.computeIfAbsent(owner, n -> new HashSet<>()).add(block.getNumber());
-			
-			//TODO Temp
-			Integer old = checked2.put(owner, block.getNumber());
-			if (old != null && old > block.getNumber()) {
-//				System.out.println("CHECKED 2 problem: old was higher (1)");
-			}
-			//ENDTODO
-			
 			for (Transaction transaction : block.getTransactions()) {
 				processSources(transaction);
 			}
@@ -135,45 +124,13 @@ public class ProofConstructor {
 			if (owner == null || owner == this.sender || owner == this.receiver) continue;
 			
 			int blockNumber = source.getBlockNumber().getAsInt();
-			Set<Integer> checkedSet = checked.computeIfAbsent(owner, n -> new HashSet<>());
-			if (checkedSet.contains(blockNumber)) {
-				Integer checked22 = checked2.get(owner);
-				if (checked22 == null || checked22 < blockNumber) {
-//					System.out.println("CHECKED 2 problem: null or less than block number (" + checked22 + ")");
-				}
-				
-				continue;
-			}
 			
 			Block block = owner.getChain().getBlocks().get(blockNumber);
 			int nextCommittedBlockNr = block.getNextCommittedBlock().getNumber();
-			if (checkedSet.contains(nextCommittedBlockNr)) {
-//				System.out.println("I don't think this should be possible");
-				//TODO Temp
-				Integer checked22 = checked2.get(owner);
-				if (checked22 == null || checked22 < nextCommittedBlockNr) {
-//					System.out.println("CHECKED 2 problem: null or less than committed block number (" + checked22 + ")");
-				}
-				//ENDTODO
-				continue;
-			}
 			
 			//Determine the blocks that we would need to send.
 			MetaKnowledge metaKnowledge = this.receiver.getMetaKnowledge();
 			List<Block> blocksOfSource = metaKnowledge.getBlocksToSend(owner, nextCommittedBlockNr);
-			if (blocksOfSource.isEmpty()) {
-				for (int i = 0; i < nextCommittedBlockNr; i++) {
-					checkedSet.add(i);
-				}
-				
-				//TODO Temp
-				Integer old = checked2.put(owner, nextCommittedBlockNr);
-				if (old != null && old > nextCommittedBlockNr) {
-//					System.out.println("CHECKED 2 problem: old was higher (2)");
-				}
-				//ENDTODO
-				continue;
-			}
 			
 			processBlocks(owner, blocksOfSource);
 		}

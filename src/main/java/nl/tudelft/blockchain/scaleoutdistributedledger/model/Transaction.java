@@ -101,7 +101,7 @@ public class Transaction implements Comparable<Transaction> {
 		}
 		return this.blockNumber;
 	}
-	
+
 	/**
 	 * Sets the block number of this transaction.
 	 * @param number - the block number

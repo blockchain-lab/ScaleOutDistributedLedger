@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionSender;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
@@ -45,6 +46,12 @@ public interface ITransactionPattern extends Serializable {
 	 */
 	public default void doAction(LocalStore localStore) throws InterruptedException {
 		Log.log(Level.FINER, "Start doAction of node " + localStore.getOwnNode().getId());
+
+		// Make sure we have some room
+		if (localStore.getApplication().getTransactionSender().blocksWaiting() >= SimulationMain.MAX_BLOCKS_PENDING) {
+			Log.log(Level.FINE, "Too many blocks pending, skipping transaction creation!");
+			return;
+		}
 		
 		//Select receiver and amount
 		long amount = selectAmount(localStore);
@@ -52,7 +59,7 @@ public interface ITransactionPattern extends Serializable {
 			Log.log(Level.INFO, "Not enough money to make transaction!");
 			return;
 		}
-		
+
 		Node receiver = selectNode(localStore);
 		
 		OwnNode ownNode = localStore.getOwnNode();
@@ -114,7 +121,7 @@ public interface ITransactionPattern extends Serializable {
 	 */
 	public default void commitExtraEmpty(LocalStore localStore) {
 		Chain ownChain = localStore.getOwnNode().getChain();
-		for (int i = 0; i < TransactionSender.REQUIRED_COMMITS; i++) {
+		for (int i = 0; i < SimulationMain.REQUIRED_COMMITS; i++) {
 			synchronized (ownChain) {
 				Block block = ownChain.appendNewBlock();
 				block.commit(localStore);
