@@ -95,6 +95,7 @@ public class Transaction implements Comparable<Transaction> {
 				this.blockNumber = OptionalInt.of(Block.GENESIS_BLOCK_NUMBER);
 			} else {
 				//TODO IMPORTANT We don't want this to be called really.
+				System.out.println("Looking up block number!");
 				for (Block block : sender.getChain().getBlocks()) {
 					if (block.getTransactions().contains(this)) {
 						this.blockNumber = OptionalInt.of(block.getNumber());
