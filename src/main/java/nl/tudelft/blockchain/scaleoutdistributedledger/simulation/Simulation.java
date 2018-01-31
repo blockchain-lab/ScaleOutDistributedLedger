@@ -17,10 +17,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -79,23 +77,28 @@ public class Simulation {
 		this.nodes = nodes;
 		//Init the applications
 		localApplications = new Application[ownNodes.size()];
-		int counter = 0;
+		AtomicInteger counter = new AtomicInteger(0);
+		List<Thread> startingThreads = new LinkedList<>();
 		for (Map.Entry<Integer, OwnNode> nodeEntry : ownNodes.entrySet()) {
-			Node node = nodeEntry.getValue();
-			int nodeNumber = nodeEntry.getKey();
+			startingThreads.add(new Thread(() -> {
+				Node node = nodeEntry.getValue();
+				int nodeNumber = nodeEntry.getKey();
 
-			Application app = new Application(true);
-			List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
+				Application app = new Application(true);
+				List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
 
-			try {
-				TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
-				app.init(node.getPort(), genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
-			} catch (Exception ex) {
-				Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + node.getPort() + "!", ex);
-			}
+				try {
+					TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
+					app.init(node.getPort(), genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
+				} catch (Exception ex) {
+					Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + node.getPort() + "!", ex);
+				}
 
-			localApplications[counter++] = app;
+				localApplications[counter.getAndIncrement()] = app;
+			}));
+
 		}
+		startingThreads.stream().forEach(Thread::start);
 	}
 
 	private List<String> generateAddressesForNodeForTendermintP2P(Integer i, Map<Integer, Node> nodes) {

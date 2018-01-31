@@ -104,10 +104,11 @@ public final class TendermintChain implements MainChain {
 		boolean updated = false;
 		do {
 			try {
+				Thread.sleep(1000);
 				updateCacheBlocking(-1, false);
 				updated = true;
 			} catch (Exception e) {
-				int retryTime = 3;
+				int retryTime = 2;
 				Log.log(Level.INFO, "Could not update cache on startup, trying again in " + retryTime + "s.");
 				Log.log(Level.FINE, "", e);
 				try {
