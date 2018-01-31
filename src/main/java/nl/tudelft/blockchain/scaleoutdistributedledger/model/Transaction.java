@@ -47,6 +47,9 @@ public class Transaction implements Comparable<Transaction> {
 	@Getter @Setter
 	private TransactionMessage message;
 
+	@Getter @Setter
+	private boolean locallyVerified;
+
 	/**
 	 * Constructor.
 	 * @param number    - the number of this transaction.
