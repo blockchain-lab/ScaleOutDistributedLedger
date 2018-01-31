@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
@@ -57,10 +56,11 @@ public class TendermintChainTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testInitialUpdateCache() {
-		when(clientMock.query(anyLong())).thenAnswer(new Answer() {
+		when(clientMock.query(anyLong())).thenAnswer(new Answer<List<BlockAbstract>>() {
 			private int c;
 
-			public Object answer(InvocationOnMock invocation) {
+			@Override
+			public List<BlockAbstract> answer(InvocationOnMock invocation) {
 				List<BlockAbstract> data = new ArrayList<>();
 				if (c == 0) {
 					data.add(new BlockAbstract(0, 0, new Sha256Hash(Utils.hexStringToBytes("FF44")), null));
@@ -73,14 +73,16 @@ public class TendermintChainTest extends SilencedTestClass {
 			}
 		});
 
-		when(clientMock.status()).thenAnswer(new Answer() {
+		when(clientMock.status()).thenAnswer(new Answer<JSONObject>() {
 			private JSONObject json;
 
-			public Object answer(InvocationOnMock invocation) {
+			@Override
+			public JSONObject answer(InvocationOnMock invocation) {
+				
 				if (json == null) {
 					json = new JSONObject();
 				} else {
-					json.put("latest_block_height", 2l);
+					json.put("latest_block_height", 2L);
 				}
 				return json;
 			}
@@ -106,7 +108,7 @@ public class TendermintChainTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testCommitAbstract() {
-		BlockAbstract abs = new BlockAbstract(0, 0, Sha256Hash.withHash(Utils.hexStringToBytes("11FF")) , null);
+		BlockAbstract abs = new BlockAbstract(0, 0, Sha256Hash.withHash(Utils.hexStringToBytes("11FF")), null);
 		Sha256Hash hash = Sha256Hash.withHash(Utils.hexStringToBytes("FF11"));
 
 		when(clientMock.commit(any(BlockAbstract.class))).thenReturn(Utils.hexStringToBytes("FF11"));
@@ -122,7 +124,7 @@ public class TendermintChainTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testCommitAbstractFail() {
-		BlockAbstract abs = new BlockAbstract(0, 0, Sha256Hash.withHash(Utils.hexStringToBytes("11FF")) , null);
+		BlockAbstract abs = new BlockAbstract(0, 0, Sha256Hash.withHash(Utils.hexStringToBytes("11FF")), null);
 		when(clientMock.commit(any(BlockAbstract.class))).thenReturn(null);
 
 		assertNull(instance.commitAbstract(abs));

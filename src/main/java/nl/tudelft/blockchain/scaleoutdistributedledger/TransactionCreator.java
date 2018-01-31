@@ -1,6 +1,13 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.*;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
@@ -21,7 +28,7 @@ public class TransactionCreator {
 	private final Node sender;
 	private final Node receiver;
 	private final long amount;
-	private final BitSet known;
+	//private final BitSet known;
 
 	private int currentBest = Integer.MAX_VALUE;
 	private TransactionTuple currentBestTuple;
@@ -37,27 +44,28 @@ public class TransactionCreator {
 		this.sender = localStore.getOwnNode();
 		this.receiver = receiver;
 		this.amount = amount;
-		this.known = calculateKnowledge();
+		//this.known = calculateKnowledge();
 	}
 
-	/**
-	 * Calculates what the receiver already knows about.
-	 * 
-	 * @return a bitset with the chains the receiver already knows about
-	 */
-	private BitSet calculateKnowledge() {
-		synchronized (receiver.getMetaKnowledge()) {
-			BitSet collected = receiver.getMetaKnowledge()
-					.keySet()
-					.stream()
-					.collect(() -> new BitSet(nodesCount),
-							(bs, i) -> bs.set(i),
-							(bs1, bs2) -> bs1.or(bs2)
-					);
-	
-			return collected;
-		}
-	}
+//TODO IMPORTANT Determine if the current transaction creation method is correct.
+//	/**
+//	 * Calculates what the receiver already knows about.
+//	 * 
+//	 * @return a bitset with the chains the receiver already knows about
+//	 */
+//	private BitSet calculateKnowledge() {
+//		synchronized (receiver.getMetaKnowledge()) {
+//			BitSet collected = receiver.getMetaKnowledge()
+//					.keySet()
+//					.stream()
+//					.collect(() -> new BitSet(nodesCount),
+//							(bs, i) -> bs.set(i),
+//							(bs1, bs2) -> bs1.or(bs2)
+//					);
+//	
+//			return collected;
+//		}
+//	}
 
 	/**
 	 * Creates a transaction.

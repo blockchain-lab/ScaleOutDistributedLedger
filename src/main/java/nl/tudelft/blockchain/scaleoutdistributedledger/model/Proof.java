@@ -4,21 +4,16 @@ import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidationException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * Proof class.
@@ -43,16 +38,6 @@ public class Proof {
 	}
 	
 	/**
-	 * Constructor.
-	 * @param transaction  - the transaction to be proven.
-	 * @param chainUpdates - a map of chain updates
-	 */
-	public Proof(Transaction transaction, Map<Node, List<Block>> chainUpdates) {
-		this.transaction = transaction;
-		this.chainUpdates = chainUpdates;
-	}
-	
-	/**
 	 * Constructor to decode a proof message.
 	 * @param proofMessage - proof received from the network
 	 * @param localStore - local store
@@ -64,12 +49,13 @@ public class Proof {
 		// Decode the transactions while skipping sources
 		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
 			List<Block> blocks = new ArrayList<>();
+			//TODO Turn into normal for loop
 			entry.getValue().forEach(blockMessage -> blocks.add(blockMessage.toBlockWithoutSources(localStore)));
 			chainUpdates.put(localStore.getNode(entry.getKey()), blocks);
 		}
 
 		// Fix backlinks
-		this.fixPreviousBlockPointersAndOrder();
+		this.fixPreviousBlockPointers();
 
 		// Fix the sources
 		this.fixTransactionSources(localStore);
@@ -80,12 +66,11 @@ public class Proof {
 				.getTransaction(proofMessage.getTransactionMessage().getNumber());
 	}
 	
-	private void fixPreviousBlockPointersAndOrder() {
+	private void fixPreviousBlockPointers() {
 		for (Entry<Node, List<Block>> entry : this.chainUpdates.entrySet()) {
 			Node node = entry.getKey();
 			List<Block> updates = entry.getValue();
-
-			updates.sort(Comparator.comparingInt(Block::getNumber));
+			if (updates.isEmpty()) continue;
 			
 			Block previousBlock = null;
 			for (int i = 0; i < updates.size(); i++) {
@@ -143,6 +128,7 @@ public class Proof {
 	 * @param end   - the block to end at (exclusive)
 	 */
 	public void addBlocksOfChain(Chain chain, int start, int end) {
+		//TODO IMPORTANT Is this check correct? Shouldn't it be start > end? And the end also seems strange.
 		if (start >= end || end > chain.getBlocks().size()) return;
 		
 		List<Block> blocks = chainUpdates.get(chain.getOwner());
@@ -277,24 +263,6 @@ public class Proof {
 		//Update the meta knowledge of the sender
 		transaction.getSender().updateMetaKnowledge(this);
 	}
-
-	/**
-	 * @param localStore
-	 * @param blockRequired
-	 * @param senderChain
-	 * @return
-	 */
-	private static Block getNextCommittedBlock(LocalStore localStore, int blockRequired, Chain senderChain) {
-		ListIterator<Block> it = senderChain.getBlocks().listIterator(blockRequired);
-		while (it.hasNext()) {
-			Block block = it.next();
-			if (block.isOnMainChain(localStore)) {
-				return block;
-			}
-		}
-		
-		throw new IllegalStateException("There is no next committed block!");
-	}
 	
 	/**
 	 * Recursively calls itself with all the sources of the given transaction. Transactions which
@@ -352,12 +320,10 @@ public class Proof {
 
 	/**
 	 * Gets the number of blocks used in the proof.
-	 * @return - the number of blocks;
+	 * @return - the number of blocks
 	 */
 	public int getNumberOfBlocks() {
-		final int[] res = {0};
-		chainUpdates.values().forEach(blocks -> res[0] += blocks.size());
-		return res[0];
+		return chainUpdates.values().stream().mapToInt(List::size).sum();
 	}
 	
 	@Override

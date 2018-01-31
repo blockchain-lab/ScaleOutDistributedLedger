@@ -2,10 +2,12 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.AppendOnlyArrayList;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.ReversedIterator;
 
 /**
@@ -17,7 +19,7 @@ public class Chain {
 	private final Node owner;
 
 	@Getter
-	private final List<Block> blocks;
+	private final AppendOnlyArrayList<Block> blocks;
 	
 	@Getter
 	private Transaction genesisTransaction;
@@ -30,17 +32,7 @@ public class Chain {
 	 */
 	public Chain(Node owner) {
 		this.owner = owner;
-		this.blocks = new ArrayList<>();
-	}
-
-	/**
-	 * Constructor.
-	 * @param owner - the owner of this chain.
-	 * @param blocks - list of blocks in this chain.
-	 */
-	public Chain(Node owner, List<Block> blocks) {
-		this.owner = owner;
-		this.blocks = blocks;
+		this.blocks = new AppendOnlyArrayList<>();
 	}
 	
 	/**
@@ -50,47 +42,49 @@ public class Chain {
 	 * @param localStore - the localStore
 	 * @throws UnsupportedOperationException - If this chain is owned by us.
 	 */
-	public synchronized void update(List<Block> updates, LocalStore localStore) {
+	public void update(List<Block> updates, LocalStore localStore) {
 		if (owner instanceof OwnNode) throw new UnsupportedOperationException("You cannot use update to update your own chain");
 		
 		if (updates.isEmpty()) return;
 		
-		//TODO remove
-		boolean asserts = false;
-		assert asserts = true;
-		if (asserts) {
-			ArrayList<Block> copy = new ArrayList<>(updates);
-			copy.sort((a, b) -> Integer.compare(a.getNumber(), b.getNumber()));
-			if (!copy.equals(updates)) {
-				throw new IllegalArgumentException("The blocks are not ordered correctly :(");
-			}
-		}
-		
-		int nextNr;
-		Block previousBlock;
-		if (blocks.isEmpty()) {
-			//Should start at 0, there is no previous block
-			nextNr = 0;
-			previousBlock = null;
-		} else {
-			//Should start with the first block after our last block.
-			Block lastBlock = blocks.get(blocks.size() - 1);
-			nextNr = lastBlock.getNumber() + 1;
-			previousBlock = lastBlock;
-		}
-		
-		//The last block in the updates must be a committed block
 		Block lastCommitted = updates.get(updates.size() - 1);
-		for (Block block : updates) {
-			//Skip any overlap
-			if (block.getNumber() != nextNr) continue;
-			block.setPreviousBlock(previousBlock);
-			block.setNextCommittedBlock(lastCommitted);
-			blocks.add(block);
-			nextNr++;
-			previousBlock = block;
+		
+		synchronized (this) {
+			int nextNr;
+			Block previousBlock;
+			if (blocks.isEmpty()) {
+				//Should start at 0, there is no previous block
+				nextNr = 0;
+				previousBlock = null;
+			} else {
+				//Should start with the first block after our last block.
+				Block lastBlock = blocks.get(blocks.size() - 1);
+				nextNr = lastBlock.getNumber() + 1;
+				previousBlock = lastBlock;
+			}
+			
+			//The last block in the updates must be a committed block
+			for (Block block : updates) {
+				//Skip any overlap
+				if (block.getNumber() != nextNr) continue;
+				block.setPreviousBlock(previousBlock);
+				
+				//TODO IMPORTANT We might want to set the next committed block in a better way. (Send it)
+				block.setNextCommittedBlock(lastCommitted);
+				blocks.add(block);
+				nextNr++;
+				previousBlock = block;
+			}
+			
+			setLastCommittedBlock(lastCommitted);
 		}
 		
+		//TODO IMPORTANT Remove after debugging
+		if (!lastCommitted.isOnMainChain(localStore)) {
+			Log.log(Level.SEVERE, "The last block received is not a committed block!");
+		}
+		
+		//TODO IMPORTANT do we need this?
 		//TODO Set last committed block
 		for (Block block : ReversedIterator.reversed(this.blocks)) {
 			if (block.isOnMainChain(localStore)) {
@@ -103,7 +97,7 @@ public class Chain {
 	/**
 	 * @return - the genesis block
 	 */
-	public synchronized Block getGenesisBlock() {
+	public Block getGenesisBlock() {
 		if (blocks.isEmpty()) return null;
 
 		return blocks.get(0);
@@ -128,7 +122,7 @@ public class Chain {
 	/**
 	 * @return the last block in this chain
 	 */
-	public synchronized Block getLastBlock() {
+	public Block getLastBlock() {
 		if (blocks.isEmpty()) return null;
 
 		return blocks.get(blocks.size() - 1);
@@ -149,7 +143,7 @@ public class Chain {
 	/**
 	 * @return - the last block that was committed to the main chain
 	 */
-	public synchronized Block getLastCommittedBlock() {
+	public Block getLastCommittedBlock() {
 		return lastCommittedBlock;
 	}
 	

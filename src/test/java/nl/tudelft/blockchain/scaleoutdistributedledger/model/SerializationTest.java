@@ -78,7 +78,7 @@ public class SerializationTest {
 		// Add Proof
 		this.proof = new Proof(this.transaction);
 		// Manually change the chainUpdates
-		List<Block> listBlockUpdate = this.bobNode.getChain().getBlocks();
+		List<Block> listBlockUpdate = new ArrayList<>(this.bobNode.getChain().getBlocks());
 		listBlockUpdate.remove(0);
 		this.proof.getChainUpdates().put(this.bobNode, listBlockUpdate);
 	}
@@ -219,8 +219,8 @@ public class SerializationTest {
 		// Create Proof
 		Proof originalProof = new Proof(newTransaction);
 		// Manually change the chainUpdates
-		originalProof.getChainUpdates().put(this.aliceNode, this.aliceNode.getChain().getBlocks());
-		originalProof.getChainUpdates().put(this.bobNode, this.bobNode.getChain().getBlocks());
+		originalProof.getChainUpdates().put(this.aliceNode, new ArrayList<>(this.aliceNode.getChain().getBlocks()));
+		originalProof.getChainUpdates().put(this.bobNode, new ArrayList<>(this.bobNode.getChain().getBlocks()));
 		// Encode Proof into ProofMessage
 		ProofMessage encodedProof = new ProofMessage(originalProof);
 		// Decode ProofMessage into Proof

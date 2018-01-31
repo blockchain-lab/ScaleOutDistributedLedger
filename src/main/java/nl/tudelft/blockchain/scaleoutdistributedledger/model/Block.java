@@ -98,17 +98,26 @@ public class Block {
 		}
 		
 		transactions.add(transaction);
-		transaction.setBlockNumber(this.getNumber());
+		transaction.setBlockNumber(getNumber());
 	}
 	
 	/**
 	 * Get hash of the block.
 	 * @return Hash SHA256
 	 */
-	public synchronized Sha256Hash getHash() {
-		if (true || this.hash == null) {
-			this.hash = this.calculateHash();
+	public Sha256Hash getHash() {
+		if (this.hash == null) {
+			this.hash = calculateHash();
 		}
+		
+		//TODO IMPORTANT Remove this check
+		Sha256Hash oldHash = this.hash;
+		Sha256Hash newHash = calculateHash();
+		if (!oldHash.equals(newHash)) {
+			Log.log(Level.SEVERE, "Hashes do not match! old: " + oldHash + ". new: " + newHash);
+			this.hash = newHash;
+		}
+		
 		return this.hash;
 	}
 
@@ -128,7 +137,7 @@ public class Block {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			outputStream.write(Utils.intToByteArray(this.owner.getId()));
 			outputStream.write(Utils.intToByteArray(this.number));
-			outputStream.write(this.getHash().getBytes());
+			outputStream.write(getHash().getBytes());
 			attrInBytes = outputStream.toByteArray();
 		} catch (IOException ex) {
 			throw new IllegalStateException("Unable to write to outputstream", ex);
@@ -137,7 +146,7 @@ public class Block {
 		// Sign the attributes
 		try {
 			byte[] signature = ((OwnNode) this.owner).sign(attrInBytes);
-			BlockAbstract blockAbstract = new BlockAbstract(this.owner.getId(), this.number, this.getHash(), signature);
+			BlockAbstract blockAbstract = new BlockAbstract(this.owner.getId(), this.number, getHash(), signature);
 			this.hasNoAbstract = false;
 			return blockAbstract;
 		} catch (Exception ex) {
@@ -150,26 +159,25 @@ public class Block {
 	 * @param localStore - the local store
 	 */
 	public synchronized void commit(LocalStore localStore) {
-//		Log.debug("{0}: Committing block {1}", localStore.getOwnNode().getId(), this.getNumber());
 		if (finalized) {
 			throw new IllegalStateException("This block has already been committed!");
 		}
 		
-		Chain chain = getOwner().getChain();
-		synchronized (chain) {
-			BlockAbstract blockAbstract = calculateBlockAbstract();
-			localStore.getMainChain().commitAbstract(blockAbstract);
-			getOwner().getChain().setLastCommittedBlock(this);
-		}
+		Log.log(Level.FINER, "Committing block " + getNumber(), getOwner().getId());
 		
-		finalized = true;
+		//Commit to the main chain, and set the last committed block
+		localStore.getMainChain().commitAbstract(calculateBlockAbstract());
+		getOwner().getChain().setLastCommittedBlock(this);
 		
+		//Set next committed block
 		nextCommittedBlock = this;
 		Block prev = getPreviousBlock();
-		while (prev.nextCommittedBlock == null) {
+		while (prev != null && prev.nextCommittedBlock == null) {
 			prev.nextCommittedBlock = this;
 			prev = prev.getPreviousBlock();
 		}
+		
+		finalized = true;
 	}
 
 	@Override
@@ -183,6 +191,7 @@ public class Block {
 
 	@Override
 	public boolean equals(Object obj) {
+		//TODO IMPORTANT Remove sysos
 		if (this == obj) return true;
 		if (!(obj instanceof Block)) {
 			System.out.println("Block not equal because one is null");
@@ -195,6 +204,7 @@ public class Block {
 			if (other.owner != null) return false;
 		} else if (!this.owner.equals(other.owner)) return false;
 
+		//TODO IMPORTANT We might not want to use equals for the previous block (as it will recurse)
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
 		} else if (!this.previousBlock.equals(other.previousBlock)) {
@@ -220,11 +230,15 @@ public class Block {
 		try {
 			// Important to keep the order of writings
 			outputStream.write(Utils.intToByteArray(this.number));
+			
+			//TODO IMPORTANT Should we include the hash of the previous block?
 			byte[] prevBlockHash = (this.previousBlock != null) ? this.previousBlock.getHash().getBytes() : new byte[0];
 			outputStream.write(prevBlockHash);
 			if (this.owner != null) {
 				outputStream.write(Utils.intToByteArray(this.owner.getId()));
 			}
+			
+			//TODO IMPORTANT Remove the transactions for testing
 			for (Transaction tx : this.transactions) {
 				outputStream.write(tx.getHash().getBytes());
 			}
@@ -249,6 +263,7 @@ public class Block {
 			block.addTransaction(transaction.genesisCopy());
 		}
 		
+		//The genesis block is on the main chain, cannot be modified and is its own committed block
 		block.onMainChain = true;
 		block.finalized = true;
 		block.nextCommittedBlock = block;
@@ -273,6 +288,12 @@ public class Block {
 		//It is present, so store it and return
 		if (localStore.getMainChain().isPresent(this)) {
 			this.onMainChain = true;
+			
+			//TODO Chance onMainChain to this.nextCommittedBlock
+			if (this.nextCommittedBlock != this) {
+				Log.debug("Block {0} doesn't have itself as next committed!", this.number);
+			}
+			
 			return true;
 		}
 

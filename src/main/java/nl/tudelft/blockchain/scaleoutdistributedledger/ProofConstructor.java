@@ -1,8 +1,15 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 /**
  * Class for constructing proofs.
@@ -131,6 +138,7 @@ public class ProofConstructor {
 			//Determine the blocks that we would need to send.
 			MetaKnowledge metaKnowledge = this.receiver.getMetaKnowledge();
 			List<Block> blocksOfSource = metaKnowledge.getBlocksToSend(owner, nextCommittedBlockNr);
+			if (blocksOfSource.isEmpty()) continue;
 			
 			processBlocks(owner, blocksOfSource);
 		}

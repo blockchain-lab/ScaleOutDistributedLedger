@@ -28,9 +28,9 @@ public final class TendermintChain implements MainChain {
 	private TSocket socket;
 	private ExecutorService threadPool;
 	private Set<Sha256Hash> cache;
-	private final Object cacheLock;
-	private Map<Integer, Set<Integer>> extraCache;
-	private Map<String, Sha256Hash> superExtraCache;
+	private final Object cacheLock = new Object();
+	private Map<Integer, Set<Integer>> extraCache = new HashMap<>();
+	private Map<String, Sha256Hash> superExtraCache = new HashMap<>();
 	@Getter
 	private long currentHeight;
 	@Getter
@@ -40,22 +40,22 @@ public final class TendermintChain implements MainChain {
 	 * Create and start the ABCI app (server) to connect with Tendermint on the default port (46658).
 	 * Also uses (port - 1), which Tendermint should listen on for RPC (rpc.laddr)
 	 * @param genesisBlock - the genesis (initial) block for the entire system
+	 * @param app          - the application
 	 */
 	public TendermintChain(Block genesisBlock, Application app) {
 		this(DEFAULT_ABCI_SERVER_PORT, genesisBlock, app);
 	}
+	
 	/**
 	 * Create and start the ABCI app (server) to connect with Tendermint on the given port.
 	 * Also uses (port - 1), which Tendermint should listen on for RPC (rpc.laddr)
-	 * @param port - the port on which we run the server
+	 * @param port         - the port on which we run the server
 	 * @param genesisBlock - the genesis (initial) block for the entire system
+	 * @param app          - the application
 	 */
 	public TendermintChain(final int port, Block genesisBlock, Application app) {
 		this.abciServerPort = port;
 		this.cache = new HashSet<>();
-		this.cacheLock = new Object();
-		this.extraCache = new HashMap<>();
-		this.superExtraCache = new HashMap<>();
 		this.app = app;
 
 		this.socket = new TSocket();
@@ -76,10 +76,6 @@ public final class TendermintChain implements MainChain {
 		this.socket = socket;
 		this.cache = cache;
 		this.app = app;
-		this.cacheLock = new Object();
-
-		this.extraCache = new HashMap<>();
-		this.superExtraCache = new HashMap<>();
 	}
 
 	/**
@@ -108,7 +104,7 @@ public final class TendermintChain implements MainChain {
 		boolean updated = false;
 		do {
 			try {
-				updateCacheBlocking(-1);
+				updateCacheBlocking(-1, false);
 				updated = true;
 			} catch (Exception e) {
 				int retryTime = 3;
@@ -132,9 +128,10 @@ public final class TendermintChain implements MainChain {
 	 */
 	protected void updateCache(long height) {
 		if (client == null) return; // If in startup
-		this.threadPool.submit(() -> updateCacheBlocking(height));
+		this.threadPool.submit(() -> updateCacheBlocking(height, false));
 	}
 
+	//TODO IMPORTANT Remove the extra
 	/**
 	 * Update the cache of the chain.
 	 * Note that this method is blocking and execution may therefore take a while,
@@ -142,7 +139,7 @@ public final class TendermintChain implements MainChain {
 	 *
 	 * @param height - The height to update to, if -1 check the needed height with Tendermint
 	 */
-	private void updateCacheBlocking(long height) {
+	private void updateCacheBlocking(long height, boolean extra) {
 		if (height == -1) {
 			height = this.client.status().getLong("latest_block_height");
 		}
@@ -155,7 +152,9 @@ public final class TendermintChain implements MainChain {
 			}
 			synchronized (cacheLock) {
 				for (BlockAbstract abs : abstractsAtCurrentHeight) {
-					cache.add(abs.getBlockHash());
+					if (cache.add(abs.getBlockHash()) && extra) {
+						Log.debug("{0}: updateCacheBlocking caused new block to be added", getApp().getLocalStore().getOwnNode().getId());
+					}
 					int blockNum = abs.getBlockNumber();
 					int owner = abs.getOwnerNodeId();
 					Set<Integer> setOfBlockNums = extraCache.getOrDefault(owner, new HashSet<>());
@@ -198,13 +197,16 @@ public final class TendermintChain implements MainChain {
 	@Override
 	public boolean isPresent(Block block) {
 		Sha256Hash blockHash = block.getHash();
+//		return cache.contains(blockHash);
+		
+		//TODO IMPORTANT Decide what to do here
 		if (cache.contains(blockHash)) {
 			return true;
 		} else {
 //			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " checking cache for " + block.getOwner().getId() + "-" + block.getNumber() + ": " + blockHash + ", the set is " + this.cache);
 			// We could miss some blocks in our cache, so update and wait for the results
 			//TODO We might not want to update here. The cache should be enough
-			updateCacheBlocking(-1);
+			updateCacheBlocking(-1, true);
 //			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " did not find " + blockHash + ", so updated the cache and now the set is " + this.cache);
 			return cache.contains(blockHash);
 			//TODO: We might want to check the actual main chain in the false case

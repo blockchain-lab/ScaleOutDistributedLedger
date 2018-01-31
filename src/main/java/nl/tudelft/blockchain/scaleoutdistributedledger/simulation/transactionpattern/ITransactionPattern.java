@@ -49,8 +49,8 @@ public interface ITransactionPattern extends Serializable {
 
 		// Make sure we have some room
 		if (localStore.getApplication().getTransactionSender().blocksWaiting() >= SimulationMain.MAX_BLOCKS_PENDING) {
-			Log.log(Level.FINE, "Too many blocks pending, skipping transaction creation!");
-			return;
+			Log.log(Level.FINE, "Too many blocks pending, maybe slow down!");
+//			return;
 		}
 		
 		//Select receiver and amount
@@ -65,17 +65,17 @@ public interface ITransactionPattern extends Serializable {
 		OwnNode ownNode = localStore.getOwnNode();
 		Block newBlock;
 		Log.log(Level.FINE, "Going to make transaction: $ " + amount + " from " + ownNode.getId() + " -> " + receiver.getId());
-		synchronized (ownNode.getChain()) {
-			//Create the transaction
-			TransactionCreator creator = new TransactionCreator(localStore, receiver, amount);
-			Transaction transaction = creator.createTransaction();
 
-			//TODO how many transactions do we put in one block?
-			//Add block to local chain
-			newBlock = ownNode.getChain().appendNewBlock();
-			newBlock.addTransaction(transaction);
-			Log.log(Level.FINE, "Node " + ownNode.getId() + " added transaction " + transaction.getNumber() + " in block " + newBlock.getNumber());
-		}
+		//TODO IMPORTANT Removed synchronization on own chain. Transaction creator should be safe.
+		//Create the transaction
+		TransactionCreator creator = new TransactionCreator(localStore, receiver, amount);
+		Transaction transaction = creator.createTransaction();
+
+		//TODO how many transactions do we put in one block?
+		//Add block to local chain
+		newBlock = ownNode.getChain().appendNewBlock();
+		newBlock.addTransaction(transaction);
+		Log.log(Level.FINE, "Node " + ownNode.getId() + " added transaction " + transaction.getNumber() + " in block " + newBlock.getNumber());
 		
 		//Ensure that the block is sent at some point
 		localStore.getApplication().getTransactionSender().scheduleBlockSending(newBlock);
@@ -102,16 +102,16 @@ public interface ITransactionPattern extends Serializable {
 	 */
 	public default void commitBlocks(LocalStore localStore, boolean force) throws InterruptedException {
 		Chain ownChain = localStore.getOwnNode().getChain();
-		synchronized (ownChain) {
-			Block lastBlock = ownChain.getLastBlock();
-			Block lastCommitted = ownChain.getLastCommittedBlock();
-			
-			//Don't commit if we don't have anything to commit
-			if (lastBlock == lastCommitted) return;
-			
-			if (force || shouldCommitBlocks(lastBlock, lastCommitted)) {
-				lastBlock.commit(localStore);
-			}
+
+		//TODO IMPORTANT Removed synchronization on own chain
+		Block lastBlock = ownChain.getLastBlock();
+		Block lastCommitted = ownChain.getLastCommittedBlock();
+		
+		//Don't commit if we don't have anything to commit
+		if (lastBlock == lastCommitted) return;
+		
+		if (force || shouldCommitBlocks(lastBlock, lastCommitted)) {
+			lastBlock.commit(localStore);
 		}
 	}
 	
@@ -121,11 +121,10 @@ public interface ITransactionPattern extends Serializable {
 	 */
 	public default void commitExtraEmpty(LocalStore localStore) {
 		Chain ownChain = localStore.getOwnNode().getChain();
-		for (int i = 0; i < SimulationMain.REQUIRED_COMMITS; i++) {
-			synchronized (ownChain) {
-				Block block = ownChain.appendNewBlock();
-				block.commit(localStore);
-			}
+		for (int i = 0; i < SimulationMain.REQUIRED_COMMITS + 1; i++) {
+			//TODO IMPORTANT (LOW) Removed synchronization on own chain (methods perform the synchronization already).
+			Block block = ownChain.appendNewBlock();
+			block.commit(localStore);
 		}
 	}
 

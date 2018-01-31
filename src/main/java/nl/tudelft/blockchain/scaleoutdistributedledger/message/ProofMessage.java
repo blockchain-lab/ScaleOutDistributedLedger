@@ -58,12 +58,11 @@ public class ProofMessage extends Message {
 
 	@Override
 	public void handle(LocalStore localStore) {
-		synchronized (localStore.getOwnNode().getChain()) {
-			try {
-				CommunicationHelper.receiveTransaction(new Proof(this, localStore), localStore);
-			} catch (IOException e) {
-				Log.log(Level.SEVERE, "Exception while handling proof message", e);
-			}
+		//TODO IMPORTANT Removed synchronized on own chain
+		try {
+			CommunicationHelper.receiveTransaction(new Proof(this, localStore), localStore);
+		} catch (IOException e) {
+			Log.log(Level.SEVERE, "Exception while handling proof message", e);
 		}
 	}
 	
