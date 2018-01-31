@@ -197,22 +197,22 @@ public final class TendermintChain implements MainChain {
 	@Override
 	public boolean isPresent(Block block) {
 		Sha256Hash blockHash = block.getHash();
-//		return cache.contains(blockHash);
+		return cache.contains(blockHash);
 		
-		//TODO IMPORTANT Decide what to do here
-		if (cache.contains(blockHash)) {
-			return true;
-		} else {
-//			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " checking cache for " + block.getOwner().getId() + "-" + block.getNumber() + ": " + blockHash + ", the set is " + this.cache);
-			// We could miss some blocks in our cache, so update and wait for the results
-			//TODO We might not want to update here. The cache should be enough
-			updateCacheBlocking(-1, true);
-//			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " did not find " + blockHash + ", so updated the cache and now the set is " + this.cache);
-			return cache.contains(blockHash);
-			//TODO: We might want to check the actual main chain in the false case
-			//      For when an abstract is in a block that is not yet closed by an ENDBLOCK
-			//		This now works because the block size is 1
-		}
+//		//TODO IMPORTANT Decide what to do here
+//		if (cache.contains(blockHash)) {
+//			return true;
+//		} else {
+////			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " checking cache for " + block.getOwner().getId() + "-" + block.getNumber() + ": " + blockHash + ", the set is " + this.cache);
+//			// We could miss some blocks in our cache, so update and wait for the results
+//			//TODO We might not want to update here. The cache should be enough
+//			updateCacheBlocking(-1, true);
+////			Log.log(Level.INFO, "Node" + this.getApp().getLocalStore().getOwnNode() + " did not find " + blockHash + ", so updated the cache and now the set is " + this.cache);
+//			return cache.contains(blockHash);
+//			//TODO: We might want to check the actual main chain in the false case
+//			//      For when an abstract is in a block that is not yet closed by an ENDBLOCK
+//			//		This now works because the block size is 1
+//		}
 	}
 
 	/**

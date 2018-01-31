@@ -110,14 +110,6 @@ public class Block {
 			this.hash = calculateHash();
 		}
 		
-		//TODO IMPORTANT Remove this check
-		Sha256Hash oldHash = this.hash;
-		Sha256Hash newHash = calculateHash();
-		if (!oldHash.equals(newHash)) {
-			Log.log(Level.SEVERE, "Hashes do not match! old: " + oldHash + ". new: " + newHash);
-			this.hash = newHash;
-		}
-		
 		return this.hash;
 	}
 
