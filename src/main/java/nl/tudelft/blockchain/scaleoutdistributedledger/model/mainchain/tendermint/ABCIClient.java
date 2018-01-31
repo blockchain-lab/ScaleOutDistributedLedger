@@ -95,10 +95,6 @@ public class ABCIClient {
 			JSONArray bytes = result.getJSONObject("result").getJSONObject("block").getJSONObject("data").getJSONArray("txs");
 			for (Object obj : bytes) {
 				abstracts.add(BlockAbstract.fromBytes(Utils.base64StringToBytes((String) obj)));
-
-				// Use the following lines when testing on a mock chain that does not contain actual abstracts
-// 				byte[] b = Utils.base64StringToBytes((String) obj);
-//				abss.add(new BlockAbstract(0, 0, Sha256Hash.withHash(b), b));
 			}
 		} catch (Exception e) {
 			Log.log(Level.WARNING, "Malformed result " + result + "\nCausing exception:", e);
@@ -179,7 +175,7 @@ public class ABCIClient {
 	 * @param params - the params passed along with the request
 	 * @return - the JSON response, or null when the response was invalid JSON
 	 */
-	private JSONObject sendRequest(String endpoint, Map<String, String> params) {
+	protected JSONObject sendRequest(String endpoint, Map<String, String> params) {
 		try {
 			StringBuilder str = new StringBuilder("http://" + addr + "/" + endpoint);
 
