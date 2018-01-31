@@ -77,6 +77,9 @@ public final class TendermintChain implements MainChain {
 		this.cache = cache;
 		this.app = app;
 		this.cacheLock = new Object();
+
+		this.extraCache = new HashMap<>();
+		this.superExtraCache = new HashMap<>();
 	}
 
 	/**
