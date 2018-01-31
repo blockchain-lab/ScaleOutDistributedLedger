@@ -4,6 +4,7 @@ import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidationException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
@@ -16,6 +17,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Proof class.
@@ -110,7 +113,7 @@ public class Proof {
 		for (Node node : this.chainUpdates.keySet()) {
 			for (Block block : this.chainUpdates.get(node)) {
 				for (Transaction tx : block.getTransactions()) {
-					tx.getMessage().getSource().forEach(entry -> {
+					for (Entry<Integer, int[]> entry : tx.getMessage().getSource()) {
 						Block sourceBlock;
 						if (!lightViews.containsKey(entry.getKey())) {
 							sourceBlock = localStore.getNode(entry.getKey()).getChain().getBlocks().get(entry.getValue()[0]);
@@ -118,7 +121,7 @@ public class Proof {
 							sourceBlock = lightViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
 						}
 						tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
-					});
+					}
 				}
 			}
 		}
@@ -345,6 +348,16 @@ public class Proof {
 		for (Transaction source : transaction.getSource()) {
 			appendChains2(nrOfNodes, source, receiver, chains);
 		}
+	}
+
+	/**
+	 * Gets the number of blocks used in the proof.
+	 * @return - the number of blocks;
+	 */
+	public int getNumberOfBlocks() {
+		final int[] res = {0};
+		chainUpdates.values().forEach(blocks -> res[0] += blocks.size());
+		return res[0];
 	}
 	
 	@Override

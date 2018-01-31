@@ -32,7 +32,7 @@ public class TransactionSender {
 	 * The number of blocks (with the same or higher block number) that need to be committed before
 	 * we send a certain block.
 	 */
-	public static final int REQUIRED_COMMITS = 2;
+	public static final int REQUIRED_COMMITS = 1;
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
@@ -170,7 +170,7 @@ public class TransactionSender {
 		synchronized (localStore.getOwnNode().getChain()) {
 			proof = proofConstructor.constructProof();
 		}
-		
+
 		ProofMessage msg = new ProofMessage(proof);
 		long timeDelta = System.currentTimeMillis() - startingTime;
 		if(timeDelta > 5 * 1000) {
