@@ -1,5 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.NodeRegisterFailedException;
+import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.TrackerException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
@@ -53,7 +55,8 @@ public final class TrackerHelper {
 	 * Registers this node with the given public key.
 	 * @param nodePort  - the port of the node
 	 * @param publicKey - the publicKey of the new node
-	 * @return - the registered node
+	 * @param id        - the id of the node
+	 * @return          - the registered node
 	 * @throws IOException - IOException while registering node
 	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
@@ -82,10 +85,11 @@ public final class TrackerHelper {
 	/**
 	 * Mark a node with the given id as initialized on the tracker.
 	 * @param id - the id of the node to mark
+	 * @param running - if the node is running or not
 	 * @throws IOException - IOException while registering node
-	 * @throws NodeRegisterFailedException - Server side exception while registering node
+	 * @throws TrackerException - Server side exception while updating running status
 	 */
-	public static void setRunning(int id, boolean running) throws IOException {
+	public static void setRunning(int id, boolean running) throws IOException, TrackerException {
 		JSONObject json = new JSONObject();
 		json.put("id", id);
 		json.put("running", running);
@@ -100,8 +104,7 @@ public final class TrackerHelper {
 				return;
 			}
 			Log.log(Level.SEVERE, "Error while updating the running status of the node");
-			//TODO: Create new excepton for this
-			throw new NodeRegisterFailedException();
+			throw new TrackerException("Unable to update to running.");
 		}
 	}
 
@@ -120,7 +123,7 @@ public final class TrackerHelper {
 				while (addrss.hasMoreElements()) {
 					String addr = addrss.nextElement().getHostAddress();
 					if (addr.contains(":") || addr.startsWith("127.")) continue;	// IPv6 or Local
-					return (addr);
+					return addr;
 				}
 			}
 		} catch (SocketException e) { }		// Intentionally empty catch block
@@ -155,6 +158,7 @@ public final class TrackerHelper {
 				} else {
 					Node node = new Node(i, publicKey, address, port);
 					
+					//TODO Check if we need this.
 					if (ownNode != null) {
 						node.getChain().setGenesisBlock(ownNode.getChain().getGenesisBlock());
 					}

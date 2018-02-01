@@ -1,9 +1,9 @@
-package nl.tudelft.blockchain.scaleoutdistributedledger;
+package nl.tudelft.blockchain.scaleoutdistributedledger.exceptions;
 
 /**
- * Exception for indicating that the user doesn't have enough money.
+ * Exception for indicating that registering with the tracker failed.
  */
-public class NodeRegisterFailedException extends RuntimeException {
+public class NodeRegisterFailedException extends TrackerException {
 	private static final long serialVersionUID = 8271135988867023425L;
 
 	/**

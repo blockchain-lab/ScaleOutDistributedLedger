@@ -43,5 +43,10 @@ public class TendermintChainMock implements MainChain {
 	}
 	
 	@Override
+	public boolean isInCache(Block block) {
+		return true;
+	}
+	
+	@Override
 	public void stop() {}
 }

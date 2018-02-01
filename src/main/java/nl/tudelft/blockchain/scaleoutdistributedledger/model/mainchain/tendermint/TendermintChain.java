@@ -1,7 +1,16 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+
 import com.github.jtendermint.jabci.socket.TSocket;
-import lombok.Getter;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
@@ -9,10 +18,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.MainChain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.Level;
+import lombok.Getter;
 
 /**
  * Class implementing {@link MainChain} for a Tendermint chain.
@@ -100,12 +106,15 @@ public final class TendermintChain implements MainChain {
 		Log.log(Level.INFO, "Started ABCI Client on " + DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
 	}
 
+	/**
+	 * Performs the initial update of the cache.
+	 */
 	protected void initialUpdateCache() {
 		boolean updated = false;
 		do {
 			try {
 				Thread.sleep(1000);
-				updateCacheBlocking(-1, false);
+				updateCacheBlocking(-1);
 				updated = true;
 			} catch (Exception e) {
 				int retryTime = 2;
@@ -129,10 +138,9 @@ public final class TendermintChain implements MainChain {
 	 */
 	protected void updateCache(long height) {
 		if (client == null) return; // If in startup
-		this.threadPool.submit(() -> updateCacheBlocking(height, false));
+		this.threadPool.submit(() -> updateCacheBlocking(height));
 	}
 
-	//TODO IMPORTANT Remove the extra
 	/**
 	 * Update the cache of the chain.
 	 * Note that this method is blocking and execution may therefore take a while,
@@ -140,7 +148,7 @@ public final class TendermintChain implements MainChain {
 	 *
 	 * @param height - The height to update to, if -1 check the needed height with Tendermint
 	 */
-	private void updateCacheBlocking(long height, boolean extra) {
+	private void updateCacheBlocking(long height) {
 		if (height == -1) {
 			height = this.client.status().getLong("latest_block_height");
 		}
@@ -153,9 +161,9 @@ public final class TendermintChain implements MainChain {
 			}
 			synchronized (cacheLock) {
 				for (BlockAbstract abs : abstractsAtCurrentHeight) {
-					if (cache.add(abs.getBlockHash()) && extra) {
-						Log.debug("{0}: updateCacheBlocking caused new block to be added", getApp().getLocalStore().getOwnNode().getId());
-					}
+					cache.add(abs.getBlockHash());
+					
+					//TODO Remove extra cache and super extra cache
 					int blockNum = abs.getBlockNumber();
 					int owner = abs.getOwnerNodeId();
 					Set<Integer> setOfBlockNums = extraCache.getOrDefault(owner, new HashSet<>());
@@ -214,6 +222,12 @@ public final class TendermintChain implements MainChain {
 //			//      For when an abstract is in a block that is not yet closed by an ENDBLOCK
 //			//		This now works because the block size is 1
 //		}
+	}
+	
+	@Override
+	public boolean isInCache(Block block) {
+		Sha256Hash blockHash = block.getHash();
+		return cache.contains(blockHash);
 	}
 
 	/**

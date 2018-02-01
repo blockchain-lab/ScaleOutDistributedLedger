@@ -25,7 +25,7 @@ public class Application {
 	@Getter
 	private LocalStore localStore;
 	private Thread executor;
-	private CancellableInfiniteRunnable transactionExecutable;
+	private CancellableInfiniteRunnable<LocalStore> transactionExecutable;
 	private final boolean isProduction;
 
 	@Getter

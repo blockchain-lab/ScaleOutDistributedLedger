@@ -1,4 +1,4 @@
-package nl.tudelft.blockchain.scaleoutdistributedledger;
+package nl.tudelft.blockchain.scaleoutdistributedledger.exceptions;
 
 /**
  * Exception for indicating that the user doesn't have enough money.

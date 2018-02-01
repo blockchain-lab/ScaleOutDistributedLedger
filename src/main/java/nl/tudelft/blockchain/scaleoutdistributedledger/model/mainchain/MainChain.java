@@ -17,21 +17,17 @@ public interface MainChain {
 	public Sha256Hash commitAbstract(BlockAbstract abs);
 
 	/**
-	 * Query the main chain for the presence of a block.
-	 *
-	 * @param block - the block to query for
-	 * @return - true when present, false otherwise
-	 */
-//	public default boolean isPresent(Block block) {
-//		return isPresent(block.getHash());
-//	}
-
-	/**
 	 * Check whether the block (from a local chain) is on the main chain (in a form of BlockAbstract).
-	 * @param block the hash of the block
+	 * @param block the block to check
 	 * @return true if there is a block abstract of the given block, false otherwise.
 	 */
 	public boolean isPresent(Block block);
+	
+	/**
+	 * @param block - the block to check
+	 * @return      - true if the given block is in the cache, false otherwise
+	 */
+	public boolean isInCache(Block block);
 
 	/**
 	 * Initializes the tendermint chain.

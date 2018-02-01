@@ -28,7 +28,6 @@ public class Transaction implements Comparable<Transaction> {
 	@Getter
 	private final Node sender;
 
-	// TODO: change back to final somehow
 	@Getter @Setter
 	private Node receiver;
 
@@ -143,7 +142,6 @@ public class Transaction implements Comparable<Transaction> {
 			outputStream.write(Utils.longToByteArray(this.amount));
 			outputStream.write(Utils.longToByteArray(this.remainder));
 			
-			// TODO: check if we really need to do this
 			for (Transaction tx : this.source) {
 				outputStream.write(tx.getHash().getBytes());
 			}
@@ -203,10 +201,10 @@ public class Transaction implements Comparable<Transaction> {
 
 	@Override
 	public int compareTo(Transaction o) {
-		if (this.sender == null && o.getSender() != null) return -1;
-		if (this.sender != null && o.getSender() == null) return 1;
-		if (this.sender == null && o.getSender() == null) return 0;
-		int senderCompare = Integer.compare(this.sender.getId(), o.getSender().getId());
+		if (this.sender == null && o.sender != null) return -1;
+		if (this.sender != null && o.sender == null) return 1;
+		if (this.sender == null && o.sender == null) return 0;
+		int senderCompare = Integer.compare(this.sender.getId(), o.sender.getId());
 		if (senderCompare != 0) return senderCompare;
 		return Integer.compare(this.getNumber(), o.getNumber());
 	}

@@ -76,7 +76,7 @@ public class UniformRandomTransactionPattern extends RandomTransactionPattern {
 		if (available == 0 || minAmount > available) return -1;
 		long amount;
 		if (maxAmount == minAmount) {
-			amount = (long) minAmount;
+			amount = minAmount;
 		} else {
 			amount = (long) minAmount + random.nextInt(maxAmount - minAmount);
 		}

@@ -1,21 +1,24 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import lombok.Getter;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
-import java.util.*;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Map.Entry;
+import lombok.Getter;
 
 /**
  * Transaction message for netty.
  */
 public class TransactionMessage extends Message {
-	
+	private static final long serialVersionUID = 1L;
+
 	@Getter
 	private final int number;
 
@@ -25,12 +28,8 @@ public class TransactionMessage extends Message {
 	@Getter
 	private final long amount, remainder;
 
-	/**
-	 * Transactions known by the receiver.
-	 * Entry: node id, [block number, transaction number]
-	 */
 	@Getter
-	private final Set<Entry<Integer, int[]>> source;
+	private final Set<TransactionSource> source;
 
 	@Getter
 	private final Sha256Hash hash;
@@ -64,13 +63,15 @@ public class TransactionMessage extends Message {
 			if (sourceTransaction.getBlockNumber().isPresent()) {
 				if (sourceSender == null) {
 					// Genesis transaction
-					this.source.add(new SimpleEntry<>(sourceTransaction.getReceiver().getId(),
-							new int[]{sourceTransaction.getBlockNumber().getAsInt(),
-									sourceTransaction.getNumber()}));
+					this.source.add(new TransactionSource(
+							sourceTransaction.getReceiver().getId(),
+							sourceTransaction.getBlockNumber().getAsInt(),
+							sourceTransaction.getNumber()));
 				} else {
-					this.source.add(new SimpleEntry<>(sourceSender.getId(),
-							new int[]{sourceTransaction.getBlockNumber().getAsInt(),
-									sourceTransaction.getNumber()}));
+					this.source.add(new TransactionSource(
+							sourceSender.getId(),
+							sourceTransaction.getBlockNumber().getAsInt(),
+							sourceTransaction.getNumber()));
 				}
 			} else {
 				throw new IllegalStateException("Transaction without blocknumber found");
@@ -80,6 +81,11 @@ public class TransactionMessage extends Message {
 		this.blockNumber = transaction.getBlockNumber().getAsInt();
 	}
 
+	/**
+	 * Converts this message into a transaction without any sources.
+	 * @param localStore - the local store
+	 * @return - the transaction represented by this message, without sources
+	 */
 	public Transaction toTransactionWithoutSources(LocalStore localStore) {
 		Transaction tx = new Transaction(this.number, localStore.getNode(this.senderId),
 				localStore.getNode(this.receiverId), this.amount, this.remainder, new TreeSet<>());
@@ -103,9 +109,9 @@ public class TransactionMessage extends Message {
 		if (receiverId != other.receiverId) return false;
 		if (amount != other.amount) return false;
 		if (remainder != other.remainder) return false;
-		if (source.equals(other.source)) return false;
-		if (hash.equals(other.hash)) return false;
-		return blockNumber == other.blockNumber;
+		if (blockNumber != other.blockNumber) return false;
+		if (!source.equals(other.source)) return false;
+		return hash.equals(other.hash);
 	}
 
 	@Override
@@ -125,7 +131,7 @@ public class TransactionMessage extends Message {
 	
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder(64);
+		StringBuilder sb = new StringBuilder(128);
 		sb.append("TransactionMessage<nr=").append(number)
 		.append(", sender=").append(senderId)
 		.append(", receiver=").append(receiverId)
@@ -137,12 +143,57 @@ public class TransactionMessage extends Message {
 			return sb.append("]").toString();
 		}
 		
-		for (Entry<Integer, int[]> entry : source) {
-			sb.append("\n        ").append(entry.getKey())
-			.append(": block=").append(entry.getValue()[0])
-			.append(", id=").append(entry.getValue()[1]);
+		for (TransactionSource ts : source) {
+			sb.append("\n        ").append(ts.getOwner())
+			.append(": block=").append(ts.getBlockNumber())
+			.append(", id=").append(ts.getId());
 		}
 		sb.append("\n      ]");
 		return sb.toString();
+	}
+	
+	/**
+	 * Class to represent a transaction source.
+	 */
+	@Getter
+	public static class TransactionSource implements Serializable {
+		private static final long serialVersionUID = 1L;
+		
+		private final int owner;
+		private final int id;
+		private final int blockNumber;
+		
+		/**
+		 * @param owner - the id of the owner of the transaction
+		 * @param blockNumber - the number of the block in which this transaction resides
+		 * @param id - the id of the transaction
+		 */
+		public TransactionSource(int owner, int blockNumber, int id) {
+			this.owner = owner;
+			this.id = id;
+			this.blockNumber = blockNumber;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + id;
+			result = prime * result + blockNumber;
+			result = prime * result + owner;
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) return true;
+			if (!(obj instanceof TransactionSource)) return false;
+			
+			TransactionSource other = (TransactionSource) obj;
+			if (id != other.id) return false;
+			if (blockNumber != other.blockNumber) return false;
+			if (owner != other.owner) return false;
+			return true;
+		}
 	}
 }

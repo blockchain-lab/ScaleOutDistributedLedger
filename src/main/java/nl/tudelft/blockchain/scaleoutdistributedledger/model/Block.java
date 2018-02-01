@@ -183,12 +183,8 @@ public class Block {
 
 	@Override
 	public boolean equals(Object obj) {
-		//TODO IMPORTANT Remove sysos
 		if (this == obj) return true;
-		if (!(obj instanceof Block)) {
-			System.out.println("Block not equal because one is null");
-			return false;
-		}
+		if (!(obj instanceof Block)) return false;
 
 		Block other = (Block) obj;
 		if (this.number != other.number) return false;
@@ -196,13 +192,10 @@ public class Block {
 			if (other.owner != null) return false;
 		} else if (!this.owner.equals(other.owner)) return false;
 
-		//TODO IMPORTANT We might not want to use equals for the previous block (as it will recurse)
+		//TODO IMPORTANT We might not want to use equals for the previous block (as it will recurse further)
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
-		} else if (!this.previousBlock.equals(other.previousBlock)) {
-			System.out.println("Blocks not equals because of previousBlockPointer");
-			return false;
-		}
+		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
 
 		return this.transactions.equals(other.transactions);
 	}
@@ -280,12 +273,7 @@ public class Block {
 		//It is present, so store it and return
 		if (localStore.getMainChain().isPresent(this)) {
 			this.onMainChain = true;
-			
-			//TODO Chance onMainChain to this.nextCommittedBlock
-			if (this.nextCommittedBlock != this) {
-				Log.debug("Block {0} doesn't have itself as next committed!", this.number);
-			}
-			
+			this.nextCommittedBlock = this;
 			return true;
 		}
 

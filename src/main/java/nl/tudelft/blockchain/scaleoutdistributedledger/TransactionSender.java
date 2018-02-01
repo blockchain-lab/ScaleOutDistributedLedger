@@ -1,20 +1,21 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
-import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Class which handles sending of transactions.
@@ -24,10 +25,8 @@ public class TransactionSender implements Runnable {
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
 	private final SocketClient socketClient;
-	private final AtomicInteger taskCounter = new AtomicInteger();
 	private final Chain chain;
-	private boolean stopping;
-	private int alreadySent = -1;
+	private int alreadySent;
 	
 	/**
 	 * Creates a new TransactionSender.
@@ -39,20 +38,6 @@ public class TransactionSender implements Runnable {
 		this.chain = localStore.getOwnNode().getChain();
 		
 		this.executor.schedule(this, SimulationMain.INITIAL_SENDING_DELAY, TimeUnit.MILLISECONDS);
-	}
-	
-	/**
-	 * Schedules the {@code toSend} block to be sent.
-	 * The block will only be sent when at least {@link SimulationMain#REQUIRED_COMMITS} have
-	 * been committed.
-	 * @param toSend - the block to send
-	 */
-	public void scheduleBlockSending(Block toSend) {
-		if (alreadySent == -1) {
-			alreadySent = 0;
-		}
-		
-		taskCounter.incrementAndGet();
 	}
 	
 	@Override
@@ -71,8 +56,7 @@ public class TransactionSender implements Runnable {
 	 * Sends all blocks that can be sent.
 	 */
 	public void sendAllBlocksThatCanBeSent() {
-		if (alreadySent == -1) return;
-		
+		//TODO Add explanation in readme?
 		//[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 		//Committed: [0, 2, 4, 6, 8]
 		//Last sent: 2
@@ -107,7 +91,16 @@ public class TransactionSender implements Runnable {
 	 * @return - the number of blocks currently waiting to be sent
 	 */
 	public int blocksWaiting() {
-		return taskCounter.get();
+		Block block = chain.getLastBlock();
+		if (block == null) return 0;
+		
+		Block prev = block;
+		while (block != null && block.getTransactions().isEmpty()) {
+			prev = block;
+			block = block.getPreviousBlock();
+		}
+		
+		return prev.getNumber() - alreadySent;
 	}
 	
 	/**
@@ -115,17 +108,9 @@ public class TransactionSender implements Runnable {
 	 * @throws InterruptedException - If we are interrupted while waiting.
 	 */
 	public void waitUntilDone() throws InterruptedException {
-		while (alreadySent < chain.getLastBlockNumber()) {
+		while (blocksWaiting() > 0) {
 			Thread.sleep(1000L);
 		}
-	}
-	
-	/**
-	 * Indicates that we want to stop. This reduces the REQUIRED_COMMITS to 1, to ensure that all
-	 * remaining blocks get flushed whenever that is possible.
-	 */
-	public void stop() {
-		stopping = true;
 	}
 	
 	/**
@@ -167,8 +152,8 @@ public class TransactionSender implements Runnable {
 		//TODO IMPORTANT Removed synchronization
 		ProofConstructor proofConstructor = new ProofConstructor(transaction);
 		Proof proof = proofConstructor.constructProof();
-
 		ProofMessage msg = new ProofMessage(proof);
+		
 		long timeDelta = System.currentTimeMillis() - startingTime;
 		if (timeDelta > 5 * 1000) {
 			Log.log(Level.WARNING, "Proof creation took " + timeDelta + " ms for transaction: " + transaction);

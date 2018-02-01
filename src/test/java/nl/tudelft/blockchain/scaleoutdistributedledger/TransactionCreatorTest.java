@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import org.junit.Before;
 import org.junit.Test;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.NotEnoughMoneyException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;

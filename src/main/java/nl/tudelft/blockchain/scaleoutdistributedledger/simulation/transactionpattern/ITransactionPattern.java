@@ -3,8 +3,11 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpa
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
-import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionSender;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.*;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
@@ -45,26 +48,25 @@ public interface ITransactionPattern extends Serializable {
 	 * @throws InterruptedException - if the action is interrupted
 	 */
 	public default void doAction(LocalStore localStore) throws InterruptedException {
-		Log.log(Level.FINER, "Start doAction of node " + localStore.getOwnNode().getId());
+		Log.log(Level.FINER, "Start doAction", localStore.getOwnNode().getId());
+		OwnNode ownNode = localStore.getOwnNode();
+		int ownNodeId = ownNode.getId();
 
 		// Make sure we have some room
 		if (localStore.getApplication().getTransactionSender().blocksWaiting() >= SimulationMain.MAX_BLOCKS_PENDING) {
-			Log.log(Level.FINE, "Too many blocks pending, maybe slow down!");
-//			return;
+			Log.log(Level.INFO, "Too many blocks pending, skipping transaction creation!", ownNodeId);
+			return;
 		}
 		
 		//Select receiver and amount
 		long amount = selectAmount(localStore);
 		if (amount == -1) {
-			Log.log(Level.INFO, "Not enough money to make transaction!");
+			Log.log(Level.INFO, "Not enough money to make transaction!", ownNodeId);
 			return;
 		}
 
 		Node receiver = selectNode(localStore);
-		
-		OwnNode ownNode = localStore.getOwnNode();
-		Block newBlock;
-		Log.log(Level.FINE, "Going to make transaction: $ " + amount + " from " + ownNode.getId() + " -> " + receiver.getId());
+		Log.log(Level.FINE, "Going to make transaction: $ " + amount + " from " + ownNodeId + " -> " + receiver.getId());
 
 		//TODO IMPORTANT Removed synchronization on own chain. Transaction creator should be safe.
 		//Create the transaction
@@ -73,12 +75,9 @@ public interface ITransactionPattern extends Serializable {
 
 		//TODO how many transactions do we put in one block?
 		//Add block to local chain
-		newBlock = ownNode.getChain().appendNewBlock();
+		Block newBlock = ownNode.getChain().appendNewBlock();
 		newBlock.addTransaction(transaction);
-		Log.log(Level.FINE, "Node " + ownNode.getId() + " added transaction " + transaction.getNumber() + " in block " + newBlock.getNumber());
-		
-		//Ensure that the block is sent at some point
-		localStore.getApplication().getTransactionSender().scheduleBlockSending(newBlock);
+		Log.log(Level.FINE, "Node " + ownNodeId + " added transaction " + transaction.getNumber() + " in block " + newBlock.getNumber());
 		
 		//Check if we want to commit the new block, and commit it if we do.
 		commitBlocks(localStore, false);
@@ -122,7 +121,6 @@ public interface ITransactionPattern extends Serializable {
 	public default void commitExtraEmpty(LocalStore localStore) {
 		Chain ownChain = localStore.getOwnNode().getChain();
 		for (int i = 0; i < SimulationMain.REQUIRED_COMMITS + 1; i++) {
-			//TODO IMPORTANT (LOW) Removed synchronization on own chain (methods perform the synchronization already).
 			Block block = ownChain.appendNewBlock();
 			block.commit(localStore);
 		}

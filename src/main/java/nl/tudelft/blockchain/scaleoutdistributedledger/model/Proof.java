@@ -3,6 +3,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage.TransactionSource;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ProofValidationException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
@@ -47,10 +48,11 @@ public class Proof {
 		this.chainUpdates = new HashMap<>();
 
 		// Decode the transactions while skipping sources
-		for (Map.Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
+		for (Entry<Integer, List<BlockMessage>> entry : proofMessage.getChainUpdates().entrySet()) {
 			List<Block> blocks = new ArrayList<>();
-			//TODO Turn into normal for loop
-			entry.getValue().forEach(blockMessage -> blocks.add(blockMessage.toBlockWithoutSources(localStore)));
+			for (BlockMessage blockMessage : entry.getValue()) {
+				blocks.add(blockMessage.toBlockWithoutSources(localStore));
+			}
 			chainUpdates.put(localStore.getNode(entry.getKey()), blocks);
 		}
 
@@ -95,17 +97,17 @@ public class Proof {
 		}
 
 		// For all transactions of all nodes do
-		for (Node node : this.chainUpdates.keySet()) {
-			for (Block block : this.chainUpdates.get(node)) {
+		for (List<Block> blocks : this.chainUpdates.values()) {
+			for (Block block : blocks) {
 				for (Transaction tx : block.getTransactions()) {
-					for (Entry<Integer, int[]> entry : tx.getMessage().getSource()) {
+					for (TransactionSource ts : tx.getMessage().getSource()) {
 						Block sourceBlock;
-						if (!lightViews.containsKey(entry.getKey())) {
-							sourceBlock = localStore.getNode(entry.getKey()).getChain().getBlocks().get(entry.getValue()[0]);
+						if (!lightViews.containsKey(ts.getOwner())) {
+							sourceBlock = localStore.getNode(ts.getOwner()).getChain().getBlocks().get(ts.getBlockNumber());
 						} else {
-							sourceBlock = lightViews.get(entry.getKey()).getBlock(entry.getValue()[0]);
+							sourceBlock = lightViews.get(ts.getOwner()).getBlock(ts.getBlockNumber());
 						}
-						tx.getSource().add(sourceBlock.getTransaction(entry.getValue()[1]));
+						tx.getSource().add(sourceBlock.getTransaction(ts.getId()));
 					}
 				}
 			}
@@ -119,24 +121,6 @@ public class Proof {
 	public void addBlock(Block block) {
 		List<Block> blocks = chainUpdates.computeIfAbsent(block.getOwner(), k -> new ArrayList<>());
 		blocks.add(block);
-	}
-	
-	/**
-	 * Adds the blocks with numbers start to end of the given chain to the proof.
-	 * @param chain - the chain
-	 * @param start - the block to start at (inclusive)
-	 * @param end   - the block to end at (exclusive)
-	 */
-	public void addBlocksOfChain(Chain chain, int start, int end) {
-		//TODO IMPORTANT Is this check correct? Shouldn't it be start > end? And the end also seems strange.
-		if (start >= end || end > chain.getBlocks().size()) return;
-		
-		List<Block> blocks = chainUpdates.get(chain.getOwner());
-		if (blocks == null) {
-			blocks = new ArrayList<>();
-			chainUpdates.put(chain.getOwner(), blocks);
-		}
-		blocks.addAll(chain.getBlocks().subList(start, end));
 	}
 
 	/**
@@ -172,41 +156,75 @@ public class Proof {
 			return;
 		}
 
-		int absmark = 0;
-		boolean seen = false;
+		verifyChainWithTransaction(transaction, localStore, blockNumber);
+		verifySourceTransactions(transaction, localStore);
+		transaction.setLocallyVerified(true);
+	}
 
+	/**
+	 * Performs the first part of the verification of a transaction.
+	 * This method first checks if the chain is consistent with the updates in this proof, and then
+	 * checks that the transaction only appears once. Finally, it checks if the transaction is in
+	 * a block that before a committed block, or is itself committed.
+	 * @param transaction - the transaction
+	 * @param localStore  - the local store
+	 * @param blockNumber - the block number of transaction
+	 */
+	private void verifyChainWithTransaction(Transaction transaction, LocalStore localStore, int blockNumber) {
 		ChainView chainView = getChainView(transaction.getSender());
 		if (!chainView.isValid()) {
 			throw new ProofValidationException("ChainView of node " + transaction.getSender().getId() + " is invalid.");
 		}
-
+		
+		boolean seen = false;
+		boolean absmark = false;
 		for (Block block : chainView) {
+			//TODO This containment check will not report transactions with the same id in different blocks (they will be unequal).
+			//It is therefore impossible to find a duplicate transaction
 			if (block.getTransactions().contains(transaction)) {
 				if (seen) {
 					throw new ProofValidationException("Duplicate transaction found.");
 				}
 				seen = true;
 			}
-			if (block.isOnMainChain(localStore)) absmark = block.getNumber();
+			
+			//If a block at or after the block in question is committed, then we have found a valid absmark
+			if (!absmark && block.getNumber() >= blockNumber) {
+				Block nextCommitted = block.getNextCommittedBlock();
+				
+				if (nextCommitted != null || block.isOnMainChain(localStore)) {
+					absmark = true;
+				}
+			}
 		}
-
-		if (absmark < blockNumber) {
-			System.out.println(this.getTransaction());
-			throw new ProofValidationException("No suitable committed block found");
+		
+		if (!seen) {
+			throw new ProofValidationException("Transaction not found in any block!");
 		}
-
-		// Verify source transaction
+		
+		if (!absmark) {
+			throw new ProofValidationException("No suitable committed block found for block " + blockNumber);
+		}
+	}
+	
+	/**
+	 * Performs the second part of the verification of a transaction.
+	 * This method verifies all source transactions.
+	 * @param transaction - the transaction
+	 * @param localStore  - the local store
+	 */
+	private void verifySourceTransactions(Transaction transaction, LocalStore localStore) {
 		for (Transaction sourceTransaction : transaction.getSource()) {
 			try {
 				verify(sourceTransaction, localStore);
 			} catch (ValidationException ex) {
+				//TODO Remove debugging stuff
 				ex.printStackTrace();
 				System.out.println(this);
 				System.exit(1);
 				throw new ProofValidationException("Source " + sourceTransaction + " is not valid", ex);
 			}
 		}
-		transaction.setLocallyVerified(true);
 	}
 	
 	/**
@@ -271,10 +289,11 @@ public class Proof {
 	/**
 	 * Recursively calls itself with all the sources of the given transaction. Transactions which
 	 * are in the chain of {@code receiver} are ignored.
-	 * @param nrOfNodes   - the total number of nodes
-	 * @param transaction - the transaction to check the sources of
-	 * @param receiver    - the node receiving the transaction
-	 * @param chains      - the list of chains to append to
+	 * @param nrOfNodes     - the total number of nodes
+	 * @param transaction   - the transaction to check the sources of
+	 * @param receiver      - the node receiving the transaction
+	 * @param metaKnowledge - the meta knowledge
+	 * @param chains        - the list of chains to append to
 	 */
 	public static void appendChains(int nrOfNodes, Transaction transaction, Node receiver, MetaKnowledge metaKnowledge, Set<Chain> chains) {
 		Node owner = transaction.getSender();

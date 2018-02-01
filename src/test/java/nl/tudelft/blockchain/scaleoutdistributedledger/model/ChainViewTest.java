@@ -184,6 +184,19 @@ public class ChainViewTest {
 	}
 	
 	/**
+	 * Test for {@link ChainView#size()}.
+	 */
+	@Test
+	public void testSize() {
+		addBlock(0, true);
+		addBlock(1, true);
+		addBlock(1, false);
+		addBlock(2, false);
+		
+		assertEquals(3, chainview.size());
+	}
+	
+	/**
 	 * Test for {@link ChainView#iterator()}, for next and nextIndex.
 	 */
 	@Test

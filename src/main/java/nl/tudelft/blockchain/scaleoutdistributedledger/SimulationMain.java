@@ -1,12 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.Simulation;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.UniformRandomTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
@@ -24,13 +24,11 @@ import java.util.stream.IntStream;
  * Main class for running a simulation.
  */
 public final class SimulationMain {
-	private SimulationMain() {}
-
 	//SETTINGS
 	//number of local nodes to generate
-	public static final int LOCAL_NODES_NUMBER = 5;
+	public static final int LOCAL_NODES_NUMBER = 6;
 	//number of total nodes in the system
-	public static final int TOTAL_NODES_NUMBER = 5;
+	public static final int TOTAL_NODES_NUMBER = 6;
 	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 	public static final int NODES_FROM_NUMBER = 0;
 	//Whether this main is the master coordinator of the simulation
@@ -39,7 +37,7 @@ public final class SimulationMain {
 	//The duration of the simulation in seconds. Only has an effect when IS_MASTER == true.
 	public static final int SIMULATION_DURATION = 600;
 	// Maximum number of blocks waiting to be sent (no new transaction created in the mean time
-	public static final int MAX_BLOCKS_PENDING = 30;
+	public static final int MAX_BLOCKS_PENDING = 50;
 	// The initial delay in milliseconds to wait before checking for the first time.
 	public static final long INITIAL_SENDING_DELAY = 5000;
 	// The time in milliseconds to wait before checking again.
@@ -47,6 +45,8 @@ public final class SimulationMain {
 	// The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
 	public static final int REQUIRED_COMMITS = 2;
 
+	private SimulationMain() {}
+	
 	/**
 	 * @param args - the program arguments
 	 * @throws Exception - If an exception occurs.
@@ -86,11 +86,10 @@ public final class SimulationMain {
 
 		// --- PHASE 3: start the actual simulation ---
 		Simulation simulation = new Simulation(IS_MASTER);
-//		ITransactionPattern itp = new OnlyNodeZeroTransactionPattern(10, 20, 1000, 2000, 1);
-//		ITransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 1000, 2000, 2);
-		UniformRandomTransactionPattern itp = new UniformRandomTransactionPattern(10, 20, 100, 200, 10);
-		itp.setSeed(1);
-		simulation.setTransactionPattern(itp);
+
+		RandomTransactionPattern rtp = new UniformRandomTransactionPattern(10, 20, 100, 200, 10);
+//		rtp.setSeed(1);
+		simulation.setTransactionPattern(rtp);
 		simulation.runNodesLocally(nodes, ownNodes, genesisBlock, nodeToKeyPair);
 
 		// Wait for all nodes to have initialized
@@ -106,12 +105,12 @@ public final class SimulationMain {
 
 		if (IS_MASTER) {
 			Thread.sleep(SIMULATION_DURATION * 1000);
-			simulation.broadcastMessage(new StopTransactingMessage());
 		}
 
 		// Wait for all the other nodes to stop
-		waitForStop();
+		
 		simulation.stop();
+		waitForStop();
 
 		simulation.stopLocalNodes();
 		simulation.cleanup();

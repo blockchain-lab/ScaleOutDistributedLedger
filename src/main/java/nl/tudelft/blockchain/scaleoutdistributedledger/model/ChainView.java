@@ -173,7 +173,6 @@ public class ChainView implements Iterable<Block> {
 	 * 		of this ChainView.
 	 */
 	public Block getBlock(int number) {
-		//TODO IMPORTANT chainSize instead of the actual size??
 		if (number < chain.getBlocks().size()) {
 			return chain.getBlocks().get(number);
 		} else if (isValid()) {
@@ -183,6 +182,15 @@ public class ChainView implements Iterable<Block> {
 			throw new IllegalStateException(
 					"This ChainView is invalid. The block with number " + number + " is not in the valid part of this ChainView.");
 		}
+	}
+	
+	/**
+	 * @return - the amount of blocks in this chainview
+	 */
+	public int size() {
+		if (!isValid()) throw new IllegalStateException("This chainview is invalid");
+		
+		return chainSize + updates.size() - startIndex;
 	}
 	
 	@Override

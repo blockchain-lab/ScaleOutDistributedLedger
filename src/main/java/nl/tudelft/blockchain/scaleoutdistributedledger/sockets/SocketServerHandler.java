@@ -27,8 +27,7 @@ public class SocketServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-//        Log.log(Level.INFO, "Node " + localStore.getOwnNode().getId() + " Server: received message: " + msg);
-        if(msg instanceof Message) {
+        if (msg instanceof Message) {
             ((Message) msg).handle(localStore);
         } else {
             Log.log(Level.SEVERE, "Invalid message, not a message instance");

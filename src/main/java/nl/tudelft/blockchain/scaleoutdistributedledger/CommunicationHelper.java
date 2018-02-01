@@ -31,7 +31,7 @@ public final class CommunicationHelper {
 		try {
 			localStore.getVerification().validateNewMessage(proof, localStore);
 		} catch (ValidationException ex) {
-			Log.log(Level.WARNING, "Received an invalid transaction/proof.", ex);
+			Log.log(Level.WARNING, "Received an invalid transaction/proof " + proof.getTransaction() + ": " + ex.getMessage());
 			return false;
 		}
 

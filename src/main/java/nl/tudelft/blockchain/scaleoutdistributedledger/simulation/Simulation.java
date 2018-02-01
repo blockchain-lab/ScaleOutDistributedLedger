@@ -6,6 +6,7 @@ import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.StartTransactingMessage;
+import nl.tudelft.blockchain.scaleoutdistributedledger.message.StopTransactingMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionPatternMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.UpdateNodesMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
@@ -42,6 +43,7 @@ public class Simulation {
 	
 	/**
 	 * Creates a new simulation.
+	 * @param isMaster - if this simulation is the master
 	 */
 	public Simulation(boolean isMaster) {
 		this.socketClient = new SocketClient();
@@ -180,7 +182,9 @@ public class Simulation {
 	 */
 	public void stop() {
 		checkState(SimulationState.RUNNING, "stop");
-		Log.log(Level.INFO, "[Simulation] Stopped");
+		
+		broadcastMessage(new StopTransactingMessage());
+		Log.log(Level.INFO, "[Simulation] Stopping");
 		state = SimulationState.STOPPED;
 	}
 	
@@ -212,7 +216,7 @@ public class Simulation {
 	 * @param msg - the message to send
 	 */
 	public void broadcastMessage(Message msg) {
-		if(!isMaster) return;
+		if (!isMaster) return;
 		Log.log(Level.INFO, "[Simulation] Sending " + msg + " to all nodes...");
 		
 		for (Node node : nodes.values()) {

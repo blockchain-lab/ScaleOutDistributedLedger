@@ -2,13 +2,11 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.AppendOnlyArrayList;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.ReversedIterator;
 
 /**
  * Chain class.
@@ -48,50 +46,79 @@ public class Chain {
 		if (updates.isEmpty()) return;
 		
 		Block lastCommitted = updates.get(updates.size() - 1);
-		
 		synchronized (this) {
+			//Figure out where to start updating
 			int nextNr;
 			Block previousBlock;
 			if (blocks.isEmpty()) {
 				//Should start at 0, there is no previous block
-				nextNr = 0;
 				previousBlock = null;
+				nextNr = 0;
 			} else {
 				//Should start with the first block after our last block.
-				Block lastBlock = blocks.get(blocks.size() - 1);
-				nextNr = lastBlock.getNumber() + 1;
-				previousBlock = lastBlock;
+				previousBlock = blocks.get(blocks.size() - 1);
+				nextNr = previousBlock.getNumber() + 1;
 			}
 			
-			//The last block in the updates must be a committed block
+			//Actually apply the updates
+			ArrayList<Block> toAdd = new ArrayList<>();
+			int lastBlockNr = nextNr - 1;
 			for (Block block : updates) {
 				//Skip any overlap
 				if (block.getNumber() != nextNr) continue;
 				block.setPreviousBlock(previousBlock);
-				
-				//TODO IMPORTANT We might want to set the next committed block in a better way. (Send it)
-				block.setNextCommittedBlock(lastCommitted);
-				blocks.add(block);
+				lastBlockNr = fixNextCommitted(block, lastCommitted.getNumber(), lastBlockNr, localStore);
+				toAdd.add(block);
 				nextNr++;
 				previousBlock = block;
 			}
 			
-			setLastCommittedBlock(lastCommitted);
+			blocks.addAll(toAdd);
 		}
 		
-		//TODO IMPORTANT Remove after debugging
-		if (!lastCommitted.isOnMainChain(localStore)) {
-			Log.log(Level.SEVERE, "The last block received is not a committed block!");
-		}
+		//The last block in the updates must be a committed block
+		setLastCommittedBlock(lastCommitted);
+	}
+	
+	/**
+	 * Fixes the next committed block pointers.
+	 * @param updates    - the block updates
+	 * @param localStore - the local store
+	 */
+	private void fixNextCommitted(List<Block> updates, LocalStore localStore) {
+		if (updates.isEmpty()) return;
 		
-		//TODO IMPORTANT do we need this?
-		//TODO Set last committed block
-		for (Block block : ReversedIterator.reversed(this.blocks)) {
-			if (block.isOnMainChain(localStore)) {
-				setLastCommittedBlock(block);
-				return;
+		int lastBlockNr = updates.get(0).getNumber();
+		for (Block block : updates) {
+			if (!localStore.getMainChain().isInCache(block)) continue;
+			
+			Block prev = block.getPreviousBlock();
+			while (prev != null && prev.getNumber() > lastBlockNr) {
+				prev.setNextCommittedBlock(block);
+				prev = prev.getPreviousBlock();
 			}
+			
+			lastBlockNr = block.getNumber();
 		}
+	}
+	
+	/**
+	 * @param block - the block
+	 * @param lastUpdateBlockNr - the number of the last block in the list of updates
+	 * @param lastBlockNr - the number of the last checked block that was actually committed
+	 * @param localStore - the local store
+	 * @return - the new lastBlockNr
+	 */
+	private int fixNextCommitted(Block block, int lastUpdateBlockNr, int lastBlockNr, LocalStore localStore) {
+		if (block.getNumber() != lastUpdateBlockNr && !localStore.getMainChain().isInCache(block)) return lastBlockNr;
+		
+		Block prev = block;
+		while (prev != null && prev.getNumber() > lastBlockNr) {
+			prev.setNextCommittedBlock(block);
+			prev = prev.getPreviousBlock();
+		}
+		
+		return block.getNumber();
 	}
 	
 	/**
@@ -132,11 +159,6 @@ public class Chain {
 	 * @return - the number of the last block
 	 */
 	public int getLastBlockNumber() {
-		//TODO Remove
-		{
-			Block last;
-			assert blocks.size() - 1 == ((last = getLastBlock()) == null ? -1 : last.getNumber());
-		}
 		return blocks.size() - 1;
 	}
 	
