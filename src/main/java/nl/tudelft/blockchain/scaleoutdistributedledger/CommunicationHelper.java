@@ -4,7 +4,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
-import java.io.IOException;
 import java.util.logging.Level;
 
 /**
@@ -38,11 +37,7 @@ public final class CommunicationHelper {
 		Log.log(Level.INFO, "Received and validated transaction: " + proof.getTransaction());
 		Log.log(Level.FINE, "Transaction " + proof.getTransaction() + " is valid, applying updates...");
 		proof.applyUpdates(localStore);
-		try {
-			TrackerHelper.registerTransaction(proof);
-		} catch (IOException e) {
-			Log.log(Level.WARNING, "Transaction registration failed", e);
-		}
+		TrackerHelper.registerTransaction(proof);
 
 		if (proof.getTransaction().getAmount() > 0) {
 			localStore.addUnspentTransaction(proof.getTransaction());

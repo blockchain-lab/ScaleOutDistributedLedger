@@ -44,6 +44,8 @@ public final class SimulationMain {
 	public static final long SENDING_WAIT_TIME = 5000;
 	// The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
 	public static final int REQUIRED_COMMITS = 2;
+	// The number of transactions that are registered in one batch.
+	public static final int REGISTER_TRANSACTIONS_EVERY = 10;
 
 	private SimulationMain() {}
 	

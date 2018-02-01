@@ -5,6 +5,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.TrackerExcepti
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.TransactionRegistration;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -22,13 +23,19 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.logging.Level;
 
 /**
  * Helper class for interacting with the tracker.
  */
 public final class TrackerHelper {
+
+	private volatile static Queue<TransactionRegistration> transactionsToBeRegistered = new LinkedList<>();
+	private volatile static Queue<TransactionRegistration> transactionsToBeSend;
+
 	private TrackerHelper() {
 		throw new UnsupportedOperationException();
 	}
@@ -213,32 +220,56 @@ public final class TrackerHelper {
 	}
 
 	/**
-	 * Registers a transaction to the tracker server.
-	 * @param proof - the proof used to send the transaction
-	 * @return - whether the registration was successful
-	 * @throws IOException - exception while registering
+	 * Registers a transaction to a queue, ready to be send to the server.
+	 * @param proof - the proof used to send the transaction.
 	 */
-	public static boolean registerTransaction(Proof proof) throws IOException {
-		JSONObject json = new JSONObject();
-		json.put("from", proof.getTransaction().getSender().getId());
-		json.put("to", proof.getTransaction().getReceiver().getId());
-		json.put("amount", proof.getTransaction().getAmount());
-		json.put("remainder", proof.getTransaction().getRemainder());
-		json.put("numberOfChains", proof.getChainUpdates().size());
-		json.put("numberOfBlocks", proof.getNumberOfBlocks());
+	public synchronized static void registerTransaction(Proof proof) {
+//        System.out.println(proof.getTransaction());
+		transactionsToBeRegistered.add(new TransactionRegistration(
+				proof.getTransaction(), proof.getChainUpdates().size(), proof.getNumberOfBlocks()));
+
+		if (transactionsToBeRegistered.size() >= SimulationMain.REGISTER_TRANSACTIONS_EVERY) {
+			try {
+			    transactionsToBeSend = transactionsToBeRegistered;
+			    transactionsToBeRegistered = new LinkedList<>();
+				sendTransactions();
+			} catch (IOException e) {
+				Log.log(Level.WARNING, "Transaction registration failed", e);
+			}
+		}
+	}
+
+	/**
+	 * Actually send the transactions to the server.
+	 * @throws IOException - exception while sending.
+	 */
+	private synchronized static void  sendTransactions() throws IOException {
+		JSONArray transactionArray = new JSONArray();
+
+        while (!transactionsToBeSend.isEmpty()) {
+            TransactionRegistration next = transactionsToBeSend.poll();
+            JSONObject json = new JSONObject();
+            json.put("from", next.getTransaction().getSender().getId());
+            json.put("to", next.getTransaction().getReceiver().getId());
+            json.put("amount", next.getTransaction().getAmount());
+            json.put("remainder", next.getTransaction().getRemainder());
+            json.put("numberOfChains", next.getNumberOfChains());
+            json.put("numberOfBlocks", next.getNumberOfBlocks());
+            transactionArray.put(json);
+        }
+        JSONObject json = new JSONObject();
+        json.put("transactions", transactionArray);
 
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
 			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-			HttpPost request = new HttpPost(String.format("http://%s:%d/register-transaction",
+			HttpPost request = new HttpPost(String.format("http://%s:%d/register-transactions",
 					Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
 			request.setEntity(requestEntity);
 			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 			if (response.getBoolean("success")) {
-				Log.log(Level.FINE, "Successfully registered transaction to tracker server");
-				return true;
+				Log.log(Level.INFO, "Successfully registered " + transactionArray.length() + " transactions to tracker server");
 			} else {
-				Log.log(Level.WARNING, "Error while registering transaction " + proof.getTransaction());
-				return false;
+				Log.log(Level.WARNING, "Error while registering transactions");
 			}
 		}
 	}
