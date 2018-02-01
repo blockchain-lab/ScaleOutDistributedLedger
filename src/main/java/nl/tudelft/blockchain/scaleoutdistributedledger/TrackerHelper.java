@@ -33,218 +33,219 @@ import java.util.logging.Level;
  */
 public final class TrackerHelper {
 
-	private volatile static Queue<TransactionRegistration> transactionsToBeRegistered = new LinkedList<>();
-	private volatile static Queue<TransactionRegistration> transactionsToBeSend;
+    private volatile static Queue<TransactionRegistration> transactionsToBeRegistered = new LinkedList<>();
+    private static final CloseableHttpClient client = HttpClientBuilder.create().build();
 
-	private TrackerHelper() {
-		throw new UnsupportedOperationException();
-	}
+    private TrackerHelper() {
+        throw new UnsupportedOperationException();
+    }
 
-	/**
-	 * Reset the tracker server with a new empty nodelist.
-	 * @return - boolean identifying if the reset was successful
-	 * @throws IOException - exception while resetting tracker server
-	 */
-	public static boolean resetTrackerServer() throws IOException {
-		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpPost request = new HttpPost(String.format("http://%s:%d/reset", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-			if (response.getBoolean("success")) {
-				Log.log(Level.INFO, "Successfully resetted the tracker server");
-				return true;
-			}
-			Log.log(Level.SEVERE, "Error while resetting the tracker server");
-			return false;
-		}
-	}
+    /**
+     * Reset the tracker server with a new empty nodelist.
+     * @return - boolean identifying if the reset was successful
+     * @throws IOException - exception while resetting tracker server
+     */
+    public static boolean resetTrackerServer() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost request = new HttpPost(String.format("http://%s:%d/reset", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+            JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+            if (response.getBoolean("success")) {
+                Log.log(Level.INFO, "Successfully resetted the tracker server");
+                return true;
+            }
+            Log.log(Level.SEVERE, "Error while resetting the tracker server");
+            return false;
+        }
+    }
 
-	/**
-	 * Registers this node with the given public key.
-	 * @param nodePort  - the port of the node
-	 * @param publicKey - the publicKey of the new node
-	 * @param id        - the id of the node
-	 * @return          - the registered node
-	 * @throws IOException - IOException while registering node
-	 * @throws NodeRegisterFailedException - Server side exception while registering node
-	 */
-	public static OwnNode registerNode(int nodePort, byte[] publicKey, int id) throws IOException, NodeRegisterFailedException {
-		String address = getIP();
-		JSONObject json = new JSONObject();
-		json.put("address", address);
-		json.put("port", nodePort);
-		json.put("publicKey", publicKey);
-		json.put("id", id);
+    /**
+     * Registers this node with the given public key.
+     * @param nodePort  - the port of the node
+     * @param publicKey - the publicKey of the new node
+     * @param id        - the id of the node
+     * @return          - the registered node
+     * @throws IOException - IOException while registering node
+     * @throws NodeRegisterFailedException - Server side exception while registering node
+     */
+    public static OwnNode registerNode(int nodePort, byte[] publicKey, int id) throws IOException, NodeRegisterFailedException {
+        String address = getIP();
+        JSONObject json = new JSONObject();
+        json.put("address", address);
+        json.put("port", nodePort);
+        json.put("publicKey", publicKey);
+        json.put("id", id);
 
-		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-			HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			request.setEntity(requestEntity);
-			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-			if (response.getBoolean("success")) {
-				Log.log(Level.INFO, "Successfully registered node to tracker server");
-				return new OwnNode(id, publicKey, address, nodePort);
-			}
-			Log.log(Level.SEVERE, "Error while registering node");
-			throw new NodeRegisterFailedException();
-		}
-	}
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+            HttpPost request = new HttpPost(String.format("http://%s:%d/register-node", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+            request.setEntity(requestEntity);
+            JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+            if (response.getBoolean("success")) {
+                Log.log(Level.INFO, "Successfully registered node to tracker server");
+                return new OwnNode(id, publicKey, address, nodePort);
+            }
+            Log.log(Level.SEVERE, "Error while registering node");
+            throw new NodeRegisterFailedException();
+        }
+    }
 
-	/**
-	 * Mark a node with the given id as initialized on the tracker.
-	 * @param id - the id of the node to mark
-	 * @param running - if the node is running or not
-	 * @throws IOException - IOException while registering node
-	 * @throws TrackerException - Server side exception while updating running status
-	 */
-	public static void setRunning(int id, boolean running) throws IOException, TrackerException {
-		JSONObject json = new JSONObject();
-		json.put("id", id);
-		json.put("running", running);
+    /**
+     * Mark a node with the given id as initialized on the tracker.
+     * @param id - the id of the node to mark
+     * @param running - if the node is running or not
+     * @throws IOException - IOException while registering node
+     * @throws TrackerException - Server side exception while updating running status
+     */
+    public static void setRunning(int id, boolean running) throws IOException, TrackerException {
+        JSONObject json = new JSONObject();
+        json.put("id", id);
+        json.put("running", running);
 
-		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-			HttpPost request = new HttpPost(String.format("http://%s:%d/set-node-status", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			request.setEntity(requestEntity);
-			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-			if (response.getBoolean("success")) {
-				Log.log(Level.INFO, "Successfully updated node " + id + " to running=" + running);
-				return;
-			}
-			Log.log(Level.SEVERE, "Error while updating the running status of the node");
-			throw new TrackerException("Unable to update to running.");
-		}
-	}
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+            HttpPost request = new HttpPost(String.format("http://%s:%d/set-node-status", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+            request.setEntity(requestEntity);
+            JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+            if (response.getBoolean("success")) {
+                Log.log(Level.INFO, "Successfully updated node " + id + " to running=" + running);
+                return;
+            }
+            Log.log(Level.SEVERE, "Error while updating the running status of the node");
+            throw new TrackerException("Unable to update to running.");
+        }
+    }
 
-	/**
-	 * Tries to resolve the IP(v4) address of this machine.
-	 * When it fails to do so it uses the local IP.
-	 *
-	 * @return the IP of this machine
-	 */
-	public static String getIP() {
-		try {
-			Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-			while (interfaces.hasMoreElements()) {
-				NetworkInterface ni = interfaces.nextElement();
-				Enumeration<InetAddress> addrss = ni.getInetAddresses();
-				while (addrss.hasMoreElements()) {
-					String addr = addrss.nextElement().getHostAddress();
-					if (addr.contains(":") || addr.startsWith("127.")) continue;	// IPv6 or Local
-					return addr;
-				}
-			}
-		} catch (SocketException e) { }		// Intentionally empty catch block
-		try {
-			Log.log(Level.WARNING, "Could not resolve address, using localhost instead");
-			return InetAddress.getLocalHost().getHostAddress();
-		} catch (UnknownHostException e) {
-			Log.log(Level.SEVERE, "Could not resolve localhost address, please check your network configuration");
-			return "0.0.0.0";
-		}
-	}
+    /**
+     * Tries to resolve the IP(v4) address of this machine.
+     * When it fails to do so it uses the local IP.
+     *
+     * @return the IP of this machine
+     */
+    public static String getIP() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface ni = interfaces.nextElement();
+                Enumeration<InetAddress> addrss = ni.getInetAddresses();
+                while (addrss.hasMoreElements()) {
+                    String addr = addrss.nextElement().getHostAddress();
+                    if (addr.contains(":") || addr.startsWith("127.")) continue;	// IPv6 or Local
+                    return addr;
+                }
+            }
+        } catch (SocketException e) { }		// Intentionally empty catch block
+        try {
+            Log.log(Level.WARNING, "Could not resolve address, using localhost instead");
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            Log.log(Level.SEVERE, "Could not resolve localhost address, please check your network configuration");
+            return "0.0.0.0";
+        }
+    }
 
-	/**
-	 * Updates the given map of nodes with new information from the tracker.
-	 * @param nodes - the map of nodes
-	 * @throws IOException - exception while updating nodes
-	 */
-	public static void updateNodes(Map<Integer, Node> nodes, OwnNode ownNode) throws IOException {
-		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpGet request = new HttpGet(String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			JSONArray nodesArray = (JSONArray) new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).get("nodes");
+    /**
+     * Updates the given map of nodes with new information from the tracker.
+     * @param nodes - the map of nodes
+     * @throws IOException - exception while updating nodes
+     */
+    public static void updateNodes(Map<Integer, Node> nodes, OwnNode ownNode) throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet request = new HttpGet(String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+            JSONArray nodesArray = (JSONArray) new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent())).get("nodes");
 
-			for (int i = 0; i < nodesArray.length(); i++) {
-				JSONObject object = (JSONObject) nodesArray.get(i);
-				byte[] publicKey = jsonArrayToByteArray((JSONArray) object.get("publicKey"));
-				String address = object.getString("address");
-				int port = object.getInt("port");
-				if (nodes.containsKey(i)) {
-					Node node = nodes.get(i);
-					node.setAddress(address);
-					node.setPort(port);
-				} else {
-					Node node = new Node(i, publicKey, address, port);
-					
-					//TODO Check if we need this.
-					if (ownNode != null) {
-						node.getChain().setGenesisBlock(ownNode.getChain().getGenesisBlock());
-					}
-					
-					nodes.put(i, node);
-				}
-			}
-		}
-	}
+            for (int i = 0; i < nodesArray.length(); i++) {
+                JSONObject object = (JSONObject) nodesArray.get(i);
+                byte[] publicKey = jsonArrayToByteArray((JSONArray) object.get("publicKey"));
+                String address = object.getString("address");
+                int port = object.getInt("port");
+                if (nodes.containsKey(i)) {
+                    Node node = nodes.get(i);
+                    node.setAddress(address);
+                    node.setPort(port);
+                } else {
+                    Node node = new Node(i, publicKey, address, port);
 
-	/**
-	 * Get the status of the tracker.
-	 * @return a JSON object describing the status of the tracker
-	 * @throws IOException when problems with creating/closing http client
-	 */
-	public static JSONObject getStatus() throws IOException {
-		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpGet request = new HttpGet(String.format("http://%s:%d/status", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-		}
-	}
+                    //TODO Check if we need this.
+                    if (ownNode != null) {
+                        node.getChain().setGenesisBlock(ownNode.getChain().getGenesisBlock());
+                    }
 
-	/**
-	 * Get the number of running nodes from the tracker.
-	 * @return the number of nodes already registered in tracker
-	 * @throws IOException when problems with creating/closing http client
-	 */
-	public static int getRunning() throws IOException {
-		return getStatus().getInt("running");
-	}
+                    nodes.put(i, node);
+                }
+            }
+        }
+    }
 
-	/**
-	 * Get the number of registered nodes from the  tracker.
-	 * @return the number of nodes already registered in tracker
-	 * @throws IOException when problems with creating/closing http client
-	 */
-	public static int getRegistered() throws IOException {
-		return getStatus().getInt("registered");
-	}
+    /**
+     * Get the status of the tracker.
+     * @return a JSON object describing the status of the tracker
+     * @throws IOException when problems with creating/closing http client
+     */
+    public static JSONObject getStatus() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet request = new HttpGet(String.format("http://%s:%d/status", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+            return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+        }
+    }
 
-	/**
-	 * Converts JSONArray containing ints to byte array.
-	 * @param json - the jsonarray to convert.
-	 * @return - the generated byte array
-	 */
-	private static byte[] jsonArrayToByteArray(JSONArray json) {
-		byte[] res = new byte[json.length()];
-		for (int i = 0; i < json.length(); i++) {
-			res[i] = (byte) json.getInt(i);
-		}
-		return res;
-	}
+    /**
+     * Get the number of running nodes from the tracker.
+     * @return the number of nodes already registered in tracker
+     * @throws IOException when problems with creating/closing http client
+     */
+    public static int getRunning() throws IOException {
+        return getStatus().getInt("running");
+    }
 
-	/**
-	 * Registers a transaction to a queue, ready to be send to the server.
-	 * @param proof - the proof used to send the transaction.
-	 */
-	public synchronized static void registerTransaction(Proof proof) {
-//        System.out.println(proof.getTransaction());
-		transactionsToBeRegistered.add(new TransactionRegistration(
-				proof.getTransaction(), proof.getChainUpdates().size(), proof.getNumberOfBlocks()));
+    /**
+     * Get the number of registered nodes from the  tracker.
+     * @return the number of nodes already registered in tracker
+     * @throws IOException when problems with creating/closing http client
+     */
+    public static int getRegistered() throws IOException {
+        return getStatus().getInt("registered");
+    }
 
-		if (transactionsToBeRegistered.size() >= SimulationMain.REGISTER_TRANSACTIONS_EVERY) {
-			try {
-			    transactionsToBeSend = transactionsToBeRegistered;
-			    transactionsToBeRegistered = new LinkedList<>();
-				sendTransactions();
-			} catch (IOException e) {
-				Log.log(Level.WARNING, "Transaction registration failed", e);
-			}
-		}
-	}
+    /**
+     * Converts JSONArray containing ints to byte array.
+     * @param json - the jsonarray to convert.
+     * @return - the generated byte array
+     */
+    private static byte[] jsonArrayToByteArray(JSONArray json) {
+        byte[] res = new byte[json.length()];
+        for (int i = 0; i < json.length(); i++) {
+            res[i] = (byte) json.getInt(i);
+        }
+        return res;
+    }
 
-	/**
-	 * Actually send the transactions to the server.
-	 * @throws IOException - exception while sending.
-	 */
-	private synchronized static void  sendTransactions() throws IOException {
-		JSONArray transactionArray = new JSONArray();
+    /**
+     * Registers a transaction to a queue, ready to be send to the server.
+     * @param proof - the proof used to send the transaction.
+     */
+    public static synchronized void registerTransaction(Proof proof) {
+        transactionsToBeRegistered.add(new TransactionRegistration(
+                proof.getTransaction(), proof.getChainUpdates().size(), proof.getNumberOfBlocks()));
+
+        try {
+            Queue<TransactionRegistration> transactionsToBeSend;
+            synchronized (TrackerHelper.class) {
+                if (transactionsToBeRegistered.size() < SimulationMain.REGISTER_TRANSACTIONS_EVERY) return;
+                transactionsToBeSend = transactionsToBeRegistered;
+                transactionsToBeRegistered = new LinkedList<>();
+            }
+            sendTransactions(transactionsToBeSend);
+        } catch (IOException e) {
+            Log.log(Level.WARNING, "Transaction registration failed", e);
+        }
+    }
+
+    /**
+     * Actually send the transactions to the server.
+     * @throws IOException - exception while sending.
+     */
+    private static synchronized void  sendTransactions(Queue<TransactionRegistration> transactionsToBeSend) throws IOException {
+        JSONArray transactionArray = new JSONArray();
 
         while (!transactionsToBeSend.isEmpty()) {
             TransactionRegistration next = transactionsToBeSend.poll();
@@ -260,17 +261,15 @@ public final class TrackerHelper {
         JSONObject json = new JSONObject();
         json.put("transactions", transactionArray);
 
-		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-			HttpPost request = new HttpPost(String.format("http://%s:%d/register-transactions",
-					Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
-			request.setEntity(requestEntity);
-			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
-			if (response.getBoolean("success")) {
-				Log.log(Level.INFO, "Successfully registered " + transactionArray.length() + " transactions to tracker server");
-			} else {
-				Log.log(Level.WARNING, "Error while registering transactions");
-			}
-		}
-	}
+        StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+        HttpPost request = new HttpPost(String.format("http://%s:%d/register-transactions",
+                Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+        request.setEntity(requestEntity);
+        JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+        if (response.getBoolean("success")) {
+            Log.log(Level.INFO, "Successfully registered " + transactionArray.length() + " transactions to tracker server");
+        } else {
+            Log.log(Level.WARNING, "Error while registering transactions");
+        }
+    }
 }
