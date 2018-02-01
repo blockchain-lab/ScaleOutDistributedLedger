@@ -145,7 +145,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>false</addClasspath>
-							<mainClass>nl.tudelft.blockchain.scaleoutdistributedledger.Main</mainClass>
+							<mainClass>nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain</mainClass>
 						</manifest>
 						<manifestEntries>
 							<Bundle-Name>${project.name}</Bundle-Name>
