@@ -58,6 +58,19 @@ router.post('/register-transaction', (req, res) => {
 	}
 });
 
+router.post('/register-transactions', (req, res) => {
+    if(!isPresent(req.body.transactions)) {
+        res.status(403);
+        res.json({success: false, err: 'Specify array of transactions'});
+    } else {
+        req.body.transactions.forEach(tx => {
+            app.transactionList.addTransaction(new Transaction(tx.from, tx.to, tx.amount, tx.remainder, tx.numberOfChains, tx.numberOfBlocks));
+        });
+        updateSseClients();
+        res.json({success: true});
+    }
+});
+
 /**
  * Update the running status of a node.
  */
