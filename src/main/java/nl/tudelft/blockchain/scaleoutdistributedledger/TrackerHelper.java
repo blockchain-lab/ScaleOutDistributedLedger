@@ -224,7 +224,6 @@ public final class TrackerHelper {
 	 * @param proof - the proof used to send the transaction.
 	 */
 	public synchronized static void registerTransaction(Proof proof) {
-//        System.out.println(proof.getTransaction());
 		transactionsToBeRegistered.add(new TransactionRegistration(
 				proof.getTransaction(), proof.getChainUpdates().size(), proof.getNumberOfBlocks()));
 
