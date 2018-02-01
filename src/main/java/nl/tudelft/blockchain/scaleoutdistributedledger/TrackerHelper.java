@@ -1,7 +1,10 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.NodeRegisterFailedException;
+import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.TrackerException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -52,7 +55,8 @@ public final class TrackerHelper {
 	 * Registers this node with the given public key.
 	 * @param nodePort  - the port of the node
 	 * @param publicKey - the publicKey of the new node
-	 * @return - the registered node
+	 * @param id        - the id of the node
+	 * @return          - the registered node
 	 * @throws IOException - IOException while registering node
 	 * @throws NodeRegisterFailedException - Server side exception while registering node
 	 */
@@ -81,10 +85,11 @@ public final class TrackerHelper {
 	/**
 	 * Mark a node with the given id as initialized on the tracker.
 	 * @param id - the id of the node to mark
+	 * @param running - if the node is running or not
 	 * @throws IOException - IOException while registering node
-	 * @throws NodeRegisterFailedException - Server side exception while registering node
+	 * @throws TrackerException - Server side exception while updating running status
 	 */
-	public static void setRunning(int id, boolean running) throws IOException {
+	public static void setRunning(int id, boolean running) throws IOException, TrackerException {
 		JSONObject json = new JSONObject();
 		json.put("id", id);
 		json.put("running", running);
@@ -99,8 +104,7 @@ public final class TrackerHelper {
 				return;
 			}
 			Log.log(Level.SEVERE, "Error while updating the running status of the node");
-			//TODO: Create new excepton for this
-			throw new NodeRegisterFailedException();
+			throw new TrackerException("Unable to update to running.");
 		}
 	}
 
@@ -119,7 +123,7 @@ public final class TrackerHelper {
 				while (addrss.hasMoreElements()) {
 					String addr = addrss.nextElement().getHostAddress();
 					if (addr.contains(":") || addr.startsWith("127.")) continue;	// IPv6 or Local
-					return (addr);
+					return addr;
 				}
 			}
 		} catch (SocketException e) { }		// Intentionally empty catch block
@@ -154,6 +158,7 @@ public final class TrackerHelper {
 				} else {
 					Node node = new Node(i, publicKey, address, port);
 					
+					//TODO Check if we need this.
 					if (ownNode != null) {
 						node.getChain().setGenesisBlock(ownNode.getChain().getGenesisBlock());
 					}
@@ -205,5 +210,36 @@ public final class TrackerHelper {
 			res[i] = (byte) json.getInt(i);
 		}
 		return res;
+	}
+
+	/**
+	 * Registers a transaction to the tracker server.
+	 * @param proof - the proof used to send the transaction
+	 * @return - whether the registration was successful
+	 * @throws IOException - exception while registering
+	 */
+	public static boolean registerTransaction(Proof proof) throws IOException {
+		JSONObject json = new JSONObject();
+		json.put("from", proof.getTransaction().getSender().getId());
+		json.put("to", proof.getTransaction().getReceiver().getId());
+		json.put("amount", proof.getTransaction().getAmount());
+		json.put("remainder", proof.getTransaction().getRemainder());
+		json.put("numberOfChains", proof.getChainUpdates().size());
+		json.put("numberOfBlocks", proof.getNumberOfBlocks());
+
+		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+			StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
+			HttpPost request = new HttpPost(String.format("http://%s:%d/register-transaction",
+					Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT));
+			request.setEntity(requestEntity);
+			JSONObject response = new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
+			if (response.getBoolean("success")) {
+				Log.log(Level.FINE, "Successfully registered transaction to tracker server");
+				return true;
+			} else {
+				Log.log(Level.WARNING, "Error while registering transaction " + proof.getTransaction());
+				return false;
+			}
+		}
 	}
 }

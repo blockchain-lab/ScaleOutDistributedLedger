@@ -33,7 +33,6 @@ public class LocalStore {
 	@Getter
 	private final Verification verification = new Verification();
 	
-	@Getter
 	private final Set<Transaction> unspent = new HashSet<>();
 
 	@Getter
@@ -146,18 +145,29 @@ public class LocalStore {
 	}
 	
 	/**
+	 * @return - a copy of the unspent transactions
+	 */
+	public Set<Transaction> getUnspent() {
+		synchronized (unspent) {
+			return new HashSet<>(unspent);
+		}
+	}
+	
+	/**
 	 * Adds the given transaction as unspent.
 	 * @param transaction - the transaction to add
 	 */
 	public void addUnspentTransaction(Transaction transaction) {
-		if (!unspent.add(transaction)) return;
-
-		if (ownNode.equals(transaction.getReceiver())) {
-			availableMoney += transaction.getAmount();
-		}
-		
-		if (ownNode.equals(transaction.getSender())) {
-			availableMoney += transaction.getRemainder();
+		synchronized (unspent) {
+			if (!unspent.add(transaction)) return;
+	
+			if (ownNode.equals(transaction.getReceiver())) {
+				availableMoney += transaction.getAmount();
+			}
+			
+			if (ownNode.equals(transaction.getSender())) {
+				availableMoney += transaction.getRemainder();
+			}
 		}
 	}
 	
@@ -165,14 +175,16 @@ public class LocalStore {
 	 * @param toRemove - the unspent transactions to remove
 	 */
 	public void removeUnspentTransactions(Collection<Transaction> toRemove) {
-		for (Transaction transaction : toRemove) {
-			if (!unspent.remove(transaction)) continue;
-			
-			if (ownNode.equals(transaction.getReceiver())) {
-				availableMoney -= transaction.getAmount();
-			}
-			if (ownNode.equals(transaction.getSender())) {
-				availableMoney -= transaction.getRemainder();
+		synchronized (unspent) {
+			for (Transaction transaction : toRemove) {
+				if (!unspent.remove(transaction)) continue;
+				
+				if (ownNode.equals(transaction.getReceiver())) {
+					availableMoney -= transaction.getAmount();
+				}
+				if (ownNode.equals(transaction.getSender())) {
+					availableMoney -= transaction.getRemainder();
+				}
 			}
 		}
 	}
@@ -197,7 +209,7 @@ public class LocalStore {
 	private void normalizeGenesis() {
 		for (Transaction transaction : ownNode.getChain().getGenesisBlock().getTransactions()) {
 			Node receiver = getNode(transaction.getReceiver().getId());
-			if (receiver != transaction.getReceiver()) {
+			if (receiver != null && receiver != transaction.getReceiver()) {
 				transaction.setReceiver(receiver);
 			}
 		}

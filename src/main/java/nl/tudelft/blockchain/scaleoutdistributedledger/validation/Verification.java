@@ -96,8 +96,6 @@ public class Verification {
 	 * @throws ValidationException - If we detect double spending.
 	 */
 	private void checkDoubleSpending(Transaction transaction, Proof proof) throws ValidationException {
-		//TODO [PERFORMANCE]: We will revalidate the same chainview for every source that we check, even though is is not necessary.
-		//TODO [PERFORMANCE]: We might want some kind of caching or other mechanism to prevent this.
 		ChainView chainView = proof.getChainView(transaction.getSender());
 		for (Block block : chainView) {
 			boolean found = false;

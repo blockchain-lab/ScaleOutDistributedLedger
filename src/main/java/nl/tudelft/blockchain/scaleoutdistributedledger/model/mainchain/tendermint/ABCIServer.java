@@ -1,7 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint;
 
 import com.github.jtendermint.jabci.api.ABCIAPI;
-import com.github.jtendermint.jabci.types.Types;
 import com.github.jtendermint.jabci.types.Types.CodeType;
 import com.github.jtendermint.jabci.types.Types.RequestBeginBlock;
 import com.github.jtendermint.jabci.types.Types.RequestCheckTx;

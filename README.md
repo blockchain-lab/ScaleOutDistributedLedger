@@ -30,16 +30,18 @@ An in-depth explanation of the system is available as a technical report in the 
 Apply these configuration steps for every machine
 - In the `SimulationMain`-class:
   - Give each machine its sets of node by changing the `LOCAL_NODES_NUMBER`, `TOTAL_NODES_NUMBER`, `NODES_FROM_NUMBER` values
+  - Specify the parameters for the transaction sending behaviour of each node using the fields `MAX_BLOCKS_PENDING`, `INITIAL_SENDING_DELAY`, `SENDING_WAIT_TIME` and `REQUIRED_COMMITS`. 
   - Set `IS_MASTER` to `true` for the master machine and to `false` for all the others
   - If the current machine is the master, also specify the simulation time in seconds.
 - In the `Application`-class:
   - Set `TRACKER_SERVER_ADDRESS` and `TRACKER_SERVER_PORT` to point to the server location
-    
+
 ### Running
 - Start the tracker server
   - In folder `tracker-server` run `npm start`
 - Start the master machine by calling the main method in `SimulationMain`. 
 - Start the other machines the same way as the master.
+- A live visualization of the network can be seen by opening `<tracker-address>/demo` in a browser.
 
 ### Run Tests
 From the root folder run `mvn test`.

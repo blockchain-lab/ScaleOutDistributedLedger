@@ -5,6 +5,9 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.AppendOnlyArrayList;
+
 /**
  * Chain class.
  */
@@ -14,7 +17,7 @@ public class Chain {
 	private final Node owner;
 
 	@Getter
-	private final List<Block> blocks;
+	private final AppendOnlyArrayList<Block> blocks;
 	
 	@Getter
 	private Transaction genesisTransaction;
@@ -27,48 +30,101 @@ public class Chain {
 	 */
 	public Chain(Node owner) {
 		this.owner = owner;
-		this.blocks = new ArrayList<>();
-	}
-
-	/**
-	 * Constructor.
-	 * @param owner - the owner of this chain.
-	 * @param blocks - list of blocks in this chain.
-	 */
-	public Chain(Node owner, List<Block> blocks) {
-		this.owner = owner;
-		this.blocks = blocks;
+		this.blocks = new AppendOnlyArrayList<>();
 	}
 	
 	/**
 	 * Updates this chain with the given updates.
 	 * This method is used for updating a chain belonging to a different node.
 	 * @param updates - the new blocks to append
+	 * @param localStore - the localStore
 	 * @throws UnsupportedOperationException - If this chain is owned by us.
 	 */
-	public synchronized void update(List<Block> updates) {
+	public void update(List<Block> updates, LocalStore localStore) {
 		if (owner instanceof OwnNode) throw new UnsupportedOperationException("You cannot use update to update your own chain");
 		
 		if (updates.isEmpty()) return;
 		
-		if (blocks.isEmpty()) {
-			blocks.addAll(updates);
-		} else {
-			Block lastBlock = blocks.get(blocks.size() - 1);
-			int nextNr = lastBlock.getNumber() + 1;
+		Block lastCommitted = updates.get(updates.size() - 1);
+		synchronized (this) {
+			//Figure out where to start updating
+			int nextNr;
+			Block previousBlock;
+			if (blocks.isEmpty()) {
+				//Should start at 0, there is no previous block
+				previousBlock = null;
+				nextNr = 0;
+			} else {
+				//Should start with the first block after our last block.
+				previousBlock = blocks.get(blocks.size() - 1);
+				nextNr = previousBlock.getNumber() + 1;
+			}
+			
+			//Actually apply the updates
+			ArrayList<Block> toAdd = new ArrayList<>();
+			int lastBlockNr = nextNr - 1;
 			for (Block block : updates) {
 				//Skip any overlap
 				if (block.getNumber() != nextNr) continue;
-				blocks.add(block);
+				block.setPreviousBlock(previousBlock);
+				lastBlockNr = fixNextCommitted(block, lastCommitted.getNumber(), lastBlockNr, localStore);
+				toAdd.add(block);
 				nextNr++;
+				previousBlock = block;
 			}
+			
+			blocks.addAll(toAdd);
 		}
+		
+		//The last block in the updates must be a committed block
+		setLastCommittedBlock(lastCommitted);
+	}
+	
+	/**
+	 * Fixes the next committed block pointers.
+	 * @param updates    - the block updates
+	 * @param localStore - the local store
+	 */
+	private void fixNextCommitted(List<Block> updates, LocalStore localStore) {
+		if (updates.isEmpty()) return;
+		
+		int lastBlockNr = updates.get(0).getNumber();
+		for (Block block : updates) {
+			if (!localStore.getMainChain().isInCache(block)) continue;
+			
+			Block prev = block.getPreviousBlock();
+			while (prev != null && prev.getNumber() > lastBlockNr) {
+				prev.setNextCommittedBlock(block);
+				prev = prev.getPreviousBlock();
+			}
+			
+			lastBlockNr = block.getNumber();
+		}
+	}
+	
+	/**
+	 * @param block - the block
+	 * @param lastUpdateBlockNr - the number of the last block in the list of updates
+	 * @param lastBlockNr - the number of the last checked block that was actually committed
+	 * @param localStore - the local store
+	 * @return - the new lastBlockNr
+	 */
+	private int fixNextCommitted(Block block, int lastUpdateBlockNr, int lastBlockNr, LocalStore localStore) {
+		if (block.getNumber() != lastUpdateBlockNr && !localStore.getMainChain().isInCache(block)) return lastBlockNr;
+		
+		Block prev = block;
+		while (prev != null && prev.getNumber() > lastBlockNr) {
+			prev.setNextCommittedBlock(block);
+			prev = prev.getPreviousBlock();
+		}
+		
+		return block.getNumber();
 	}
 	
 	/**
 	 * @return - the genesis block
 	 */
-	public synchronized Block getGenesisBlock() {
+	public Block getGenesisBlock() {
 		if (blocks.isEmpty()) return null;
 
 		return blocks.get(0);
@@ -93,16 +149,23 @@ public class Chain {
 	/**
 	 * @return the last block in this chain
 	 */
-	public synchronized Block getLastBlock() {
+	public Block getLastBlock() {
 		if (blocks.isEmpty()) return null;
 
 		return blocks.get(blocks.size() - 1);
 	}
 	
 	/**
+	 * @return - the number of the last block
+	 */
+	public int getLastBlockNumber() {
+		return blocks.size() - 1;
+	}
+	
+	/**
 	 * @return - the last block that was committed to the main chain
 	 */
-	public synchronized Block getLastCommittedBlock() {
+	public Block getLastCommittedBlock() {
 		return lastCommittedBlock;
 	}
 	

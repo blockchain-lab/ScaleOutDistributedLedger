@@ -8,13 +8,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -71,8 +65,7 @@ public final class TendermintHelper {
 		try {
 			final Process ps = rt.exec(script.toString(), envVariables);
 			ps.waitFor();
-			BufferedReader stdInput = new BufferedReader(new
-					InputStreamReader(ps.getInputStream()));
+			BufferedReader stdInput = new BufferedReader(new InputStreamReader(ps.getInputStream()));
 			// read the output from the command
 			String s;
 			while ((s = stdInput.readLine()) != null) {
@@ -114,15 +107,12 @@ public final class TendermintHelper {
 			keyPair = new Ed25519Key(privateKey, publicKey);
 		}
 
-		try (
-				BufferedWriter writer = Files.newBufferedWriter(Paths.get(nodeFilesLocation, "priv_validator.json"))
-		) {
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(nodeFilesLocation, "priv_validator.json"))) {
 			if (!ensureDirectoryExists(nodeFilesLocation)) {
 				return null;
 			}
 
 			writer.write(privValidator.toString());
-			writer.close();
 		} catch (IOException e) {
 			Log.log(Level.WARNING, "Could not generate priv_validator.json due to IO Exception", e);
 			return null;
@@ -199,15 +189,12 @@ public final class TendermintHelper {
 		genesis.put("validators", validators);
 
 		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
-		try (
-				BufferedWriter writer = Files.newBufferedWriter(Paths.get(nodeFilesLocation, "genesis.json"))
-		) {
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(nodeFilesLocation, "genesis.json"))) {
 			if (!ensureDirectoryExists(nodeFilesLocation)) {
 				return false;
 			}
 
 			writer.write(genesis.toString());
-			writer.close();
 		} catch (IOException e) {
 			Log.log(Level.WARNING, "Could not generate genesis.json due to IO exception.", e);
 			return false;
@@ -276,11 +263,11 @@ public final class TendermintHelper {
 		}
 		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
 		//add arguments
-		script.append("--home ").append(nodeFilesLocation).append(" ");
-		script.append("--p2p.laddr=tcp://0.0.0.0:").append(nodeBasePort + 1).append(" ");
-		script.append("--rpc.laddr=tcp://0.0.0.0:").append(nodeBasePort + 2).append(" ");
-		script.append("--proxy_app=tcp://127.0.0.1:").append(nodeBasePort + 3).append(" ");
-		script.append("--moniker=Node").append(nodeNumber).append(" ");
+		script.append("--home ").append(nodeFilesLocation).append(' ');
+		script.append("--p2p.laddr=tcp://0.0.0.0:").append(nodeBasePort + 1).append(' ');
+		script.append("--rpc.laddr=tcp://0.0.0.0:").append(nodeBasePort + 2).append(' ');
+		script.append("--proxy_app=tcp://127.0.0.1:").append(nodeBasePort + 3).append(' ');
+		script.append("--moniker=Node").append(nodeNumber).append(' ');
 
 		//add other seeds
 		if (peerAddresses != null && !peerAddresses.isEmpty()) {
@@ -319,31 +306,23 @@ public final class TendermintHelper {
 	 */
 	private static void enableLogging(Process ps, String logPrefix) {
 		Thread stdOutThread = new Thread(() -> {
-			try (
-					BufferedReader stdInput = new BufferedReader(new
-							InputStreamReader(ps.getInputStream()))
-			) {
+			try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(ps.getInputStream()))) {
 				// read the output from the command
 				String s;
 				while ((s = stdInput.readLine()) != null) {
 					Log.log(Level.FINE, "[TM STDIN " + logPrefix + " ] " + s);
 				}
-				stdInput.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		});
 		Thread stdErrThread = new Thread(() -> {
-			try (
-					BufferedReader stdError = new BufferedReader(new
-							InputStreamReader(ps.getErrorStream()))
-			) {
+			try (BufferedReader stdError = new BufferedReader(new InputStreamReader(ps.getErrorStream()))) {
 				// read any errors from the attempted command
 				String s;
 				while ((s = stdError.readLine()) != null) {
 					Log.log(Level.FINE, "[TM STDERROR " + logPrefix + " ] " + s);
 				}
-				stdError.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -361,11 +340,13 @@ public final class TendermintHelper {
 	public static Block generateGenesisBlock(long amount, Map<Integer, Node> nodeList) {
 		List<Transaction> initialTransactions = new ArrayList<>();
 		for (int i = 0; i < nodeList.size(); i++) {
-			Transaction t = new Transaction(i, null, nodeList.get(i), amount, 0, new HashSet<>(0));
+			Transaction t = new Transaction(i, null, nodeList.get(i), amount, 0, new TreeSet<>());
 			initialTransactions.add(t);
 		}
 		
-		return new Block(0, null, initialTransactions);
+		Block block = new Block(0, null, initialTransactions);
+		block.setNextCommittedBlock(block);
+		return block;
 	}
 	
 	/**

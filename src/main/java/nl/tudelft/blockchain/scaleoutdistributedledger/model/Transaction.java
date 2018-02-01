@@ -1,28 +1,23 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import lombok.Getter;
-import lombok.Setter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.OptionalInt;
+import java.util.TreeSet;
+import java.util.logging.Level;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.logging.Level;
-import nl.tudelft.blockchain.scaleoutdistributedledger.message.BlockMessage;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Transaction class.
  */
-public class Transaction {
+public class Transaction implements Comparable<Transaction> {
 
 	// Represent the sender of a genesis transaction
 	public static final int GENESIS_SENDER = -1;
@@ -33,7 +28,6 @@ public class Transaction {
 	@Getter
 	private final Node sender;
 
-	// TODO: change back to final somehow
 	@Getter @Setter
 	private Node receiver;
 
@@ -41,23 +35,30 @@ public class Transaction {
 	private final long amount, remainder;
 
 	@Getter
-	private final Set<Transaction> source;
+	private final TreeSet<Transaction> source;
 
 	// Custem getter
 	private Sha256Hash hash;
 	
 	private OptionalInt blockNumber;
 
+	// Only temporarily used while decoding
+	@Getter @Setter
+	private TransactionMessage message;
+
+	@Getter @Setter
+	private boolean locallyVerified;
+
 	/**
 	 * Constructor.
-	 * @param number - the number of this transaction.
-	 * @param sender - the sender of this transaction.
-	 * @param receiver - the receiver of this transaction.
-	 * @param amount - the amount to be transferred.
+	 * @param number    - the number of this transaction.
+	 * @param sender    - the sender of this transaction.
+	 * @param receiver  - the receiver of this transaction.
+	 * @param amount    - the amount to be transferred.
 	 * @param remainder - the remaining amount.
-	 * @param source - set of transactions that are used as source for this transaction.
+	 * @param source    - set of transactions that are used as source for this transaction.
 	 */
-	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, Set<Transaction> source) {
+	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, TreeSet<Transaction> source) {
 		this.sender = sender;
 		this.receiver = receiver;
 		this.amount = amount;
@@ -66,79 +67,21 @@ public class Transaction {
 		this.number = number;
 		this.blockNumber = OptionalInt.empty();
 	}
-
-	/**
-	 * Constructor to decode a transaction message.
-	 * @param transactionMessage - the message received from a transaction.
-	 * @param encodedChainUpdates - the received chain of updates
-	 * @param decodedChainUpdates - current chain of updates, from the decoding process
-	 * @param localStore - local store, to get each Node object
-	 * @throws java.io.IOException - error while getting node
-	 */
-	public Transaction(TransactionMessage transactionMessage, Map<Integer, List<BlockMessage>> encodedChainUpdates,
-			Map<Node, List<Block>> decodedChainUpdates, LocalStore localStore) throws IOException  {
-		this.number = transactionMessage.getNumber();
-		this.blockNumber = OptionalInt.of(transactionMessage.getBlockNumber());
-		
-		// It's a genesis transaction
-		if (transactionMessage.getSenderId() == GENESIS_SENDER) {
-			this.sender = null;
-		} else {
-			this.sender = localStore.getNode(transactionMessage.getSenderId());
-		}
-		this.receiver = localStore.getNode(transactionMessage.getReceiverId());
-		this.amount = transactionMessage.getAmount();
-		this.remainder = transactionMessage.getRemainder();
-		// Decode transaction messages to normal transactions
-		this.source = new HashSet<>();
-		// Use local store for known sources
-		for (Entry<Integer, Integer> knownSourceEntry : transactionMessage.getKnownSource()) {
-			Integer nodeId = knownSourceEntry.getKey();
-			Integer transactionId = knownSourceEntry.getValue();
-			//TODO This might need to be done in a certain order
-			this.source.add(localStore.getTransactionFromNode(nodeId, transactionId));
-		}
-		// Use chain of updates for new sources
-		for (Entry<Integer, Integer> newSourceEntry : transactionMessage.getNewSource()) {
-			try {
-				// Try to find the transaction in the local store
-				this.source.add(localStore.getTransactionFromNode(newSourceEntry.getKey(), newSourceEntry.getValue()));
-				continue;
-			} catch (IllegalStateException ex) {
-				// Not in localStore
-			}
-			// Use the transaction from the current chain of updates
-			Node owner = localStore.getNode(newSourceEntry.getKey());
-			if (!decodedChainUpdates.containsKey(owner)) {
-				// Get that new chain
-				List<BlockMessage> blockMessageList = encodedChainUpdates.get(owner.getId());
-				// Decode chain, in REVERSE order
-				BlockMessage lastBlockMessage = blockMessageList.get(blockMessageList.size() - 1);
-				// Recursively decode the blocks of a chain (in reverse order)
-				Block lastBlockLocal = new Block(lastBlockMessage, encodedChainUpdates, decodedChainUpdates, localStore);
-				if (decodedChainUpdates.containsKey(owner)) {
-					// Add to already created list
-					decodedChainUpdates.get(owner).add(lastBlockLocal);
-				} else {
-					// Create a new list
-					List<Block> blockList = new ArrayList<>();
-					blockList.add(lastBlockLocal);
-					decodedChainUpdates.put(owner, blockList);
-				}
-			}
-			// TODO [Performance]: Find a way to directly go to the correct block instead of iterating through all of them
-			for (Block blockAux : decodedChainUpdates.get(owner)) {
-				for (Transaction transactionAux : blockAux.getTransactions()) {
-					if (transactionAux.getNumber() == newSourceEntry.getValue()) {
-						this.source.add(transactionAux);
-						break;
-					}
-				}
-			}
-		}
-		this.hash = transactionMessage.getHash();
-	}
 	
+	/**
+	 * Convenience constructor. The given sources are converted to a TreeSet with
+	 * <pre>new TreeSet<>(Arrays.asList(source))</pre>.
+	 * @param number    - the number of this transaction.
+	 * @param sender    - the sender of this transaction.
+	 * @param receiver  - the receiver of this transaction.
+	 * @param amount    - the amount to be transferred.
+	 * @param remainder - the remaining amount.
+	 * @param source    - the transaction that are used as sources for this transaction.
+	 */
+	public Transaction(int number, Node sender, Node receiver, long amount, long remainder, Transaction... source) {
+		this(number, sender, receiver, amount, remainder, new TreeSet<>(Arrays.asList(source)));
+	}
+
 	/**
 	 * Returns the number of the block (if it is in a block).
 	 * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)
@@ -150,6 +93,8 @@ public class Transaction {
 			if (this.sender == null) {
 				this.blockNumber = OptionalInt.of(Block.GENESIS_BLOCK_NUMBER);
 			} else {
+				//TODO IMPORTANT We don't want this to be called really.
+				System.out.println("Looking up block number!");
 				for (Block block : sender.getChain().getBlocks()) {
 					if (block.getTransactions().contains(this)) {
 						this.blockNumber = OptionalInt.of(block.getNumber());
@@ -160,7 +105,7 @@ public class Transaction {
 		}
 		return this.blockNumber;
 	}
-	
+
 	/**
 	 * Sets the block number of this transaction.
 	 * @param number - the block number
@@ -197,7 +142,6 @@ public class Transaction {
 			outputStream.write(Utils.longToByteArray(this.amount));
 			outputStream.write(Utils.longToByteArray(this.remainder));
 			
-			// TODO: check if we really need to do this
 			for (Transaction tx : this.source) {
 				outputStream.write(tx.getHash().getBytes());
 			}
@@ -215,9 +159,7 @@ public class Transaction {
 	 */
 	public Transaction genesisCopy() {
 		if (!source.isEmpty()) throw new UnsupportedOperationException("Only genesis transactions can be copied");
-		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, new HashSet<>(0));
-		transaction.blockNumber = OptionalInt.of(0);
-		return transaction;
+		return new Transaction(number, sender, receiver, amount, remainder, new TreeSet<>());
 	}
 
 	@Override
@@ -237,13 +179,12 @@ public class Transaction {
 		
 		Transaction other = (Transaction) obj;
 		if (number != other.number) return false;
-		if (receiver.getId() != other.receiver.getId()) return false;
+		if (!receiver.equals(other.receiver)) return false;
 		if (sender == null) {
 			if (other.sender != null) return false;
-		} else if (other.sender == null || sender.getId() != other.sender.getId()) return false;
+		} else if (!sender.equals(other.sender)) return false;
 		if (amount != other.amount) return false;
 		if (remainder != other.remainder) return false;
-		if (!hash.equals(other.hash)) return false;
 		if (!source.equals(other.source)) return false;
 		if (!blockNumber.equals(other.blockNumber)) return false;
 		return true;
@@ -258,4 +199,13 @@ public class Transaction {
 		}
 	}
 
+	@Override
+	public int compareTo(Transaction o) {
+		if (this.sender == null && o.sender != null) return -1;
+		if (this.sender != null && o.sender == null) return 1;
+		if (this.sender == null && o.sender == null) return 0;
+		int senderCompare = Integer.compare(this.sender.getId(), o.sender.getId());
+		if (senderCompare != 0) return senderCompare;
+		return Integer.compare(this.getNumber(), o.getNumber());
+	}
 }

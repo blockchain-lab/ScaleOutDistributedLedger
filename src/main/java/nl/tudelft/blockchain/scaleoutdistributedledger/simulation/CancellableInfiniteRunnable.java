@@ -66,6 +66,7 @@ public class CancellableInfiniteRunnable<T> implements Runnable {
 		
 		try {
 			while (!isCancelled()) {
+				//Do action
 				try {
 					action.accept(t);
 				} catch (InterruptedException ex) {
@@ -74,6 +75,7 @@ public class CancellableInfiniteRunnable<T> implements Runnable {
 					Log.log(Level.SEVERE, "Uncaught exception in action", ex);
 				}
 				
+				//Sleep
 				try {
 					Thread.sleep(sleepFunction.applyAsLong(t));
 				} catch (InterruptedException ex) {

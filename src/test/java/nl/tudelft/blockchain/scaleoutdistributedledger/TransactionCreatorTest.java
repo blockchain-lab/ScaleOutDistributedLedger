@@ -3,14 +3,16 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.NotEnoughMoneyException;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -31,7 +33,7 @@ public class TransactionCreatorTest {
 	@Before
 	public void setUp() {
 		ownNode = new OwnNode(0);
-		
+		//TestHelper.generateGenesis(ownNode, 5, 100);
 		localStore = new LocalStore(ownNode, null, null, false);
 		nodes = localStore.getNodes();
 	}
@@ -44,6 +46,7 @@ public class TransactionCreatorTest {
 	public void createNodes(int from, int to) {
 		for (int i = from; i <= to; i++) {
 			nodes.put(i, new Node(i));
+			localStore.getNewTransactionId();
 		}
 	}
 	
@@ -62,9 +65,9 @@ public class TransactionCreatorTest {
 	 * @param chains - the chains to add to the meta knowledge
 	 */
 	public void addMetaKnowledge(Node node, int... chains) {
-		Map<Node, Integer> meta = node.getMetaKnowledge();
+		MetaKnowledge meta = node.getMetaKnowledge();
 		for (int chain : chains) {
-			meta.put(getNode(chain), 0);
+			meta.updateLastKnownBlockNumber(chain, 2);
 		}
 	}
 	
@@ -78,8 +81,16 @@ public class TransactionCreatorTest {
 	 * @return            the transaction
 	 */
 	public Transaction addUnspent(Node sender, Node receiver, long amount, long remainder) {
-		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new HashSet<>());
-		Transaction transaction = new Transaction(localStore.getNewTransactionId(), sender, receiver, amount, remainder, Collections.singleton(genesis));
+		//Create genesis block
+		Transaction genesis = new Transaction(0, null, sender, amount + remainder, 0, new TreeSet<>());
+		Block genesisBlock = new Block(0, null, Arrays.asList(genesis));
+		sender.getChain().getBlocks().add(genesisBlock);
+		
+		//Create transaction and block
+		Transaction transaction = new Transaction(localStore.getNewTransactionId(), sender, receiver, amount, remainder, genesis);
+		Block block1 = new Block(1, sender, Arrays.asList(transaction));
+		sender.getChain().getBlocks().add(block1);
+		
 		localStore.addUnspentTransaction(transaction);
 		return transaction;
 	}
@@ -111,7 +122,7 @@ public class TransactionCreatorTest {
 	 */
 	public void checkTransactionSources(Transaction transaction, Transaction... expectedSources) {
 		Set<Transaction> actualSet = transaction.getSource();
-		Set<Transaction> expectedSet = new HashSet<>();
+		Set<Transaction> expectedSet = new TreeSet<>();
 		expectedSet.addAll(Arrays.asList(expectedSources));
 		
 		assertEquals(expectedSet, actualSet);

@@ -80,6 +80,16 @@ public final class Log {
 	}
 	
 	/**
+	 * Logs the given message for the given node id.
+	 * @param level  - level to log at
+	 * @param str    - message to log
+	 * @param nodeId - the id of the node
+	 */
+	public static void log(Level level, String str, int nodeId) {
+		Logger.getLogger(getCallerClassName()).log(level, "[" + nodeId + "] " + str);
+	}
+	
+	/**
 	 * Logs the given debug message.
 	 * @param msg    - the message
 	 * @param params - the parameters

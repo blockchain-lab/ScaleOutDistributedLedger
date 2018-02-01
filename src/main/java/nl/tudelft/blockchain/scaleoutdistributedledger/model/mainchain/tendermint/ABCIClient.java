@@ -113,7 +113,7 @@ public class ABCIClient {
 		try {
 			return result.getJSONObject("result");
 		} catch (NullPointerException e) {
-			Log.log(Level.SEVERE, "The main chain does not respond. Did you start tendermint?");
+			Log.log(Level.WARNING, "The main chain does not respond. Perhaps the tendermint is not yet running?");
 			return new JSONObject();
 		}
 	}
