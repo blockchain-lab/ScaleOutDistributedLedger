@@ -149,15 +149,16 @@ public class TransactionSender implements Runnable {
 		long startingTime = System.currentTimeMillis();
 		Node to = transaction.getReceiver();
 
-		//TODO IMPORTANT Removed synchronization
 		ProofConstructor proofConstructor = new ProofConstructor(transaction);
 		Proof proof = proofConstructor.constructProof();
 		ProofMessage msg = new ProofMessage(proof);
 		
+		//Check if the proof creation took a long time and log it.
 		long timeDelta = System.currentTimeMillis() - startingTime;
 		if (timeDelta > 5 * 1000) {
 			Log.log(Level.WARNING, "Proof creation took " + timeDelta + " ms for transaction: " + transaction);
 		}
+		
 		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " now actually sending transaction: " + transaction);
 		if (socketClient.sendMessage(to, msg)) {
 			to.updateMetaKnowledge(proof);
