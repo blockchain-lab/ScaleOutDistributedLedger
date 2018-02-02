@@ -33,9 +33,6 @@ $(document).ready(function() {
             nodes: {
                 shape: 'dot'
             },
-            layout: {
-                randomSeed:2
-            },
             configure: {
                 filter:function (option, path) {
                     if (path.indexOf('physics') !== -1) {
