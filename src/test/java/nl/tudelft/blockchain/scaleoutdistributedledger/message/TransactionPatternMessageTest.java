@@ -19,9 +19,9 @@ public class TransactionPatternMessageTest extends MessageTest {
 	public void testHandle() {
 		ITransactionPattern pattern = mock(ITransactionPattern.class);
 		TransactionPatternMessage msg = new TransactionPatternMessage(pattern);
-		msg.handle(storeSpy);
+		msg.handle(this.storeSpy);
 		
-		//The correct transaction pattern should be set.
+		// The correct transaction pattern should be set.
 		verify(appMock, times(1)).setTransactionPattern(same(pattern));
 	}
 

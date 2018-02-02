@@ -42,6 +42,19 @@ public class Application {
 	public Application(boolean isProduction) {
 		this.isProduction = isProduction;
 	}
+
+	/**
+	 * Constructor used for testing.
+	 * @param localStore - the localStore to use
+	 * @param serverThread - the serverThread to use
+	 * @param transactionSender - the transactionSender to use
+	 */
+	protected Application(LocalStore localStore, Thread serverThread, TransactionSender transactionSender) {
+		this.localStore = localStore;
+		this.serverThread = serverThread;
+		this.transactionSender = transactionSender;
+		this.isProduction = false;
+	}
 	
 	/**
 	 * Initializes the application.

@@ -13,6 +13,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.ByteArrayOutputStream;
 import java.security.SignatureException;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.logging.Level;
 
 /**
@@ -105,18 +107,36 @@ public class BlockAbstract implements Serializable {
 	 */
 	public boolean checkSignature(byte[] signatureKey) {
 		try {
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			outputStream.write(Utils.intToByteArray(this.ownerNodeId));
-			outputStream.write(Utils.intToByteArray(this.blockNumber));
-			outputStream.write(this.blockHash.getBytes());
-			byte[] attrInBytes = outputStream.toByteArray();
+			byte[] attrInBytes = BlockAbstract.calculateBytesForSignature(this.ownerNodeId, this.blockNumber, this.blockHash);
 
 			return Ed25519Key.verify(attrInBytes, this.signature, signatureKey);
-		} catch (IOException | SignatureException e) {
+		} catch (SignatureException e) {
 			return false;
 		}
 	}
 
+	/**
+	 * Convert attributes of abstract into an array of bytes, for the signature.
+	 * Important to keep the order of writings.
+	 * @param ownerId - id of the owner
+	 * @param blockNumber - number of the block
+	 * @param hash - hash of the block
+	 * @return array of bytes
+	 */
+	public static byte[] calculateBytesForSignature(int ownerId, int blockNumber, Sha256Hash hash) {
+		byte[] attrInBytes;
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			outputStream.write(Utils.intToByteArray(ownerId));
+			outputStream.write(Utils.intToByteArray(blockNumber));
+			outputStream.write(hash.getBytes());
+			attrInBytes = outputStream.toByteArray();
+		} catch (IOException ex) {
+			throw new IllegalStateException("Unable to write to outputstream", ex);
+		}
+		
+		return attrInBytes;
+	}
+	
 	private void writeObject(ObjectOutputStream stream) throws IOException {
 		stream.defaultWriteObject();
 	}
@@ -126,4 +146,32 @@ public class BlockAbstract implements Serializable {
 		stream.defaultReadObject();
 	}
 
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 47 * hash + this.ownerNodeId;
+		hash = 47 * hash + this.blockNumber;
+		hash = 47 * hash + Objects.hashCode(this.blockHash);
+		hash = 47 * hash + Arrays.hashCode(this.signature);
+		hash = 47 * hash + Objects.hashCode(this.abstractHash);
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this) return true;
+		if (!(obj instanceof BlockAbstract)) return false;
+		
+		BlockAbstract other = (BlockAbstract) obj;
+		if (ownerNodeId != other.ownerNodeId) return false;
+		if (blockNumber != other.blockNumber) return false;
+		if (!blockHash.equals(other.blockHash)) return false;
+		if (!Arrays.equals(signature, other.signature)) return false;
+		if (this.abstractHash == null) {
+			if (other.abstractHash != null) return false;
+		} else if (other.abstractHash == null || this.abstractHash.equals(other.abstractHash)) return false;
+		
+		return true;
+	}
+	
 }

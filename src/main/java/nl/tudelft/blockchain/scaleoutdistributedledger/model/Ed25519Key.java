@@ -102,9 +102,11 @@ public class Ed25519Key {
 	 * @param message - array of bytes of the message
 	 * @param privateKey - private ED25519 key
 	 * @return signature of the message
-	 * @throws java.lang.Exception - exception while signing
+	 * @throws java.security.SignatureException - invalid signature
+	 * @throws java.security.InvalidKeyException - invalid key
+	 * @throws java.security.NoSuchAlgorithmException - no algorithm found for Ed25519
 	 */
-	public static byte[] sign(byte[] message, byte[] privateKey) throws Exception {
+	public static byte[] sign(byte[] message, byte[] privateKey) throws SignatureException, InvalidKeyException, NoSuchAlgorithmException {
 		// Get seed
 		byte[] seed = Arrays.copyOf(privateKey, 32);
 		// Sign
@@ -120,9 +122,11 @@ public class Ed25519Key {
 	 * Sign an array of bytes with a private key.
 	 * @param message - array of bytes of the message
 	 * @return signature of the message
-	 * @throws java.lang.Exception - exception while signing
+	 * @throws java.security.SignatureException - invalid signature
+	 * @throws java.security.InvalidKeyException - invalid key
+	 * @throws java.security.NoSuchAlgorithmException - no algorithm found for Ed25519
 	 */
-	public byte[] sign(byte[] message) throws Exception {
+	public byte[] sign(byte[] message) throws SignatureException, InvalidKeyException, NoSuchAlgorithmException {
 		return sign(message, this.privateKey);
 	}
 	

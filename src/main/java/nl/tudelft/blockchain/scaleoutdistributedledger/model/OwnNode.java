@@ -7,6 +7,7 @@ import lombok.Setter;
  * Class to represent our own node.
  */
 public class OwnNode extends Node {
+	
 	/**
 	 * Only used by the node himself.
 	 * @return private key
@@ -44,4 +45,5 @@ public class OwnNode extends Node {
 	public String toString() {
 		return "(OwnNode) " + super.toString();
 	}
+	
 }

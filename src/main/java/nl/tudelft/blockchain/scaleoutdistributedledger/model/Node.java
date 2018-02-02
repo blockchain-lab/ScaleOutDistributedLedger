@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import java.security.SignatureException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -59,9 +60,9 @@ public class Node {
 	 * @param message - message to be verified
 	 * @param signature - signature of the message
 	 * @return - the signature
-	 * @throws Exception - See {@link Ed25519Key#verify(byte[], byte[], byte[])}
+	 * @throws SignatureException - See {@link Ed25519Key#verify(byte[], byte[], byte[])}
 	 */
-	public boolean verify(byte[] message, byte[] signature) throws Exception {
+	public boolean verify(byte[] message, byte[] signature) throws SignatureException {
 		return Ed25519Key.verify(message, signature, this.publicKey);
 	}
 	

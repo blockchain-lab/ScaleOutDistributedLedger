@@ -47,7 +47,7 @@ public class ChainView implements Iterable<Block> {
 	 * 		true if this view is valid, false otherwise
 	 */
 	public boolean isValid() {
-		if (this.valid != null) return this.valid.booleanValue();
+		if (this.valid != null) return this.valid;
 		
 		return checkIntegrity();
 	}

@@ -122,7 +122,7 @@ public class Block {
 		if (!(this.owner instanceof OwnNode)) {
 			throw new UnsupportedOperationException("You cannot calculate the block abstract of a block you do not own!");
 		}
-		
+
 		// Convert attributes of abstract into an array of bytes, for the signature
 		// Important to keep the order of writings
 		byte[] attrInBytes;
@@ -151,10 +151,10 @@ public class Block {
 	 * @param localStore - the local store
 	 */
 	public synchronized void commit(LocalStore localStore) {
-		if (finalized) {
+		if (this.finalized) {
 			throw new IllegalStateException("This block has already been committed!");
 		}
-		
+
 		Log.log(Level.FINER, "Committing block " + getNumber(), getOwner().getId());
 		
 		//Commit to the main chain, and set the last committed block
@@ -169,7 +169,7 @@ public class Block {
 			prev = prev.getPreviousBlock();
 		}
 		
-		finalized = true;
+		this.finalized = true;
 	}
 
 	@Override

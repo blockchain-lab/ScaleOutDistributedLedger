@@ -21,6 +21,7 @@ import java.util.Set;
  * Class to store information related to our own node.
  */
 public class LocalStore {
+	
 	@Getter
 	private final Application application;
 	
@@ -104,13 +105,15 @@ public class LocalStore {
 		if (nodeId == Transaction.GENESIS_SENDER) {
 			// It's a genesis transaction
 			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
-			return genesisBlock.getTransactions().get(transactionId);
-		}
-		
-		Node node = getNode(nodeId);
-		for (Block block : node.getChain().getBlocks()) {
-			for (Transaction transaction : block.getTransactions()) {
-				if (transaction.getNumber() == transactionId) return transaction;
+			if (transactionId < genesisBlock.getTransactions().size()) {
+				return genesisBlock.getTransactions().get(transactionId);
+			}
+		} else {
+			Node node = getNode(nodeId);
+			for (Block block : node.getChain().getBlocks()) {
+				for (Transaction transaction : block.getTransactions()) {
+					if (transaction.getNumber() == transactionId) return transaction;
+				}
 			}
 		}
 		
@@ -128,17 +131,19 @@ public class LocalStore {
 		if (nodeId == Transaction.GENESIS_SENDER) {
 			// It's a genesis transaction
 			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
-			return genesisBlock.getTransactions().get(transactionId);
-		}
-		
-		Node node = getNode(nodeId);
-		try {
-			Block block = node.getChain().getBlocks().get(blockId);
-			for (Transaction transaction : block.getTransactions()) {
-				if (transaction.getNumber() == transactionId) return transaction;
+			if (transactionId < genesisBlock.getTransactions().size()) {
+				return genesisBlock.getTransactions().get(transactionId);
 			}
-		} catch (IndexOutOfBoundsException ex) {
-			throw new IllegalStateException("Block with id " + blockId + " from node " + nodeId + " not found.");
+		} else {
+			Node node = getNode(nodeId);
+			try {
+				Block block = node.getChain().getBlocks().get(blockId);
+				for (Transaction transaction : block.getTransactions()) {
+					if (transaction.getNumber() == transactionId) return transaction;
+				}
+			} catch (IndexOutOfBoundsException ex) {
+				throw new IllegalStateException("Block with id " + blockId + " from node " + nodeId + " not found.");
+			}
 		}
 		
 		throw new IllegalStateException("Transaction with id " + transactionId + " in block " + blockId + " from node " + nodeId + " not found.");

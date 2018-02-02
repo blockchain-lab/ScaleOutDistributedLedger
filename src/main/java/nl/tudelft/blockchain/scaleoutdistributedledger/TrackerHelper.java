@@ -32,7 +32,6 @@ import java.util.logging.Level;
  * Helper class for interacting with the tracker.
  */
 public final class TrackerHelper {
-
     private volatile static Queue<TransactionRegistration> transactionsToBeRegistered = new LinkedList<>();
     private static final CloseableHttpClient client = HttpClientBuilder.create().build();
 
