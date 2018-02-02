@@ -197,18 +197,15 @@ public class ChainViewTest {
 	/**
 	 * Test for {@link ChainView#getBlock(int)}.
 	 */
-	@Test
+	@Test(expected = IllegalStateException.class)
 	public void testGetBlock_Exception() {
 		addBlock(0, true);
 		addBlock(1, true);
 		addBlock(2, false);
 		addBlock(4, false);
-		try {
-			this.chainview.getBlock(4);
-			fail();
-		} catch (IllegalStateException ex) {
-			// Good
-		}
+		chainview.isValid();
+		
+		this.chainview.getBlock(4);
 	}
 
 	/**
@@ -328,6 +325,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, false);
 		addBlock(2, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.listIterator(0);
 		assertTrue(it.hasNext());
@@ -344,6 +342,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, false);
 		addBlock(2, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.listIterator(1);
 		it.next(); // Get 1
@@ -357,6 +356,7 @@ public class ChainViewTest {
 	public void testListIteratorHasPrevious() {
 		addBlock(0, true);
 		addBlock(1, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.listIterator(0);
 		assertFalse(it.hasPrevious());
@@ -372,6 +372,7 @@ public class ChainViewTest {
 	@Test
 	public void testListIteratorOneBlock() {
 		addBlock(0, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.listIterator(1);
 		assertFalse(it.hasNext());
@@ -385,6 +386,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, true);
 		addBlock(2, false);
+		chainview.isValid();
 		
 		// Is valid
 		assertTrue(this.chainview.isValid());
@@ -405,7 +407,7 @@ public class ChainViewTest {
 	public void testResetIsRedundant_Valid() {
 		addBlock(0, true);
 		addBlock(1, true);
-		addBlock(1, false);
+		chainview.isValid();
 		
 		assertTrue(this.chainview.isRedundant());
 	}
