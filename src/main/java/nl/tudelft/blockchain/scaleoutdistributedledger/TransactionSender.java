@@ -56,14 +56,6 @@ public class TransactionSender implements Runnable {
 	 * Sends all blocks that can be sent.
 	 */
 	public void sendAllBlocksThatCanBeSent() {
-		//TODO Add explanation in readme?
-		//[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-		//Committed: [0, 2, 4, 6, 8]
-		//Last sent: 2
-		//Committed found: [3 -> 4, 5 -> 6, 7 -> 8] = [4, 6, 8]
-		//We can send up to 6 (inclusive)
-		//3 commits found, 2 required
-		
 		int lastBlockNr = chain.getLastBlockNumber();
 		
 		//Determine what blocks have been committed since the last batch we sent
