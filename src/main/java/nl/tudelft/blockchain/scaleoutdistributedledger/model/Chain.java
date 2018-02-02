@@ -81,28 +81,6 @@ public class Chain {
 	}
 	
 	/**
-	 * Fixes the next committed block pointers.
-	 * @param updates    - the block updates
-	 * @param localStore - the local store
-	 */
-	private void fixNextCommitted(List<Block> updates, LocalStore localStore) {
-		if (updates.isEmpty()) return;
-		
-		int lastBlockNr = updates.get(0).getNumber();
-		for (Block block : updates) {
-			if (!localStore.getMainChain().isInCache(block)) continue;
-			
-			Block prev = block.getPreviousBlock();
-			while (prev != null && prev.getNumber() > lastBlockNr) {
-				prev.setNextCommittedBlock(block);
-				prev = prev.getPreviousBlock();
-			}
-			
-			lastBlockNr = block.getNumber();
-		}
-	}
-	
-	/**
 	 * @param block - the block
 	 * @param lastUpdateBlockNr - the number of the last block in the list of updates
 	 * @param lastBlockNr - the number of the last checked block that was actually committed

@@ -91,7 +91,7 @@ public class Proof {
 
 	private void fixTransactionSources(LocalStore localStore) {
 		HashMap<Integer, LightView> lightViews = new HashMap<>();
-		// Initialize the chainviews only once
+		// Initialize the lightviews only once
 		for (Node node : this.chainUpdates.keySet()) {
 			lightViews.put(node.getId(), new LightView(node.getChain(), chainUpdates.get(node)));
 		}
@@ -218,10 +218,6 @@ public class Proof {
 			try {
 				verify(sourceTransaction, localStore);
 			} catch (ValidationException ex) {
-				//TODO Remove debugging stuff
-				ex.printStackTrace();
-				System.out.println(this);
-				System.exit(1);
 				throw new ProofValidationException("Source " + sourceTransaction + " is not valid", ex);
 			}
 		}

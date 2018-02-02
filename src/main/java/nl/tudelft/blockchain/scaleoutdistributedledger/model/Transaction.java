@@ -84,8 +84,7 @@ public class Transaction implements Comparable<Transaction> {
 
 	/**
 	 * Returns the number of the block (if it is in a block).
-	 * TODO: maybe do this more efficiently (when adding the transaction to the local chain or something)
-	 * @return - optional that is empty if the transaction is not in a block, and filled with the number of the block otherwise.
+	 * @return - the number of the block that this transaction is in, if known
 	 */
 	public OptionalInt getBlockNumber() {
 		if (!this.blockNumber.isPresent()) {
@@ -93,8 +92,6 @@ public class Transaction implements Comparable<Transaction> {
 			if (this.sender == null) {
 				this.blockNumber = OptionalInt.of(Block.GENESIS_BLOCK_NUMBER);
 			} else {
-				//TODO IMPORTANT We don't want this to be called really.
-				System.out.println("Looking up block number!");
 				for (Block block : sender.getChain().getBlocks()) {
 					if (block.getTransactions().contains(this)) {
 						this.blockNumber = OptionalInt.of(block.getNumber());

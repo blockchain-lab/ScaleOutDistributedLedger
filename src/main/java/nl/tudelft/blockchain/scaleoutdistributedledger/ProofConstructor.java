@@ -22,56 +22,6 @@ public class ProofConstructor {
 	private final Map<Node, List<Block>> toSend;
 	private final Proof proof;
 	
-	/*
-	 * The Problem:
-	 * We want to send block A.
-	 * We have committed block B.
-	 * With metaknowledge, we can translate this to a list of blocks that need to be sent.
-	 * 
-	 * From all these blocks, we have to determine "what is the last block of each node that needs to be sent."
-	 * This is "loop over the blocks, loop over the sources of transactions (recursively):
-	 * 
-	 * Block A
-	 * Block B
-	 * Node sender
-	 * Node receiver
-	 * List<Block> ownBlocks = MetaKnowledge.determineBlocks(sender, B)
-	 * processBlocks(sender, ownBlocks)
-	 * Map<Node, List<Block>> toSend
-	 * Map<Node, Set<Integer>> alreadyChecked
-	 * 
-	 * processBlocks(Node owner, List<Block> blocks):
-	 *     //newlyAdded is the list of all the blocks that were added (not already present) (HAS TO BE ORDERED)
-	 *     List<Block> newlyAdded = toSend.addAll(owner, blocks)
-	 *     for (Block b : newlyAdded) {
-	 *         alreadyChecked.add(owner, b.getNumber())
-	 *         for (Transaction t : b.getTransactions()) {
-	 *             processSources(t)
-	 *         }
-	 *     }
-	 * 
-	 * processSources(Transaction t):
-	 *     for (Transaction s : t.getSource())
-	 *         Node owner = s.getOwner();
-	 *         //Skip all sources in genesis blocks, our own blocks or in receiver blocks
-	 *         if (owner == null || owner == sender || owner == receiver) continue;
-	 *         
-	 *         Block b = s.getBlock()
-	 *         //Skip all blocks that were already checked
-	 *         if (b.getNumber() in alreadyChecked.get(owner)) continue;
-	 *         
-	 *         Block bCom = the first committed block at or after b
-	 *         if (bCom.getNumber() in alreadyChecked.get(owner)) continue;
-	 *         
-	 *         List<Block> blocksOfSource = MetaKnowledge.determineBlocks(owner, bCom)
-	 *         if (blocksOfSource is empty) {
-	 *             alreadyChecked.addAll(owner, 0 up to (inclusive) bCom.getNumber())
-	 *             continue;
-	 *         }
-	 *         
-	 *         processBlocks(owner, blocksOfSource)
-	 */
-	
 	/**
 	 * @param mainTransaction - the transaction to construct the proof for
 	 */

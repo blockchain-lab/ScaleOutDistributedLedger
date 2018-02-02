@@ -44,15 +44,18 @@ public class ABCIClient {
 			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data"));
 			Log.log(Level.INFO, result.toString());
 			return null;
-		} else { //No error coming from Tendermint found
+		} else {
+			//No error coming from Tendermint found
 			byte[] ret = null;
 			try {
 				JSONObject resultField = result.getJSONObject("result");
 				JSONObject deliverTx = resultField.getJSONObject("deliver_tx");
-				if (deliverTx.getInt("code") == 0) { //double check we succeeded
+				if (deliverTx.getInt("code") == 0) {
+					//double check we succeeded
 					ret = Utils.hexStringToBytes(resultField.getString("hash"));
 				}
-			} catch (Exception e) {		// Malformed result
+			} catch (Exception e) {
+				// Malformed result
 				Log.log(Level.WARNING, "Result parsing failed, result of sending was: \n" + result.toString(), e);
 			}
 			return ret;
@@ -126,7 +129,8 @@ public class ABCIClient {
 	private JSONObject getError(JSONObject obj) {
 		try {
 			return obj.getJSONObject("error");
-		} catch (Exception e) { //could not find the 'error' in JSON, result was OK.
+		} catch (Exception e) {
+			//could not find the 'error' in JSON, result was OK.
 			Log.log(Level.FINER, "No error found: ", e);
 			return null;
 		}
