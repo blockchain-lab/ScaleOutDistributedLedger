@@ -10,6 +10,8 @@ import java.util.ListIterator;
 import org.junit.Before;
 import org.junit.Test;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.AppendOnlyArrayList;
+
 /**
  * Test class for {@link ChainView}.
  */
@@ -17,7 +19,7 @@ public class ChainViewTest {
 	private ChainView chainview;
 	private Chain chainMock;
 	private Node nodeMock;
-	private List<Block> blocks;
+	private AppendOnlyArrayList<Block> blocks;
 	private List<Block> updatedBlocks;
 	
 	/**
@@ -25,14 +27,14 @@ public class ChainViewTest {
 	 */
 	@Before
 	public void setUp() {
-		blocks = new ArrayList<>();
+		blocks = new AppendOnlyArrayList<>();
 		updatedBlocks = new ArrayList<>();
 		
 		nodeMock = mock(Node.class);
 		chainMock = mock(Chain.class);
 		when(chainMock.getBlocks()).thenReturn(blocks);
 		
-		chainview = new ChainView(chainMock, updatedBlocks);
+		chainview = new ChainView(chainMock, updatedBlocks, false);
 	}
 	
 	/**
@@ -65,6 +67,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, true);
 		addBlock(2, false);
+		chainview.isValid();
 		
 		assertTrue(chainview.isValid());
 	}
@@ -76,6 +79,7 @@ public class ChainViewTest {
 	public void testIsValid_EmptyUpdate() {
 		addBlock(0, true);
 		addBlock(1, true);
+		chainview.isValid();
 		
 		assertTrue(chainview.isValid());
 	}
@@ -99,6 +103,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, true);
 		addBlock(3, false);
+		chainview.isValid();
 		
 		assertFalse(chainview.isValid());
 	}
@@ -112,6 +117,7 @@ public class ChainViewTest {
 		addBlock(1, true);
 		addBlock(2, false);
 		addBlock(4, false);
+		chainview.isValid();
 		
 		assertFalse(chainview.isValid());
 	}
@@ -127,6 +133,7 @@ public class ChainViewTest {
 		addBlock(1, false);
 		addBlock(2, false);
 		addBlock(3, false);
+		chainview.isValid();
 		
 		assertTrue(chainview.isValid());
 	}
@@ -141,6 +148,7 @@ public class ChainViewTest {
 		addBlock(2, true);
 		addBlock(1, false);
 		addBlock(3, false);
+		chainview.isValid();
 		
 		assertFalse(chainview.isValid());
 	}
@@ -152,6 +160,7 @@ public class ChainViewTest {
 	public void testGetBlock() {
 		addBlock(0, true);
 		addBlock(1, true);
+		chainview.isValid();
 		
 		assertEquals(0, chainview.getBlock(0).getNumber());
 		assertEquals(1, chainview.getBlock(1).getNumber());
@@ -166,6 +175,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		Block good1 = addBlock(1, true);
 		addBlock(1, false);
+		chainview.isValid();
 		
 		assertSame(good1, chainview.getBlock(1));
 	}
@@ -179,12 +189,13 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, true);
 		addBlock(2, false);
+		chainview.isValid();
 		
 		assertEquals(2, chainview.getBlock(2).getNumber());
 	}
 	
 	/**
-	 * Test for {@link ChainView#getBlock()}.
+	 * Test for {@link ChainView#getBlock(int)}.
 	 */
 	@Test
 	public void testGetBlock_Exception() {
@@ -199,6 +210,19 @@ public class ChainViewTest {
 			// Good
 		}
 	}
+
+	/**
+	 * Test for {@link ChainView#size()}.
+	 */
+	@Test
+	public void testSize() {
+		addBlock(0, true);
+		addBlock(1, true);
+		addBlock(1, false);
+		addBlock(2, false);
+		
+		assertEquals(3, chainview.size());
+	}
 	
 	/**
 	 * Test for {@link ChainView#iterator()}, for next and nextIndex.
@@ -207,6 +231,7 @@ public class ChainViewTest {
 	public void testIteratorNextIndex() {
 		addBlock(0, true);
 		addBlock(1, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.iterator();
 		assertEquals(0, it.nextIndex());
@@ -224,6 +249,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, false);
 		addBlock(2, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.listIterator(2);
 		assertEquals(2, it.nextIndex());
@@ -240,6 +266,7 @@ public class ChainViewTest {
 	public void testIteratorPreviousIndex() {
 		addBlock(0, true);
 		addBlock(1, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.iterator();
 		assertEquals(-1, it.previousIndex());
@@ -256,6 +283,7 @@ public class ChainViewTest {
 	public void testListIteratorNextPrevious() {
 		addBlock(0, true);
 		addBlock(1, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.listIterator();
 		assertEquals(0, it.next().getNumber());
@@ -271,6 +299,7 @@ public class ChainViewTest {
 		addBlock(0, true);
 		addBlock(1, false);
 		addBlock(2, false);
+		chainview.isValid();
 		
 		ListIterator<Block> it = chainview.listIterator(2);
 		assertEquals(1, it.previousIndex());

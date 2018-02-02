@@ -49,7 +49,11 @@ public class UniformRandomTransactionPattern extends RandomTransactionPattern {
 
 	@Override
 	public long timeUntilNextAction(LocalStore localStore) {
-		return minWaitTime + random.nextInt(maxWaitTime - minWaitTime);
+		if (maxWaitTime == minWaitTime) {
+			return minWaitTime;
+		} else {
+			return minWaitTime + random.nextInt(maxWaitTime - minWaitTime);
+		}
 	}
 
 	@Override
@@ -70,8 +74,12 @@ public class UniformRandomTransactionPattern extends RandomTransactionPattern {
 	public long selectAmount(LocalStore localStore) {
 		long available = localStore.getAvailableMoney();
 		if (available == 0 || minAmount > available) return -1;
-		
-		long amount = (long) minAmount + random.nextInt(maxAmount - minAmount);
+		long amount;
+		if (maxAmount == minAmount) {
+			amount = minAmount;
+		} else {
+			amount = (long) minAmount + random.nextInt(maxAmount - minAmount);
+		}
 		return Math.min(amount, available);
 	}
 	

@@ -25,7 +25,7 @@ public class Application {
 	@Getter
 	private LocalStore localStore;
 	private Thread executor;
-	private CancellableInfiniteRunnable transactionExecutable;
+	private CancellableInfiniteRunnable<LocalStore> transactionExecutable;
 	private final boolean isProduction;
 
 	@Getter
@@ -73,7 +73,6 @@ public class Application {
 
 		// Setup local store
 		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction);
-		localStore.updateNodes();
 		localStore.initMainChain();
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
@@ -146,7 +145,7 @@ public class Application {
 	 */
 	public void finishTransactionSending() {
 		int nodeID = localStore.getOwnNode().getId();
-		transactionSender.stop();
+		//transactionSender.stop();
 		try {
 			transactionSender.waitUntilDone();
 			TrackerHelper.setRunning(nodeID, false);

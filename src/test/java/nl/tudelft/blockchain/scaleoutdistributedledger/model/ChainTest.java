@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import org.junit.Before;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
@@ -16,14 +18,16 @@ public class ChainTest {
 	private Node node;
 	
 	private Chain chain;
-	
+	private LocalStore localstoreMock;
+
 	/**
 	 * Setup method.
 	 */
 	@Before
 	public void setUp() {
 		this.node = mock(Node.class);
-		this.chain = new Chain(node, new ArrayList<>());
+		this.localstoreMock = mock(LocalStore.class);
+		this.chain = new Chain(node);
 	}
 	
 	/**
@@ -32,7 +36,7 @@ public class ChainTest {
 	@Test
 	public void testUpdate_EmptyUpdate() {
 		List<Block> updateList = new ArrayList<>();
-		this.chain.update(updateList);
+		this.chain.update(updateList, localstoreMock);
 		
 		assertTrue(this.chain.getBlocks().isEmpty());
 	}
@@ -44,7 +48,7 @@ public class ChainTest {
 	public void testUpdate_EmptyChain() {
 		List<Block> updateList = new ArrayList<>();
 		updateList.add(new Block(1, this.node, new ArrayList<>()));
-		this.chain.update(updateList);
+		this.chain.update(updateList, localstoreMock);
 		
 		assertEquals(updateList, this.chain.getBlocks());
 	}
@@ -56,10 +60,10 @@ public class ChainTest {
 	public void testUpdate_NotEmptyChain() {
 		List<Block> updateList = new ArrayList<>();
 		updateList.add(new Block(1, this.node, new ArrayList<>()));
-		this.chain.update(updateList);
+		this.chain.update(updateList, localstoreMock);
 		updateList.add(new Block(2, this.node, new ArrayList<>()));
 		updateList.add(new Block(3, this.node, new ArrayList<>()));
-		this.chain.update(updateList);
+		this.chain.update(updateList, localstoreMock);
 		
 		assertEquals(updateList, this.chain.getBlocks());
 	}

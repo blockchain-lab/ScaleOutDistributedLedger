@@ -1,8 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
@@ -21,7 +20,7 @@ public class TransactionTuple {
 	private int amount;
 	
 	@Getter
-	private Set<Transaction> transactions = new HashSet<>();
+	private TreeSet<Transaction> transactions = new TreeSet<>();
 	
 	@Getter @Setter
 	private BitSet chainsRequired;

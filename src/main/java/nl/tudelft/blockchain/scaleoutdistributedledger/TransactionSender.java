@@ -1,11 +1,11 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.ListIterator;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
@@ -20,28 +20,13 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 /**
  * Class which handles sending of transactions.
  */
-public class TransactionSender {
-	/**
-	 * The initial delay in milliseconds to wait before checking for the first time.
-	 */
-	public static final long INITIAL_DELAY = 2000;
-	
-	/**
-	 * The time in milliseconds to wait before checking again.
-	 */
-	public static final long WAIT_TIME = 5000;
-	
-	/**
-	 * The number of blocks (with the same or higher block number) that need to be committed before
-	 * we send a certain block.
-	 */
-	public static final int REQUIRED_COMMITS = 2;
+public class TransactionSender implements Runnable {
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
 	private final SocketClient socketClient;
-	private final AtomicInteger taskCounter = new AtomicInteger();
-	private boolean stopping;
+	private final Chain chain;
+	private int alreadySent;
 	
 	/**
 	 * Creates a new TransactionSender.
@@ -50,68 +35,72 @@ public class TransactionSender {
 	public TransactionSender(LocalStore localStore) {
 		this.localStore = localStore;
 		this.socketClient = new SocketClient();
+		this.chain = localStore.getOwnNode().getChain();
+		
+		this.executor.schedule(this, SimulationMain.INITIAL_SENDING_DELAY, TimeUnit.MILLISECONDS);
+	}
+	
+	@Override
+	public void run() {
+		//Send all and reschedule
+		try {
+			sendAllBlocksThatCanBeSent();
+		} catch (Exception ex) {
+			Log.log(Level.SEVERE, "Uncaught exception in transaction sender!");
+		} finally {
+			executor.schedule(this, SimulationMain.SENDING_WAIT_TIME, TimeUnit.MILLISECONDS);
+		}
 	}
 	
 	/**
-	 * Schedules the {@code toSend} block to be sent.
-	 * The block will only be sent when at least {@link TransactionSender#REQUIRED_COMMITS} have
-	 * been committed.
-	 * @param toSend - the block to send
+	 * Sends all blocks that can be sent.
 	 */
-	public void scheduleBlockSending(Block toSend) {
-		final Chain chain = toSend.getOwner().getChain();
-		Runnable runnable = new Runnable() {
-			//We need to start 
-			private Block lastCheckedBlock = toSend.getPreviousBlock();
-			private int committedBlocks;
+	public void sendAllBlocksThatCanBeSent() {
+		//TODO Add explanation in readme?
+		//[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+		//Committed: [0, 2, 4, 6, 8]
+		//Last sent: 2
+		//Committed found: [3 -> 4, 5 -> 6, 7 -> 8] = [4, 6, 8]
+		//We can send up to 6 (inclusive)
+		//3 commits found, 2 required
+		
+		int lastBlockNr = chain.getLastBlockNumber();
+		
+		//Determine what blocks have been committed since the last batch we sent
+		List<Integer> committed = new ArrayList<>();
+		for (int index = alreadySent + 1; index <= lastBlockNr; index++) {
+			Block current = chain.getBlocks().get(index);
+			Block next = current.getNextCommittedBlock();
+			if (next == null || !next.isOnMainChain(localStore)) break;
 			
-			@Override
-			public void run() {
-				synchronized (chain) {
-					//We iterate over all the blocks since the last checked block and count how many are on the main chain.
-					//We have to check the same parts of the chain every time, since blocks can get committed after we checked them.
-					ListIterator<Block> lit = chain.getBlocks().listIterator(lastCheckedBlock.getNumber() - Block.GENESIS_BLOCK_NUMBER + 1);
-					while (lit.hasNext() && committedBlocks < REQUIRED_COMMITS) {
-						Block block = lit.next();
-						if (block.isOnMainChain(localStore)) {
-							committedBlocks++;
-							lastCheckedBlock = block;
-						}
-					}
-				}
-				
-				//If we didn't find enough blocks, then we reschedule to check again later.
-				if (!canSend(committedBlocks)) {
-					schedule(this);
-					return;
-				}
-				
-				//There are enough blocks on the chain, so we can send the block.
-				sendBlock(toSend);
-				taskCounter.decrementAndGet();
-			}
-		};
-		taskCounter.incrementAndGet();
-		executor.schedule(runnable, INITIAL_DELAY, TimeUnit.MILLISECONDS);
-	}
-	
-	/**
-	 * @param committedBlocks - the number of blocks that have been committed
-	 * @return - if a block can be sent
-	 */
-	public boolean canSend(int committedBlocks) {
-		if (stopping && committedBlocks >= 1) {
-			return true;
+			committed.add(next.getNumber());
+			index = next.getNumber();
 		}
 		
-		return committedBlocks >= REQUIRED_COMMITS;
+		//Not enough commits
+		if (committed.size() < SimulationMain.REQUIRED_COMMITS) return;
+		
+		//Send all the blocks that we haven't sent up to the committed block (inclusive)
+		int lastToSend = committed.get(committed.size() - SimulationMain.REQUIRED_COMMITS);
+		for (int blockNr = alreadySent + 1; blockNr <= lastToSend; blockNr++) {
+			sendBlock(chain.getBlocks().get(blockNr));
+		}
 	}
 	
 	/**
 	 * @return - the number of blocks currently waiting to be sent
 	 */
 	public int blocksWaiting() {
-		return taskCounter.get();
+		Block block = chain.getLastBlock();
+		if (block == null) return 0;
+		
+		Block prev = block;
+		while (block != null && block.getTransactions().isEmpty()) {
+			prev = block;
+			block = block.getPreviousBlock();
+		}
+		
+		return prev.getNumber() - alreadySent;
 	}
 	
 	/**
@@ -119,17 +108,9 @@ public class TransactionSender {
 	 * @throws InterruptedException - If we are interrupted while waiting.
 	 */
 	public void waitUntilDone() throws InterruptedException {
-		while (taskCounter.get() != 0) {
+		while (blocksWaiting() > 0) {
 			Thread.sleep(1000L);
 		}
-	}
-	
-	/**
-	 * Indicates that we want to stop. This reduces the REQUIRED_COMMITS to 1, to ensure that all
-	 * remaining blocks get flushed whenever that is possible.
-	 */
-	public void stop() {
-		stopping = true;
 	}
 	
 	/**
@@ -139,7 +120,6 @@ public class TransactionSender {
 	public void shutdownNow() {
 		executor.shutdownNow();
 		socketClient.shutdown();
-		taskCounter.set(0);
 	}
 	
 	/**
@@ -147,6 +127,7 @@ public class TransactionSender {
 	 * @param block - the block
 	 */
 	private void sendBlock(Block block) {
+		alreadySent = block.getNumber();
 		for (Transaction transaction : block.getTransactions()) {
 			try {
 				sendTransaction(transaction);
@@ -163,22 +144,27 @@ public class TransactionSender {
 	 * @return            - if the sending succeeded
 	 * @throws InterruptedException - If the current thread was interrupted while sending.
 	 */
-	private boolean sendTransaction(Transaction transaction) throws InterruptedException {
+	private boolean sendTransaction(Transaction transaction) throws InterruptedException, IOException {
+		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " starting sending transaction: " + transaction);
+		long startingTime = System.currentTimeMillis();
 		Node to = transaction.getReceiver();
-		Proof proof = Proof.createProof(transaction);
-		if (socketClient.sendMessage(to, new ProofMessage(proof))) {
+
+		//TODO IMPORTANT Removed synchronization
+		ProofConstructor proofConstructor = new ProofConstructor(transaction);
+		Proof proof = proofConstructor.constructProof();
+		ProofMessage msg = new ProofMessage(proof);
+		
+		long timeDelta = System.currentTimeMillis() - startingTime;
+		if (timeDelta > 5 * 1000) {
+			Log.log(Level.WARNING, "Proof creation took " + timeDelta + " ms for transaction: " + transaction);
+		}
+		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " now actually sending transaction: " + transaction);
+		if (socketClient.sendMessage(to, msg)) {
 			to.updateMetaKnowledge(proof);
+			Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " done sending transaction: " + transaction);
 			return true;
 		}
 		
 		return false;
-	}
-	
-	/**
-	 * @param runnable - the runnable to schedule
-	 * @return         - the ScheduledFuture
-	 */
-	private ScheduledFuture<?> schedule(Runnable runnable) {
-		return executor.schedule(runnable, WAIT_TIME, TimeUnit.MILLISECONDS);
 	}
 }

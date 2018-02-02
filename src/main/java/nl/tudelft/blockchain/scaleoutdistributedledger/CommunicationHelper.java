@@ -1,10 +1,10 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.logging.Level;
-
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
+
+import java.util.logging.Level;
 
 /**
  * Helper class for communication.
@@ -20,6 +20,8 @@ public final class CommunicationHelper {
 	 * @return               true if the transaction was accepted, false otherwise
 	 */
 	public static boolean receiveTransaction(Proof proof, LocalStore localStore) {
+		Log.log(Level.FINE, "Received transaction: " + proof.getTransaction());
+		
 		if (proof.getTransaction().getReceiver().getId() != localStore.getOwnNode().getId()) {
 			Log.log(Level.WARNING, "Received a transaction that isn't for us: " + proof.getTransaction());
 			return false;
@@ -28,13 +30,14 @@ public final class CommunicationHelper {
 		try {
 			localStore.getVerification().validateNewMessage(proof, localStore);
 		} catch (ValidationException ex) {
-			Log.log(Level.WARNING, "Received an invalid transaction/proof.", ex);
+			Log.log(Level.WARNING, "Received an invalid transaction/proof " + proof.getTransaction() + ": " + ex.getMessage());
 			return false;
 		}
-		
-		proof.applyUpdates();
 
 		Log.log(Level.INFO, "Received and validated transaction: " + proof.getTransaction());
+		Log.log(Level.FINE, "Transaction " + proof.getTransaction() + " is valid, applying updates...");
+		proof.applyUpdates(localStore);
+		TrackerHelper.registerTransaction(proof);
 
 		if (proof.getTransaction().getAmount() > 0) {
 			localStore.addUnspentTransaction(proof.getTransaction());

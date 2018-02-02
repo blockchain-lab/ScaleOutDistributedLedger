@@ -4,7 +4,6 @@ import java.security.SignatureException;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,11 +28,8 @@ public class Node {
 	@Getter @Setter
 	private int port;
 	
-	/**
-	 * @return a map containing what we know that this node knows
-	 */
 	@Getter
-	private Map<Node, Integer> metaKnowledge = new HashMap<>();
+	private MetaKnowledge metaKnowledge = new MetaKnowledge(this);
 
 	/**
 	 * Constructor.
@@ -78,8 +74,12 @@ public class Node {
 	public void updateMetaKnowledge(Proof proof) {
 		Map<Node, List<Block>> updates = proof.getChainUpdates();
 		for (Entry<Node, List<Block>> entry : updates.entrySet()) {
+			//Don't include self
+			if (entry.getKey() == this) continue;
+			
 			int lastBlockNr = getLastBlockNumber(entry.getValue());
-			metaKnowledge.merge(entry.getKey(), lastBlockNr, Math::max);
+			if (lastBlockNr == -1) continue;
+			metaKnowledge.updateLastKnownBlockNumber(entry.getKey(), lastBlockNr);
 		}
 	}
 	

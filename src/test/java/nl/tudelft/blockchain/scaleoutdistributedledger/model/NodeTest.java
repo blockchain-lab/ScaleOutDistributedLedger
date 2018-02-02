@@ -22,7 +22,7 @@ public class NodeTest {
 		proof.addBlock(new Block(2, otherNode, new ArrayList<>()));
 		proof.addBlock(new Block(3, otherNode, new ArrayList<>()));
 		node.updateMetaKnowledge(proof);
-		
+
 		assertEquals(3, node.getMetaKnowledge().get(otherNode).intValue());
 	}
 	
