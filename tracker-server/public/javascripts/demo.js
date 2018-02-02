@@ -50,6 +50,21 @@ $(document).ready(function() {
                 }
             },
             configure: {
+                filter:function (option, path) {
+                    if (path.indexOf('physics') !== -1) {
+                        return true;
+                    }
+                    if (path.indexOf('smooth') !== -1 || option === 'smooth') {
+                        return true;
+                    }
+                    if (path.indexOf('color') !== -1 || option === 'color') {
+                        return true;
+                    }
+                    if (path.indexOf('nodes') !== -1) {
+                        return true;
+                    }
+                    return false;
+                },
                 container: document.getElementById('config')
             }
         };
