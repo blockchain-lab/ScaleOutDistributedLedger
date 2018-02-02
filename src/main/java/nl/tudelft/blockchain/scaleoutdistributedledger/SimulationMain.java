@@ -6,7 +6,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.Simulation;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.RandomTransactionPattern;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.UniformRandomTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
@@ -34,18 +34,22 @@ public final class SimulationMain {
 	//Whether this main is the master coordinator of the simulation
 	//Note that the master should always be started first
 	public static final boolean IS_MASTER = true;
-	//The duration of the simulation in seconds. Only has an effect when IS_MASTER == true.
+	//The duration of the simulation in seconds.
 	public static final int SIMULATION_DURATION = 600;
-	// Maximum number of blocks waiting to be sent (no new transaction created in the mean time
+	//Maximum number of blocks waiting to be sent (no new transaction will be created in the mean time)
 	public static final int MAX_BLOCKS_PENDING = 50;
-	// The initial delay in milliseconds to wait before checking for the first time.
+	//The initial delay in milliseconds to wait before checking what blocks can be sent.
 	public static final long INITIAL_SENDING_DELAY = 5000;
-	// The time in milliseconds to wait before checking again.
+	//The time in milliseconds between send checks.
 	public static final long SENDING_WAIT_TIME = 5000;
-	// The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
+	//The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
 	public static final int REQUIRED_COMMITS = 2;
 	// The number of transactions that are registered in one batch.
 	public static final int REGISTER_TRANSACTIONS_EVERY = 10;
+	//The transaction pattern that is used.
+	public static final ITransactionPattern TRANSACTION_PATTERN = new UniformRandomTransactionPattern(10, 20, 100, 200, 10);
+	//The initial amount of money each node has.
+	public static final long INITIAL_MONEY = 1000000;
 
 	private SimulationMain() {}
 	
@@ -76,9 +80,8 @@ public final class SimulationMain {
 		// --- PHASE 2: all nodes registered, so create genesis block and genesis.json files ---
 
 		//update nodes from the tracker
-		Map<Integer, Node> nodes = new HashMap<>(TOTAL_NODES_NUMBER);
-		TrackerHelper.updateNodes(nodes, null);
-		final Block genesisBlock = TendermintHelper.generateGenesisBlock(1000000, nodes);
+		Map<Integer, Node> nodes = TrackerHelper.getNodes();
+		Block genesisBlock = TendermintHelper.generateGenesisBlock(INITIAL_MONEY, nodes);
 
 		//generate genesis.json for all local nodes
 		TendermintHelper.generateGenesisFiles(new Date(),
@@ -88,10 +91,7 @@ public final class SimulationMain {
 
 		// --- PHASE 3: start the actual simulation ---
 		Simulation simulation = new Simulation(IS_MASTER);
-
-		RandomTransactionPattern rtp = new UniformRandomTransactionPattern(10, 20, 100, 200, 10);
-//		rtp.setSeed(1);
-		simulation.setTransactionPattern(rtp);
+		simulation.setTransactionPattern(TRANSACTION_PATTERN);
 		simulation.runNodesLocally(nodes, ownNodes, genesisBlock, nodeToKeyPair);
 
 		// Wait for all nodes to have initialized
@@ -104,13 +104,9 @@ public final class SimulationMain {
 
 
 		// --- PHASE 4: stop the simulation ---
+		Thread.sleep(SIMULATION_DURATION * 1000);
 
-		if (IS_MASTER) {
-			Thread.sleep(SIMULATION_DURATION * 1000);
-		}
-
-		// Wait for all the other nodes to stop
-		
+		//Stop the simulation and wait for nodes to stop.
 		simulation.stop();
 		waitForStop();
 
