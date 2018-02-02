@@ -32,6 +32,40 @@ $(document).ready(function() {
         var options = {
             nodes: {
                 shape: 'dot'
+            },
+            edges: {
+                color: {
+                    opacity: 0.5
+                },
+                smooth: {
+                    type: 'discrete'
+                }
+            },
+            layout: {
+                randomSeed: 2
+            },
+            physics: {
+                barnesHut: {
+                    springLength: 1000
+                }
+            },
+            configure: {
+                filter:function (option, path) {
+                    if (path.indexOf('physics') !== -1) {
+                        return true;
+                    }
+                    if (path.indexOf('smooth') !== -1 || option === 'smooth') {
+                        return true;
+                    }
+                    if (path.indexOf('color') !== -1 || option === 'color') {
+                        return true;
+                    }
+                    if (path.indexOf('nodes') !== -1) {
+                        return true;
+                    }
+                    return false;
+                },
+                container: document.getElementById('config')
             }
         };
         network = new vis.Network(container, data, options);
