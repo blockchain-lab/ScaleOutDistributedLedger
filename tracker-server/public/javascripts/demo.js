@@ -34,6 +34,9 @@ $(document).ready(function() {
                 shape: 'dot'
             },
             edges: {
+                color: {
+                    opacity: 0.5
+                },
                 smooth: {
                     type: 'discrete'
                 }
@@ -47,15 +50,6 @@ $(document).ready(function() {
                 }
             },
             configure: {
-                filter:function (option, path) {
-                    if (path.indexOf('physics') !== -1) {
-                        return true;
-                    }
-                    if (path.indexOf('smooth') !== -1 || option === 'smooth') {
-                        return true;
-                    }
-                    return false;
-                },
                 container: document.getElementById('config')
             }
         };
