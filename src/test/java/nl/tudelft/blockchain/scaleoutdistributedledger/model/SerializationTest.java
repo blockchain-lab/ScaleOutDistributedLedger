@@ -30,8 +30,6 @@ public class SerializationTest {
 	
 	private LocalStore aliceLocalStore;
 	
-	private LocalStore bobLocalStore;
-	
 	private LocalStore charlieLocalStore;
 		
 	private Block genesisBlock;
@@ -68,7 +66,7 @@ public class SerializationTest {
 		this.charlieNode = setupNode(2);
 		// Setup LocalStore for all thhree nodes
 		this.aliceLocalStore = setupLocalStore(this.aliceNode);
-		this.bobLocalStore = setupLocalStore(this.bobNode);
+		setupLocalStore(this.bobNode);
 		this.charlieLocalStore = setupLocalStore(this.charlieNode);
 		// Send 100 coins from Alice to Bob
 		this.transactionSource = generateTransaction(this.aliceNode, this.bobNode, 100, this.genesisBlock.getTransactions().get(0));

@@ -4,17 +4,15 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.BlockAbstract;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.SilencedTestClass;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
-
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -38,7 +36,7 @@ public class ABCIClientTest extends SilencedTestClass {
 	@Test
 	public void testCommitSuccess() {
 		String hash = "AAFF";
-		BlockAbstract abs = new BlockAbstract(0,0, null, null);
+		BlockAbstract abs = new BlockAbstract(0, 0, null, null);
 		JSONObject json = new JSONObject();
 		json.put("result", json);
 		json.put("deliver_tx", json);
@@ -46,7 +44,7 @@ public class ABCIClientTest extends SilencedTestClass {
 		json.put("hash", hash);
 
 		doReturn(json).when(instance).sendRequest(anyString(), any());
-		assertTrue(Arrays.equals(Utils.hexStringToBytes(hash), instance.commit(abs)));
+		assertArrayEquals(Utils.hexStringToBytes(hash), instance.commit(abs));
 	}
 
 	/**
@@ -54,8 +52,7 @@ public class ABCIClientTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testCommitError() {
-		String hash = "AAFF";
-		BlockAbstract abs = new BlockAbstract(0,0, null, null);
+		BlockAbstract abs = new BlockAbstract(0, 0, null, null);
 		JSONObject json = new JSONObject();
 		JSONObject jsonError = new JSONObject();
 		json.put("error", jsonError);
@@ -70,7 +67,7 @@ public class ABCIClientTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testCommitFail() {
-		BlockAbstract abs = new BlockAbstract(0,0, null, null);
+		BlockAbstract abs = new BlockAbstract(0, 0, null, null);
 
 		doReturn(null).when(instance).sendRequest(anyString(), any());
 		assertNull(instance.commit(abs));

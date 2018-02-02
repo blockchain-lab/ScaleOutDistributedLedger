@@ -1,15 +1,16 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
-import java.io.ByteArrayOutputStream;
-import java.security.SignatureException;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+
+import java.security.SignatureException;
 import java.util.ArrayList;
-import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
-import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.mock;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 
 /**
  * Test class for {@link Block}.

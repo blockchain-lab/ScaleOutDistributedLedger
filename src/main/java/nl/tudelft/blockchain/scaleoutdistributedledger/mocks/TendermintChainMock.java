@@ -38,6 +38,11 @@ public class TendermintChainMock implements MainChain {
 	}
 
 	@Override
+	public boolean isPresent(Sha256Hash hash) {
+		return true;
+	}
+	
+	@Override
 	public boolean isPresent(Block block) {
 		return true;
 	}

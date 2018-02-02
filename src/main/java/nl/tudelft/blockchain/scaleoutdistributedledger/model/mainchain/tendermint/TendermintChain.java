@@ -190,6 +190,11 @@ public final class TendermintChain implements MainChain {
 			return Sha256Hash.withHash(hash);
 		}
 	}
+	
+	@Override
+	public boolean isPresent(Sha256Hash hash) {
+		return cache.contains(hash);
+	}
 
 	@Override
 	public boolean isPresent(Block block) {
