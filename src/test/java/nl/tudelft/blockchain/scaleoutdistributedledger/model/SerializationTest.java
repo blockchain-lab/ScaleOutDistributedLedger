@@ -144,7 +144,7 @@ public class SerializationTest {
 	@Test
 	public void testGensisBlockMessage_Valid() throws IOException {
 		// Encode genesis block
-		BlockMessage genesisBlockMessage = new BlockMessage(this.genesisBlock, this.aliceNode);
+		BlockMessage genesisBlockMessage = new BlockMessage(this.genesisBlock);
 		// Check
 		assertEquals(this.genesisBlock.getNumber(), genesisBlockMessage.getNumber());
 		assertEquals(-1, genesisBlockMessage.getPreviousBlockNumber());
@@ -160,7 +160,7 @@ public class SerializationTest {
 	@Test
 	public void testTransactionMessage_Valid() throws IOException {
 		// Encode Transaction into TransactionMessage
-		TransactionMessage transactionMessage = new TransactionMessage(this.transaction, this.transaction.getReceiver());
+		TransactionMessage transactionMessage = new TransactionMessage(this.transaction);
 		// Check
 		assertEquals(this.transaction.getNumber(), transactionMessage.getNumber());
 		assertEquals(this.transaction.getSender().getId(), transactionMessage.getSenderId());
@@ -194,7 +194,7 @@ public class SerializationTest {
 	public void testBlockMessage_Valid() throws IOException {
 		// Encode Block into BlockMessage
 		Block aliceBlock = this.aliceNode.getChain().getBlocks().get(1);
-		BlockMessage blockMessage = new BlockMessage(aliceBlock, this.bobNode);
+		BlockMessage blockMessage = new BlockMessage(aliceBlock);
 		// Check
 		assertEquals(aliceBlock.getNumber(), blockMessage.getNumber());
 		assertEquals(aliceBlock.getPreviousBlock().getNumber(), blockMessage.getPreviousBlockNumber());

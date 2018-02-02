@@ -38,8 +38,7 @@ public class ProofMessage extends Message {
 	 * @param proof - original proof 
 	 */
 	public ProofMessage(Proof proof) {
-		Node proofReceiver = proof.getTransaction().getReceiver();
-		this.transactionMessage = new TransactionMessage(proof.getTransaction(), proofReceiver);
+		this.transactionMessage = new TransactionMessage(proof.getTransaction());
 		this.chainUpdates = new HashMap<>();
 		for (Entry<Node, List<Block>> entry : proof.getChainUpdates().entrySet()) {
 			Node node = entry.getKey();
@@ -49,7 +48,7 @@ public class ProofMessage extends Message {
 				List<BlockMessage> blockMessageList = new ArrayList<>();
 				for (int i = 0; i < blockList.size(); i++) {
 					Block block = blockList.get(i);
-					blockMessageList.add(new BlockMessage(block, proofReceiver));
+					blockMessageList.add(new BlockMessage(block));
 				}
 				this.chainUpdates.put(node.getId(), blockMessageList);
 			}
@@ -58,7 +57,6 @@ public class ProofMessage extends Message {
 
 	@Override
 	public void handle(LocalStore localStore) {
-		//TODO IMPORTANT Removed synchronized on own chain
 		try {
 			CommunicationHelper.receiveTransaction(new Proof(this, localStore), localStore);
 		} catch (IOException e) {

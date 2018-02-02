@@ -40,9 +40,8 @@ public class TransactionMessage extends Message {
 	/**
 	 * Constructor.
 	 * @param transaction - the original transaction object
-	 * @param proofReceiver - receiver of the proof
 	 */
-	public TransactionMessage(Transaction transaction, Node proofReceiver) {
+	public TransactionMessage(Transaction transaction) {
 		if (!transaction.getBlockNumber().isPresent()) {
 			throw new RuntimeException("Block number not present");
 		}
