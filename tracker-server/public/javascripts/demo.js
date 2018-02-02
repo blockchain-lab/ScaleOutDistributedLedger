@@ -34,7 +34,9 @@ $(document).ready(function() {
                 shape: 'dot'
             },
             edges: {
-                type: 'discrete'
+                smooth: {
+                    type: 'discrete'
+                }
             },
             layout: {
                 randomSeed: 2
