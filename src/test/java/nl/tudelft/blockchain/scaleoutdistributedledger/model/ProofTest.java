@@ -26,6 +26,8 @@ public class ProofTest {
 	private Application appMock;
 	private Block genesisBlock;
 	
+	private Proof proof;
+	
 	/**
 	 * @throws Exception - Will not occur.
 	 */
