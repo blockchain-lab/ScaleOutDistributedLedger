@@ -1,14 +1,15 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.TestHelper;
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
-import static org.mockito.Mockito.mock;
 
 /**
  * Class to test {@link LocalStore}.

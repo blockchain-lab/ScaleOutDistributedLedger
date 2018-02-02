@@ -29,7 +29,6 @@ public class TransactionCreator {
 	private final Node sender;
 	private final Node receiver;
 	private final long amount;
-	//private final BitSet known;
 
 	private int currentBest = Integer.MAX_VALUE;
 	private TransactionTuple currentBestTuple;
@@ -45,28 +44,7 @@ public class TransactionCreator {
 		this.sender = localStore.getOwnNode();
 		this.receiver = receiver;
 		this.amount = amount;
-		//this.known = calculateKnowledge();
 	}
-
-//TODO IMPORTANT Determine if the current transaction creation method is correct.
-//	/**
-//	 * Calculates what the receiver already knows about.
-//	 * 
-//	 * @return a bitset with the chains the receiver already knows about
-//	 */
-//	private BitSet calculateKnowledge() {
-//		synchronized (receiver.getMetaKnowledge()) {
-//			BitSet collected = receiver.getMetaKnowledge()
-//					.keySet()
-//					.stream()
-//					.collect(() -> new BitSet(nodesCount),
-//							(bs, i) -> bs.set(i),
-//							(bs1, bs2) -> bs1.or(bs2)
-//					);
-//	
-//			return collected;
-//		}
-//	}
 
 	/**
 	 * Creates a transaction.

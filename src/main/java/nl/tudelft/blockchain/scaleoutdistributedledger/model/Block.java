@@ -192,7 +192,7 @@ public class Block {
 			if (other.owner != null) return false;
 		} else if (!this.owner.equals(other.owner)) return false;
 
-		//TODO IMPORTANT We might not want to use equals for the previous block (as it will recurse further)
+		//TODO We might not want to use equals for the previous block (as it will recurse further)
 		if (this.previousBlock == null) {
 			if (other.previousBlock != null) return false;
 		} else if (!this.previousBlock.equals(other.previousBlock)) return false;
@@ -216,14 +216,12 @@ public class Block {
 			// Important to keep the order of writings
 			outputStream.write(Utils.intToByteArray(this.number));
 			
-			//TODO IMPORTANT Should we include the hash of the previous block?
 			byte[] prevBlockHash = (this.previousBlock != null) ? this.previousBlock.getHash().getBytes() : new byte[0];
 			outputStream.write(prevBlockHash);
 			if (this.owner != null) {
 				outputStream.write(Utils.intToByteArray(this.owner.getId()));
 			}
 			
-			//TODO IMPORTANT Remove the transactions for testing
 			for (Transaction tx : this.transactions) {
 				outputStream.write(tx.getHash().getBytes());
 			}
@@ -261,7 +259,6 @@ public class Block {
 	 * @return - boolean identifying if an abstract of this block is on the main chain.
 	 */
 	public boolean isOnMainChain(LocalStore localStore) {
-		//TODO Remove hack?
 		if (this.number == GENESIS_BLOCK_NUMBER) return true;
 
 		//Definitely has no abstract

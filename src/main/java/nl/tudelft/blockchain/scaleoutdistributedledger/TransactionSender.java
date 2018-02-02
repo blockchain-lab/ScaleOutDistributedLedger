@@ -56,14 +56,6 @@ public class TransactionSender implements Runnable {
 	 * Sends all blocks that can be sent.
 	 */
 	public void sendAllBlocksThatCanBeSent() {
-		//TODO Add explanation in readme?
-		//[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-		//Committed: [0, 2, 4, 6, 8]
-		//Last sent: 2
-		//Committed found: [3 -> 4, 5 -> 6, 7 -> 8] = [4, 6, 8]
-		//We can send up to 6 (inclusive)
-		//3 commits found, 2 required
-		
 		int lastBlockNr = chain.getLastBlockNumber();
 		
 		//Determine what blocks have been committed since the last batch we sent
@@ -149,15 +141,16 @@ public class TransactionSender implements Runnable {
 		long startingTime = System.currentTimeMillis();
 		Node to = transaction.getReceiver();
 
-		//TODO IMPORTANT Removed synchronization
 		ProofConstructor proofConstructor = new ProofConstructor(transaction);
 		Proof proof = proofConstructor.constructProof();
 		ProofMessage msg = new ProofMessage(proof);
 		
+		//Check if the proof creation took a long time and log it.
 		long timeDelta = System.currentTimeMillis() - startingTime;
 		if (timeDelta > 5 * 1000) {
 			Log.log(Level.WARNING, "Proof creation took " + timeDelta + " ms for transaction: " + transaction);
 		}
+		
 		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " now actually sending transaction: " + transaction);
 		if (socketClient.sendMessage(to, msg)) {
 			to.updateMetaKnowledge(proof);

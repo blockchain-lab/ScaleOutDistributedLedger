@@ -145,7 +145,6 @@ public class Application {
 	 */
 	public void finishTransactionSending() {
 		int nodeID = localStore.getOwnNode().getId();
-		//transactionSender.stop();
 		try {
 			transactionSender.waitUntilDone();
 			TrackerHelper.setRunning(nodeID, false);

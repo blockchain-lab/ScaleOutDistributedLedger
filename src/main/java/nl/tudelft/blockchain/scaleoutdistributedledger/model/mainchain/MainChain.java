@@ -17,6 +17,13 @@ public interface MainChain {
 	public Sha256Hash commitAbstract(BlockAbstract abs);
 
 	/**
+	 * Check whether the given hash is on the main chain (in a form of BlockAbstract).
+	 * @param hash the hash of the block to check
+	 * @return true if there is a block abstract of the given hash, false otherwise.
+	 */
+	public boolean isPresent(Sha256Hash hash);
+	
+	/**
 	 * Check whether the block (from a local chain) is on the main chain (in a form of BlockAbstract).
 	 * @param block the block to check
 	 * @return true if there is a block abstract of the given block, false otherwise.

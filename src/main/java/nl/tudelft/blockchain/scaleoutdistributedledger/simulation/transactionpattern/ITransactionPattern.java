@@ -68,12 +68,10 @@ public interface ITransactionPattern extends Serializable {
 		Node receiver = selectNode(localStore);
 		Log.log(Level.FINE, "Going to make transaction: $ " + amount + " from " + ownNodeId + " -> " + receiver.getId());
 
-		//TODO IMPORTANT Removed synchronization on own chain. Transaction creator should be safe.
 		//Create the transaction
 		TransactionCreator creator = new TransactionCreator(localStore, receiver, amount);
 		Transaction transaction = creator.createTransaction();
 
-		//TODO how many transactions do we put in one block?
 		//Add block to local chain
 		Block newBlock = ownNode.getChain().appendNewBlock();
 		newBlock.addTransaction(transaction);
@@ -101,8 +99,6 @@ public interface ITransactionPattern extends Serializable {
 	 */
 	public default void commitBlocks(LocalStore localStore, boolean force) throws InterruptedException {
 		Chain ownChain = localStore.getOwnNode().getChain();
-
-		//TODO IMPORTANT Removed synchronization on own chain
 		Block lastBlock = ownChain.getLastBlock();
 		Block lastCommitted = ownChain.getLastCommittedBlock();
 		

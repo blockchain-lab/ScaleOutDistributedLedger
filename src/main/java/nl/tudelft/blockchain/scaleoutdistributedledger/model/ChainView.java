@@ -11,7 +11,7 @@ import java.util.ListIterator;
  */
 public class ChainView implements Iterable<Block> {
 
-	//TODO If the chain is updated after validation, the validation needs to be done again. if (valid) then valid = null;
+	//NOTE If the chain is updated after validation, the validation needs to be done again.
 	private Chain chain;
 	private List<Block> updates;
 	private Boolean valid;
@@ -102,7 +102,6 @@ public class ChainView implements Iterable<Block> {
 		int lastOwnNumber = chainSize - 1;
 		if (firstUpdateNumber - lastOwnNumber > 1) {
 			//We are missing blocks between what we know and what we were sent! Can never happen with an honest node.
-			System.out.println("HERE1");
 			this.valid = false;
 			return false;
 		} else if (lastOwnNumber >= firstUpdateNumber) {
@@ -113,8 +112,6 @@ public class ChainView implements Iterable<Block> {
 			for (int i = 0; i < overlap && !updates.isEmpty() && startIndex < updates.size(); i++) {
 				Block ownBlock = chain.getBlocks().get(baseI + i);
 				Block updatedBlock = updates.get(startIndex);
-				
-				//TODO we might need a special equality check
 				if (!ownBlock.equals(updatedBlock)) {
 					this.valid = false;
 					return false;

@@ -138,24 +138,7 @@ public class TendermintChainTest extends SilencedTestClass {
 		Sha256Hash hash = Sha256Hash.withHash(Utils.hexStringToBytes("FF11"));
 		cache.add(hash);
 
-//		assertTrue(instance.isPresent(hash));
-	}
-
-	/**
-	 * Test isPresent when the data is not in the cache initially, but an update fixes that.
-	 */
-	@Test
-	public void testIsPresentInCacheAfterUpdate() {
-		Sha256Hash hash = Sha256Hash.withHash(Utils.hexStringToBytes("FF11"));
-
-		JSONObject json = new JSONObject();
-		json.put("latest_block_height", 1);
-		when(clientMock.status()).thenReturn(json);
-		List<BlockAbstract> abss = new ArrayList<>();
-		abss.add(new BlockAbstract(0, 0, hash, null));
-		when(clientMock.query(anyLong())).thenReturn(abss);
-
-//		assertTrue(instance.isPresent(hash));
+		assertTrue(instance.isPresent(hash));
 	}
 
 	/**
@@ -173,7 +156,7 @@ public class TendermintChainTest extends SilencedTestClass {
 		abss.add(new BlockAbstract(0, 0, hash2, null));
 		when(clientMock.query(anyLong())).thenReturn(abss);
 
-//		assertFalse(instance.isPresent(hash1));
+		assertFalse(instance.isPresent(hash1));
 	}
 
 	/**

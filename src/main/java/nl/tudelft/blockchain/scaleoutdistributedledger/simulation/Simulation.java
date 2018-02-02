@@ -1,7 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation;
 
-import lombok.Getter;
-import lombok.Setter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
@@ -18,16 +23,13 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpat
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Class for simulations.
  */
 public class Simulation {
-
-
 	@Getter @Setter
 	private ITransactionPattern transactionPattern;
 	
@@ -157,7 +159,6 @@ public class Simulation {
 		//Have everyone update their nodes list
 		broadcastMessage(new UpdateNodesMessage());
 
-		
 		Log.log(Level.INFO, "[Simulation] Initialized");
 		state = SimulationState.INITIALIZED;
 	}

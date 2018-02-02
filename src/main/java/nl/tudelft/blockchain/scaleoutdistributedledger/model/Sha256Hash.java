@@ -15,7 +15,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
  * Class to wrap a SHA256 hash.
  */
 public class Sha256Hash implements Serializable {
-
+	private static final long serialVersionUID = 1L;
+	
 	@Getter
 	private byte[] bytes;
 	

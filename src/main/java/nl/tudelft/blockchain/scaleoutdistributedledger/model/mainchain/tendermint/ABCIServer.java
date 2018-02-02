@@ -40,6 +40,7 @@ import java.util.logging.Level;
 public class ABCIServer implements ABCIAPI {
 	private final TendermintChain chain;
 	private final Block genesisBlock;
+	
 	/**
 	 * @param chain - the main chain this server is part of
 	 * @param genesisBlock - the genesis (initial) block for the entire system

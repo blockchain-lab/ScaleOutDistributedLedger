@@ -8,11 +8,18 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -24,7 +31,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
-import org.apache.commons.io.FileUtils;
 
 /**
  * A class to help with using tendermint.
@@ -46,6 +52,7 @@ public final class TendermintHelper {
 	 * If the file is already there, it is overridden.
 	 * WARNING: providing custom keyPair does not work until jABCI gets updated to TM15
 	 * @param keyPair - the public/private keypair that should be used, null if to be generated
+	 * @param nodeNumber - the number of the node to generate a key for
 	 * @return the public/private key pair generated if none provided, the same if provided, null if method failed.
 	 */
 	public static Ed25519Key generatePrivValidatorFile(Ed25519Key keyPair, int nodeNumber) {
@@ -65,13 +72,14 @@ public final class TendermintHelper {
 		try {
 			final Process ps = rt.exec(script.toString(), envVariables);
 			ps.waitFor();
-			BufferedReader stdInput = new BufferedReader(new InputStreamReader(ps.getInputStream()));
-			// read the output from the command
-			String s;
-			while ((s = stdInput.readLine()) != null) {
-				generatedJsonString.append(s);
+			
+			try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(ps.getInputStream()))) {
+				// read the output from the command
+				String s;
+				while ((s = stdInput.readLine()) != null) {
+					generatedJsonString.append(s);
+				}
 			}
-			stdInput.close();
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return null;
@@ -246,6 +254,7 @@ public final class TendermintHelper {
 	 *												       --p2p.seeds=[peerAddresses]
 	 * @param nodeBasePort - the base port for the node (ie the lowest assigned port for the node, the port+0)
 	 * @param peerAddresses - a list of addresses (with ports, which should be basePort+1) of *other* nodes
+	 * @param nodeNumber - the number of the node to run
 	 * @throws IOException - if an I/O error occurs
 	 */
 	public static void runTendermintNode(int nodeBasePort, List<String> peerAddresses, int nodeNumber) throws IOException {
