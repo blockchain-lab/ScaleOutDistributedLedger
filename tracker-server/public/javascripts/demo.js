@@ -32,6 +32,21 @@ $(document).ready(function() {
         var options = {
             nodes: {
                 shape: 'dot'
+            },
+            layout: {
+                randomSeed:2
+            },
+            configure: {
+                filter:function (option, path) {
+                    if (path.indexOf('physics') !== -1) {
+                        return true;
+                    }
+                    if (path.indexOf('smooth') !== -1 || option === 'smooth') {
+                        return true;
+                    }
+                    return false;
+                },
+                container: document.getElementById('config')
             }
         };
         network = new vis.Network(container, data, options);
