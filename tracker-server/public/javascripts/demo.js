@@ -33,6 +33,17 @@ $(document).ready(function() {
             nodes: {
                 shape: 'dot'
             },
+            edges: {
+                type: 'discrete'
+            },
+            layout: {
+                randomSeed: 2
+            },
+            pysics: {
+                barnesHut: {
+                    springLength: 1000
+                }
+            }
             configure: {
                 filter:function (option, path) {
                     if (path.indexOf('physics') !== -1) {
