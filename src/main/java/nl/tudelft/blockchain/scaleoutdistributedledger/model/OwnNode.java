@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Class for our own node.
+ * Class to represent our own node.
  */
 public class OwnNode extends Node {
 	
@@ -16,19 +16,17 @@ public class OwnNode extends Node {
 	private transient byte[] privateKey;
 
 	/**
-	 * Constructor.
-	 * @param id - id of the node
+	 * @param id - the id of our node
 	 */
 	public OwnNode(int id) {
 		super(id);
 	}
 
 	/**
-	 * Constructor.
-	 * @param id - id of the node
-	 * @param publicKey - public key of the node
-	 * @param address - IP address of the node
-	 * @param port - port in which the node is listening
+	 * @param id - the id of our node
+	 * @param publicKey - the public key
+	 * @param address - the address
+	 * @param port - the port
 	 */
 	public OwnNode(int id, byte[] publicKey, String address, int port) {
 		super(id, publicKey, address, port);

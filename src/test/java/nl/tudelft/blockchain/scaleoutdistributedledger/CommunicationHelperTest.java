@@ -1,12 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
-import nl.tudelft.blockchain.scaleoutdistributedledger.CommunicationHelper;
-import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import java.util.*;
+
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
@@ -66,9 +61,9 @@ public class CommunicationHelperTest {
 		// Create new block for transaction
 		List<Block> blockList = new ArrayList<>();
 		blockList.add(new Block(sender.getChain().getLastBlock().getNumber() + 1, sender, new ArrayList<>()));
-		sender.getChain().update(blockList);
+		sender.getChain().update(blockList, localStore);
 		// Setup sources
-		Set<Transaction> sources = new HashSet<>();
+		TreeSet<Transaction> sources = new TreeSet<>();
 		sources.add(this.genesisBlock.getTransactions().get(sender.getId()));
 		// Create transaction
 		Transaction transaction = new Transaction(transactionId++, sender, receiver, amount, remainder, sources);

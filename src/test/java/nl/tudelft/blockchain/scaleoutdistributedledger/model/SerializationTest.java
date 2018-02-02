@@ -9,11 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -82,7 +78,7 @@ public class SerializationTest {
 		// Add Proof
 		this.proof = new Proof(this.transaction);
 		// Manually change the chainUpdates
-		List<Block> listBlockUpdate = this.bobNode.getChain().getBlocks();
+		List<Block> listBlockUpdate = new ArrayList<>(this.bobNode.getChain().getBlocks());
 		listBlockUpdate.remove(0);
 		this.proof.getChainUpdates().put(this.bobNode, listBlockUpdate);
 	}
@@ -129,7 +125,7 @@ public class SerializationTest {
 	 */
 	public Transaction generateTransaction(Node sender, Node receiver, long amount, Transaction transactionSource) {
 		// Create transaction
-		Set<Transaction> sources = new HashSet<>();
+		TreeSet<Transaction> sources = new TreeSet<>();
 		sources.add(transactionSource);
 		long remainder = transactionSource.getAmount() - amount;
 		Transaction newtTransaction = new Transaction(this.transactionNumber++, sender, receiver, amount, remainder, sources);
@@ -223,8 +219,8 @@ public class SerializationTest {
 		// Create Proof
 		Proof originalProof = new Proof(newTransaction);
 		// Manually change the chainUpdates
-		originalProof.getChainUpdates().put(this.aliceNode, this.aliceNode.getChain().getBlocks());
-		originalProof.getChainUpdates().put(this.bobNode, this.bobNode.getChain().getBlocks());
+		originalProof.getChainUpdates().put(this.aliceNode, new ArrayList<>(this.aliceNode.getChain().getBlocks()));
+		originalProof.getChainUpdates().put(this.bobNode, new ArrayList<>(this.bobNode.getChain().getBlocks()));
 		// Encode Proof into ProofMessage
 		ProofMessage encodedProof = new ProofMessage(originalProof);
 		// Decode ProofMessage into Proof
@@ -233,7 +229,7 @@ public class SerializationTest {
 		// Check Block and Transaction
 		Block originalBlock = this.aliceNode.getChain().getBlocks().get(1);
 		// Note: The decoding process got rid of the genesis block
-		Block decodedBlock = decodedProof.getChainUpdates().get(this.charlieLocalStore.getNodes().get(0)).get(0);
+		Block decodedBlock = decodedProof.getChainUpdates().get(this.charlieLocalStore.getNodes().get(0)).get(1);
 		assertEquals(originalBlock, decodedBlock);
 	}
 	

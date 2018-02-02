@@ -6,15 +6,23 @@ import express from 'express';
 import http from 'http';
 import index from './routes/index';
 import NodeList from './model/NodeList';
+import TransactionList from './model/TransactionList';
+import path from "path";
+const sseMW = require('./helpers/sse');
 
 const app = express();
 const debug = Debug('test:app');
+
+app.use(sseMW.sseMiddleware);
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
 	extended: false
 }));
+app.set('views', path.join(__dirname, '../views'));
+app.set('view engine', 'ejs');
+app.use(express.static(path.join(__dirname, '../public')));
 
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
@@ -23,6 +31,7 @@ const server = http.createServer(app);
 app.use(cookieParser());
 
 app.nodeList = new NodeList();
+app.transactionList = new TransactionList();
 app.use('/', index);
 
 server.listen(port);

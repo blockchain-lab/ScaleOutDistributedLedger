@@ -7,8 +7,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.NotEnoughMoneyException;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -28,7 +29,7 @@ public class TransactionCreator {
 	private final Node sender;
 	private final Node receiver;
 	private final long amount;
-	private final BitSet known;
+	//private final BitSet known;
 
 	private int currentBest = Integer.MAX_VALUE;
 	private TransactionTuple currentBestTuple;
@@ -44,26 +45,28 @@ public class TransactionCreator {
 		this.sender = localStore.getOwnNode();
 		this.receiver = receiver;
 		this.amount = amount;
-		this.known = calculateKnowledge();
+		//this.known = calculateKnowledge();
 	}
 
-	/**
-	 * Calculates what the receiver already knows about.
-	 * 
-	 * @return a bitset with the chains the receiver already knows about
-	 */
-	private BitSet calculateKnowledge() {
-		BitSet collected = receiver.getMetaKnowledge()
-				.keySet()
-				.stream()
-				.map(Node::getId)
-				.collect(() -> new BitSet(nodesCount),
-						(bs, i) -> bs.set(i),
-						(bs1, bs2) -> bs1.or(bs2)
-				);
-
-		return collected;
-	}
+//TODO IMPORTANT Determine if the current transaction creation method is correct.
+//	/**
+//	 * Calculates what the receiver already knows about.
+//	 * 
+//	 * @return a bitset with the chains the receiver already knows about
+//	 */
+//	private BitSet calculateKnowledge() {
+//		synchronized (receiver.getMetaKnowledge()) {
+//			BitSet collected = receiver.getMetaKnowledge()
+//					.keySet()
+//					.stream()
+//					.collect(() -> new BitSet(nodesCount),
+//							(bs, i) -> bs.set(i),
+//							(bs1, bs2) -> bs1.or(bs2)
+//					);
+//	
+//			return collected;
+//		}
+//	}
 
 	/**
 	 * Creates a transaction.
@@ -79,7 +82,7 @@ public class TransactionCreator {
 		TransactionTuple sources = bestSources();
 		if (sources == null) throw new NotEnoughMoneyException();
 		
-		Set<Transaction> sourceSet = sources.getTransactions();
+		TreeSet<Transaction> sourceSet = sources.getTransactions();
 		long remainder = sources.getAmount() - amount;
 
 		//Mark sources as spent.
@@ -228,18 +231,18 @@ public class TransactionCreator {
 	 */
 	public BitSet chainsRequired(Transaction transaction) {
 		//TODO Verify that this collection of chains is correct.
-		Set<Chain> chains = new HashSet<>();
-		Proof.appendChains(transaction, receiver, chains);
-		BitSet bitset = chains.stream()
-				.map(Chain::getOwner)
+		Map<Node, Integer> chains = new HashMap<>();
+		
+		int nrOfNodes = localStore.getNodes().size();
+		Proof.appendChains2(nrOfNodes, transaction, receiver, chains);
+		BitSet bitset = chains
+				.keySet()
+				.stream()
 				.map(Node::getId)
 				.collect(() -> new BitSet(nodesCount),
 						(bs, i) -> bs.set(i),
 						(bs1, bs2) -> bs1.or(bs2)
 				);
-
-		//Remove all chains that are already known
-		bitset.andNot(known);
 
 		return bitset;
 	}

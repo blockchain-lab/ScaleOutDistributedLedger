@@ -1,18 +1,24 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.sockets;
 
+import java.util.HashMap;
+import java.util.logging.Level;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-
-import java.util.HashMap;
-import java.util.logging.Level;
 
 /**
  * Socket client.
@@ -67,6 +73,7 @@ public class SocketClient {
      * @param node - the node to send the message to.
      * @param msg - the message object to send
      * @return - whether the message was sent successfully
+     * @throws InterruptedException - If message sending is interrupted.
      */
     public boolean sendMessage(Node node, Object msg) throws InterruptedException {
         Channel channel = connections.get(node);
