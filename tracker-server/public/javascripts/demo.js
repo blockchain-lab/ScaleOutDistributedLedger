@@ -39,7 +39,7 @@ $(document).ready(function() {
             layout: {
                 randomSeed: 2
             },
-            pysics: {
+            physics: {
                 barnesHut: {
                     springLength: 1000
                 }
