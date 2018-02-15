@@ -6,8 +6,8 @@ $(document).ready(function() {
         network.setData({nodes: data.nodes, edges: data.edges});
         network.redraw();
         $(".transactions").text(data.numbers.numberOfTransactions);
-        $(".chains").text(data.numbers.averageNumberOfChains);
-        $(".blocks").text(data.numbers.averageNumberOfBlocks);
+        $(".chains").text(Math.round(data.numbers.averageNumberOfChains * 100) / 100);
+        $(".blocks").text(Math.round(data.numbers.averageNumberOfBlocks * 100) / 100);
     };
 
     window.odometerOptions = {
