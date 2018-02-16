@@ -112,11 +112,13 @@ public class TendermintChainTest extends SilencedTestClass {
 		Sha256Hash hash = Sha256Hash.withHash(Utils.hexStringToBytes("FF11"));
 
 		when(clientMock.commit(any(BlockAbstract.class))).thenReturn(Utils.hexStringToBytes("FF11"));
+		when(clientMock.commitAsync(any(BlockAbstract.class))).thenReturn(Utils.hexStringToBytes("FF11"));
+		when(clientMock.commitQuick(any(BlockAbstract.class))).thenReturn(Utils.hexStringToBytes("FF11"));
 
 		Sha256Hash result = instance.commitAbstract(abs);
 		assertEquals(hash, result);
 		assertEquals(hash, abs.getAbstractHash());
-		verify(clientMock, times(1)).commit(any(BlockAbstract.class));
+		verify(clientMock, times(1)).commitAsync(any(BlockAbstract.class));
 	}
 
 	/**
@@ -126,6 +128,8 @@ public class TendermintChainTest extends SilencedTestClass {
 	public void testCommitAbstractFail() {
 		BlockAbstract abs = new BlockAbstract(0, 0, Sha256Hash.withHash(Utils.hexStringToBytes("11FF")), null);
 		when(clientMock.commit(any(BlockAbstract.class))).thenReturn(null);
+		when(clientMock.commitAsync(any(BlockAbstract.class))).thenReturn(null);
+		when(clientMock.commitQuick(any(BlockAbstract.class))).thenReturn(null);
 
 		assertNull(instance.commitAbstract(abs));
 	}

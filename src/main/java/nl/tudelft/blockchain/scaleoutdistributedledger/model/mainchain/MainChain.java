@@ -45,4 +45,9 @@ public interface MainChain {
 	 * Stop the main chain.
 	 */
 	public void stop();
+
+	/**
+	 * @return - the current height
+	 */
+	public long getCurrentHeight();
 }

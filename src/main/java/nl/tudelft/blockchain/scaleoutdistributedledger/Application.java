@@ -33,6 +33,9 @@ public class Application {
 	
 	@Getter
 	private TransactionSender transactionSender;
+	
+	@Getter
+	private TransactionReceiver transactionReceiver;
 
 	/**
 	 * Creates a new application.
@@ -44,15 +47,17 @@ public class Application {
 	}
 
 	/**
-	 * Constructor used for testing.
-	 * @param localStore - the localStore to use
-	 * @param serverThread - the serverThread to use
-	 * @param transactionSender - the transactionSender to use
+	 * Constructor used for testing only.
+	 * @param localStore          - the localStore to use
+	 * @param serverThread        - the serverThread to use
+	 * @param transactionSender   - the transaction sender to use
+	 * @param transactionReceiver - the transaction receiver to use
 	 */
-	protected Application(LocalStore localStore, Thread serverThread, TransactionSender transactionSender) {
+	protected Application(LocalStore localStore, Thread serverThread, TransactionSender transactionSender, TransactionReceiver transactionReceiver) {
 		this.localStore = localStore;
 		this.serverThread = serverThread;
 		this.transactionSender = transactionSender;
+		this.transactionReceiver = transactionReceiver;
 		this.isProduction = false;
 	}
 	
@@ -72,12 +77,13 @@ public class Application {
 		ownNode.setPrivateKey(key.getPrivateKey());
 
 		// Setup local store
-		localStore = new LocalStore(ownNode, this, genesisBlock, this.isProduction);
+		localStore = new LocalStore(ownNode, this, genesisBlock, isProduction);
 		localStore.initMainChain();
 
 		serverThread = new Thread(new SocketServer(nodePort, localStore));
 		serverThread.start();
 		transactionSender = new TransactionSender(localStore);
+		transactionReceiver = new TransactionReceiver(localStore);
 		TrackerHelper.setRunning(ownNode.getId(), true);
 	}
 	

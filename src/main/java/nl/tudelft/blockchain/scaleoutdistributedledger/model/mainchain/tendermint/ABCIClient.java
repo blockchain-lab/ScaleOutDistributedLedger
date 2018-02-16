@@ -31,7 +31,8 @@ public class ABCIClient {
 	}
 
 	/**
-	 * Commit a block to Tendermint.
+	 * Commit a block abstract to Tendermint.
+	 * This method waits until the abstract is actually committed.
 	 *
 	 * @param abs - the abstract to commit
 	 * @return - the hash of the block on the chain if successful, null otherwise
@@ -50,9 +51,86 @@ public class ABCIClient {
 			try {
 				JSONObject resultField = result.getJSONObject("result");
 				JSONObject deliverTx = resultField.getJSONObject("deliver_tx");
-				if (deliverTx.getInt("code") == 0) {
-					//double check we succeeded
+				int code = deliverTx.getInt("code");
+				if (code == 0) {
 					ret = Utils.hexStringToBytes(resultField.getString("hash"));
+				} else {
+					Log.log(Level.WARNING,
+							"Could not commit abstract " + abs.getBlockNumber() + " of " + abs.getOwnerNodeId() +
+							" because the code was " + code);
+				}
+			} catch (Exception e) {
+				// Malformed result
+				Log.log(Level.WARNING, "Result parsing failed, result of sending was: \n" + result.toString(), e);
+			}
+			return ret;
+		}
+	}
+	
+	/**
+	 * Commit a block abstract to Tendermint.
+	 * This method does not wait until the abstract is actually committed, but it does wait until
+	 * it has been checked.
+	 *
+	 * @param abs - the abstract to commit
+	 * @return - the hash of the block on the chain if successful, null otherwise
+	 */
+	public byte[] commitQuick(BlockAbstract abs) {
+		JSONObject result = sendTxQuick(abs.toBytes());
+		if (result == null) return null;
+		JSONObject error;
+		if ((error = getError(result)) != null) {
+			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data"));
+			Log.log(Level.INFO, result.toString());
+			return null;
+		} else {
+			//No error coming from Tendermint found
+			byte[] ret = null;
+			try {
+				JSONObject resultField = result.getJSONObject("result");
+				int code = resultField.getInt("code");
+				if (code == 0) {
+					ret = Utils.hexStringToBytes(resultField.getString("hash"));
+				} else {
+					Log.log(Level.WARNING,
+							"Could not commit abstract " + abs.getBlockNumber() + " of " + abs.getOwnerNodeId() +
+							" because the code was " + code);
+				}
+			} catch (Exception e) {
+				// Malformed result
+				Log.log(Level.WARNING, "Result parsing failed, result of sending was: \n" + result.toString(), e);
+			}
+			return ret;
+		}
+	}
+	
+	/**
+	 * Commit a block abstract to Tendermint asynchronously.
+	 * This method does not wait until the abstract is actually committed.
+	 *
+	 * @param abs - the abstract to commit
+	 * @return - the hash of the block on the chain if successful, null otherwise
+	 */
+	public byte[] commitAsync(BlockAbstract abs) {
+		JSONObject result = sendTxAsync(abs.toBytes());
+		if (result == null) return null;
+		JSONObject error;
+		if ((error = getError(result)) != null) {
+			Log.log(Level.INFO, "Could not commit the abstract because: " + error.getString("data"));
+			Log.log(Level.INFO, result.toString());
+			return null;
+		} else {
+			//No error coming from Tendermint found
+			byte[] ret = null;
+			try {
+				JSONObject resultField = result.getJSONObject("result");
+				int code = resultField.getInt("code");
+				if (code == 0) {
+					ret = Utils.hexStringToBytes(resultField.getString("hash"));
+				} else {
+					Log.log(Level.WARNING,
+							"Could not commit abstract " + abs.getBlockNumber() + " of " + abs.getOwnerNodeId() +
+							" because the code was " + code);
 				}
 			} catch (Exception e) {
 				// Malformed result
@@ -144,8 +222,32 @@ public class ABCIClient {
 	 */
 	private JSONObject sendTx(byte[] data) {
 		Map<String, String> params = new HashMap<>();
-		params.put("tx", "0x" + Utils.bytesToHexString(data));
+		params.put("tx", Utils.bytesTo0xHexString(data));
 		return sendRequest("broadcast_tx_commit", params);
+	}
+	
+	/**
+	 * Send a transaction to Tendermint.
+	 *
+	 * @param data - the byte array containing the tx data
+	 * @return - the JSON response
+	 */
+	private JSONObject sendTxQuick(byte[] data) {
+		Map<String, String> params = new HashMap<>();
+		params.put("tx", Utils.bytesTo0xHexString(data));
+		return sendRequest("broadcast_tx_sync", params);
+	}
+	
+	/**
+	 * Send a transaction to Tendermint asynchronously.
+	 *
+	 * @param data - the byte array containing the tx data
+	 * @return - the JSON response
+	 */
+	private JSONObject sendTxAsync(byte[] data) {
+		Map<String, String> params = new HashMap<>();
+		params.put("tx", Utils.bytesTo0xHexString(data));
+		return sendRequest("broadcast_tx_async", params);
 	}
 
 	/**
@@ -156,7 +258,7 @@ public class ABCIClient {
 	 */
 	private JSONObject sendQuery(byte[] hash) {
 		Map<String, String> params = new HashMap<>();
-		params.put("hash", "0x" + Utils.bytesToHexString(hash));
+		params.put("hash", Utils.bytesTo0xHexString(hash));
 		return sendRequest("tx", params);
 	}
 

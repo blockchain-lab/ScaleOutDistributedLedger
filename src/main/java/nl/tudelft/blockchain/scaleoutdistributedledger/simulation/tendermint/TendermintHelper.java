@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.google.protobuf.ByteString;
+import com.moandjiezana.toml.TomlWriter;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
@@ -39,9 +41,12 @@ public final class TendermintHelper {
 
 	private static final String NODE_FOLDER_NAME_PREFIX = "node";
 	//the directory to store the file (will create separate directories in it for each node)
-	private static final String TENDERMINT_NODES_FOLDER = "tendermint-nodes";
+	private static final String TENDERMINT_NODES_FOLDER = "Z:\\tendermint-nodes";
 	//the executable binary of tendermint
 	private static final String TENDERMINT_BINARY = "./tendermint.exe";
+	//The level at which tendermint logs (error, info, debug, none). E.g. "consensus:debug,*:error"
+	private static final String TENDERMINT_LOG_LEVEL = "state:info,*:error"; //"state:info,*:error";
+	private static final TendermintLogMethod TENDERMINT_LOG_METHOD = TendermintLogMethod.FILE_SPLIT;
 
 	/* do not initialize this */
 	private TendermintHelper() {}
@@ -63,14 +68,11 @@ public final class TendermintHelper {
 		script.append(TENDERMINT_BINARY).append(" gen_validator ");
 
 		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
-		//environment variable of TMROOT
-		String[] envVariables = { "TMROOT=" + nodeFilesLocation };
 
-		Runtime rt = Runtime.getRuntime();
 		StringBuilder generatedJsonString = new StringBuilder();
 		Log.log(Level.INFO, "Executed " + script.toString());
 		try {
-			final Process ps = rt.exec(script.toString(), envVariables);
+			final Process ps = startProcess(script.toString(), nodeFilesLocation, true);
 			ps.waitFor();
 			
 			try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(ps.getInputStream()))) {
@@ -81,7 +83,7 @@ public final class TendermintHelper {
 				}
 			}
 		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
+			Log.log(Level.WARNING, "Interrupted on startup. No key pair generated.");
 			return null;
 		} catch (IOException e) {
 			Log.log(Level.WARNING, "Could not generate priv_validator.json due to IO Exception", e);
@@ -258,11 +260,13 @@ public final class TendermintHelper {
 	 * @throws IOException - if an I/O error occurs
 	 */
 	public static void runTendermintNode(int nodeBasePort, List<String> peerAddresses, int nodeNumber) throws IOException {
-
+		//First write config file
+		writeConfig(nodeBasePort, peerAddresses, nodeNumber);
+		
 		StringBuilder script = new StringBuilder(256);
 
 		//add binary to execute
-		script.append(TENDERMINT_BINARY).append(" node --consensus.create_empty_blocks=false ");
+		script.append(TENDERMINT_BINARY).append(" node ");
 
 		//TODO: get this from config/properties file?
 		//turn on for extra logging (on debug level)
@@ -272,6 +276,7 @@ public final class TendermintHelper {
 		}
 		String nodeFilesLocation = getNodeFilesLocation(nodeNumber);
 		//add arguments
+		script.append("--consensus.create_empty_blocks=false").append(' ');
 		script.append("--home ").append(nodeFilesLocation).append(' ');
 		script.append("--p2p.laddr=tcp://0.0.0.0:").append(nodeBasePort + 1).append(' ');
 		script.append("--rpc.laddr=tcp://0.0.0.0:").append(nodeBasePort + 2).append(' ');
@@ -283,20 +288,113 @@ public final class TendermintHelper {
 			script.append("--p2p.seeds=").append(String.join(",", peerAddresses));
 		}
 
-		//environment variable of TMROOT
-		String[] envVariables = { "TMROOT=" + nodeFilesLocation };
-
 		//run the process (and destroy it on JVM stop)
-		Runtime rt = Runtime.getRuntime();
 		Log.log(Level.INFO, "Executed " + script.toString());
-		final Process ps = rt.exec(script.toString(), envVariables);
-		rt.addShutdownHook(new Thread(ps::destroy));
+		final Process ps = startProcess(script.toString(), nodeNumber);
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(ps::destroy));
+	}
 
-		//TODO: get this from some config/properties file?
-		//whether to show stdin/stderr from tendermint; warning: may be costly (2 new threads)
-		boolean enableLogsFromTendermint = true;
-		if (enableLogsFromTendermint) {
-			enableLogging(ps, Integer.toString(nodeBasePort));
+	/**
+	 * Starts a process running the given command.
+	 * @param command        - the command to run
+	 * @param tmHome         - the tendermint home location
+	 * @param redirectErrors - if true, then the error stream is redirected to the output stream
+	 * @return - the started process
+	 * @throws IOException - If an exception occurs trying to start the process
+	 */
+	private static Process startProcess(String command, String tmHome, boolean redirectErrors) throws IOException {
+		ProcessBuilder pb = new ProcessBuilder();
+		StringTokenizer st = new StringTokenizer(command);
+        String[] cmdarray = new String[st.countTokens()];
+        for (int i = 0; st.hasMoreTokens(); i++) {
+            cmdarray[i] = st.nextToken();
+        }
+		pb.command(cmdarray);
+		pb.environment().put("TMROOT", tmHome);
+		pb.environment().put("TMHOME", tmHome);
+		if (redirectErrors) pb.redirectErrorStream(true);
+		return pb.start();
+	}
+	
+	/**
+	 * Starts a process running the given command.
+	 * @param command      - the command to run
+	 * @param nodeNumber   - the number of the node
+	 * @return             - the started process
+	 * @throws IOException - If an exception occurs trying to start the process.
+	 */
+	private static Process startProcess(String command, int nodeNumber) throws IOException {
+		//Determine the home folder for tendermint
+		File tmHomeFile = new File(TENDERMINT_NODES_FOLDER, NODE_FOLDER_NAME_PREFIX + nodeNumber);
+		String tmHome = tmHomeFile.toString();
+		
+		ProcessBuilder pb = new ProcessBuilder();
+		StringTokenizer st = new StringTokenizer(command);
+        String[] cmdarray = new String[st.countTokens()];
+        for (int i = 0; st.hasMoreTokens(); i++) {
+            cmdarray[i] = st.nextToken();
+        }
+		pb.command(cmdarray);
+		
+		//Set up the environment.
+		//Tendermint changed the name of the variable in some version, so we just set both to be sure.
+		pb.environment().put("TMROOT", tmHome);
+		pb.environment().put("TMHOME", tmHome);
+		
+		//Redirect output to the correct location
+		switch (TENDERMINT_LOG_METHOD) {
+			case FILE_MERGED:
+				pb.redirectErrorStream(true);
+				pb.redirectOutput(new File(tmHomeFile, "output.log"));
+				return pb.start();
+			case FILE_SPLIT:
+				pb.redirectError(new File(tmHomeFile, "errors.log"));
+				pb.redirectOutput(new File(tmHomeFile, "output.log"));
+				return pb.start();
+			case CONSOLE:
+				Process process = pb.start();
+				enableLogging(process, Integer.toString(nodeNumber));
+				return process;
+		}
+		
+		throw new IllegalStateException("TENDERMINT LOG METHOD is not set to a valid value.");
+	}
+	
+	/**
+	 * Writes the config.toml file for the node with the given node number.
+	 * @param nodeBasePort  - the base port of the node
+	 * @param peerAddresses - the addresses of peer nodes
+	 * @param nodeNumber    - the node to write the config for
+	 */
+	public static void writeConfig(int nodeBasePort, List<String> peerAddresses, int nodeNumber) {
+		File nodeFolder = new File(TENDERMINT_NODES_FOLDER, NODE_FOLDER_NAME_PREFIX + nodeNumber);
+		File configFile = new File(nodeFolder, "config.toml");
+		Map<String, Object> toWrite = new HashMap<>();
+		toWrite.put("proxy_app", "tcp://127.0.0.1:" + (nodeBasePort + 3));
+		toWrite.put("moniker", "Node" + nodeNumber);
+		toWrite.put("fast_sync", true);
+		toWrite.put("db_backend", "memdb");
+		toWrite.put("log_level", TENDERMINT_LOG_LEVEL);
+		toWrite.put("addrbook_strict", false);
+		
+		Map<String, Object> rpcMap = new HashMap<>();
+		rpcMap.put("laddr", "tcp://0.0.0.0:" + (nodeBasePort + 2));
+		toWrite.put("rpc", rpcMap);
+		
+		Map<String, Object> p2pMap = new HashMap<>();
+		p2pMap.put("laddr", "tcp://0.0.0.0:" + (nodeBasePort + 1));
+		p2pMap.put("seeds", String.join(",", peerAddresses));
+		toWrite.put("p2p", p2pMap);
+		
+		Map<String, Object> consensusMap = new HashMap<>();
+		consensusMap.put("create_empty_blocks", false);
+		toWrite.put("consensus", consensusMap);
+		
+		try {
+			new TomlWriter().write(toWrite, configFile);
+		} catch (IOException ex) {
+			ex.printStackTrace();
 		}
 	}
 
@@ -367,5 +465,20 @@ public final class TendermintHelper {
 		} catch (IOException ex) {
 			Log.log(Level.WARNING, "Could not delete Tendermint folder");
 		}
+	}
+	
+	private static enum TendermintLogMethod {
+		/**
+		 * Log tendermint output to 2 files, one for standard output and one for errors.
+		 */
+		FILE_SPLIT,
+		/**
+		 * Log tendermint output to a single file, where standard and error output are merged.
+		 */
+		FILE_MERGED,
+		/**
+		 * Log tendermint output to the console of the simulation.
+		 */
+		CONSOLE
 	}
 }

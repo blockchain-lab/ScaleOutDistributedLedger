@@ -2,6 +2,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermi
 
 import com.github.jtendermint.jabci.api.ABCIAPI;
 import com.github.jtendermint.jabci.types.Types.CodeType;
+import com.github.jtendermint.jabci.types.Types.Header;
 import com.github.jtendermint.jabci.types.Types.RequestBeginBlock;
 import com.github.jtendermint.jabci.types.Types.RequestCheckTx;
 import com.github.jtendermint.jabci.types.Types.RequestCommit;
@@ -39,7 +40,10 @@ import java.util.logging.Level;
  */
 public class ABCIServer implements ABCIAPI {
 	private final TendermintChain chain;
-	private final Block genesisBlock;
+	private final Object lastLock = new Object();
+	private long committingHeight;
+	private byte[] lastHash;
+	private long lastHeight;
 	
 	/**
 	 * @param chain - the main chain this server is part of
@@ -47,21 +51,15 @@ public class ABCIServer implements ABCIAPI {
 	 */
 	public ABCIServer(TendermintChain chain, Block genesisBlock) {
 		this.chain = chain;
-		this.genesisBlock = genesisBlock;
 		if (genesisBlock != null) {
 			chain.addToCache(genesisBlock.getHash());
+			this.lastHash = genesisBlock.getHash().getBytes();
 		}
 	}
 
 	@Override
-	public ResponseBeginBlock requestBeginBlock(RequestBeginBlock requestBeginBlock) {
-		Log.log(Level.FINER, "[TENDERMINT] New block started");
-		return ResponseBeginBlock.newBuilder().build();
-	}
-
-	@Override
 	public ResponseCheckTx requestCheckTx(RequestCheckTx requestCheckTx) {
-		Log.log(Level.FINER, "[TENDERMINT] New transaction proposed");
+		Log.log(Level.FINER, "[TENDERMINT] New BlockAbstract proposed", chain.getNodeId());
 
 		// Comment the next line when using a mock chain
 		BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
@@ -71,74 +69,119 @@ public class ABCIServer implements ABCIAPI {
 			return ResponseCheckTx.newBuilder().setCode(CodeType.OK).build();
 		} else {
 			String log = "signature on the abstract was invalid. Public key used:" + Utils.bytesToHexString(publicKey);
-			Log.log(Level.INFO, "[TENDERMINT] Proposed block rejected because " + log);
+			Log.log(Level.INFO, "[TENDERMINT] Proposed BlockAbstract rejected because " + log);
 			return ResponseCheckTx.newBuilder().setCode(CodeType.BadNonce).setLog(log).build();
 		}
+	}
+	
+	@Override
+	public ResponseBeginBlock requestBeginBlock(RequestBeginBlock requestBeginBlock) {
+		Header header = requestBeginBlock.getHeader();
+		committingHeight = header.getHeight();
+		Log.log(Level.FINER,
+				"[TENDERMINT] Begin TMBlock " + committingHeight + " (" + header.getNumTxs() + " abstracts)",
+				chain.getNodeId());
+		
+		//TODO In TM15, we would be able to see what validators are absent
+		
+		return ResponseBeginBlock.newBuilder().build();
 	}
 
 	@Override
 	public ResponseCommit requestCommit(RequestCommit requestCommit) {
-		Log.log(Level.FINER, "[TENDERMINT] Finalize commit request");
+		Log.log(Level.FINER, "[TENDERMINT] Commit TMBlock " + committingHeight, chain.getNodeId());
+		
+		//TODO Save current state to add persistence
+		byte[] appHash;
+		synchronized (lastLock) {
+			appHash = chain.getStateHash();
+			lastHash = appHash;
+			
+			lastHeight = committingHeight;
+			chain.setCurrentHeight(lastHeight);
+		}
+		
+		//Then, respond with our new state.
 		ResponseCommit.Builder responseCommit = ResponseCommit.newBuilder();
+		responseCommit.setCode(CodeType.OK);
+		responseCommit.setData(ByteString.copyFrom(appHash));
 		return responseCommit.build();
 	}
 
 	@Override
 	public ResponseDeliverTx receivedDeliverTx(RequestDeliverTx requestDeliverTx) {
-		Log.log(Level.FINER, "[TENDERMINT] requestDeliverTx " + requestDeliverTx.toString());
+		//Add to known transactions
+		BlockAbstract abs = BlockAbstract.fromBytes(requestDeliverTx.getTx().toByteArray());
+		if (abs != null) {
+			chain.addToCache(abs.getBlockHash());
+			Log.log(Level.FINER, "[TENDERMINT] Received BlockAbstract for "
+					+ "<Node " + abs.getOwnerNodeId() + "; Block " + abs.getBlockNumber() + "> "
+					+ "in TMBlock " + committingHeight, chain.getNodeId());
+		} else {
+			Log.log(Level.WARNING, "[TENDERMINT] Received invalid BlockAbstract!", chain.getNodeId());
+		}
+		
 		return ResponseDeliverTx.newBuilder().setCode(CodeType.OK).build();
 	}
-
-	@Override
-	public ResponseEcho requestEcho(RequestEcho requestEcho) {
-		Log.log(Level.FINER, "[TENDERMINT] Echo " + requestEcho.getMessage());
-		return ResponseEcho.newBuilder().setMessage(requestEcho.getMessage()).build();
-	}
-
+	
 	@Override
 	public ResponseEndBlock requestEndBlock(RequestEndBlock requestEndBlock) {
-		Log.log(Level.FINER, "[TENDERMINT] requestEndBlock " + requestEndBlock.toString());
-		long height = requestEndBlock.getHeight();
-		if (height > 0) {
-			Log.log(Level.FINE, "[TENDERMINT] Block #" + height + " ended, going to update the cache");
-			chain.updateCache(height);
-		}
+		Log.log(Level.FINER, "[TENDERMINT] End TMBlock " + committingHeight, chain.getNodeId());
+		
+		//Force update method
+//		if (height > 0) {
+//			Log.log(Level.FINE, "[TENDERMINT] Block #" + height + " ended, going to update the cache");
+//			chain.updateCache(height);
+//		}
 		return ResponseEndBlock.newBuilder().build();
 	}
 
 	@Override
-	public ResponseFlush requestFlush(RequestFlush requestFlush) {
-		Log.log(Level.FINER, "[TENDERMINT] requestFlush " + requestFlush.toString());
-		return ResponseFlush.newBuilder().build();
+	public ResponseEcho requestEcho(RequestEcho requestEcho) {
+		Log.log(Level.FINER, "[TENDERMINT] Echo " + requestEcho.getMessage(), chain.getNodeId());
+		return ResponseEcho.newBuilder().setMessage(requestEcho.getMessage()).build();
 	}
 
 	@Override
 	public ResponseInfo requestInfo(RequestInfo requestInfo) {
-		Log.log(Level.FINER, "[TENDERMINT] requestInfo " + requestInfo.toString());
+		Log.log(Level.FINER, "[TENDERMINT] Info requested " + requestInfo.toString(), chain.getNodeId());
+
+		//Retrieve last hash and last height
+		byte[] hash;
+		long height;
+		synchronized (lastLock) {
+			hash = lastHash;
+			height = lastHeight;
+		}
+		
 		ResponseInfo.Builder responseInfo = ResponseInfo.newBuilder();
-		byte[] initialAppHash = genesisBlock.getHash().getBytes();
-		//TODO: this should return the actual last block hash - now it's only used for genesis block
-		responseInfo.setLastBlockAppHash(ByteString.copyFrom(initialAppHash));
-		responseInfo.setLastBlockHeight(chain.getCurrentHeight());
-		Log.log(Level.FINER, "[TENDERMINT] responseInfo " + responseInfo.toString());
+		responseInfo.setLastBlockAppHash(ByteString.copyFrom(hash));
+		responseInfo.setLastBlockHeight(height);
 		return responseInfo.build();
 	}
 
 	@Override
 	public ResponseInitChain requestInitChain(RequestInitChain requestInitChain) {
-		Log.log(Level.FINER, "[TENDERMINT] requestInitChain " + requestInitChain.toString());
+		Log.log(Level.FINER, "[TENDERMINT] Initialized chain:\n " + requestInitChain.toString(), chain.getNodeId());
+		Log.log(Level.INFO, "[TENDERMINT] Initialized with " + requestInitChain.getValidatorsCount() + " validators.", chain.getNodeId());
 		return ResponseInitChain.newBuilder().build();
 	}
 
 	@Override
 	public ResponseQuery requestQuery(RequestQuery requestQuery) {
-		Log.log(Level.FINER, "[TENDERMINT] Chain queried");
+		Log.log(Level.FINER, "[TENDERMINT] Chain queried", chain.getNodeId());
 		return ResponseQuery.newBuilder().setCode(CodeType.OK).build();
 	}
 
 	@Override
 	public ResponseSetOption requestSetOption(RequestSetOption requestSetOption) {
-		Log.log(Level.FINER, "[TENDERMINT] requestSetOption " + requestSetOption.toString());
+		Log.log(Level.FINER, "[TENDERMINT] requestSetOption " + requestSetOption.toString(), chain.getNodeId());
 		return ResponseSetOption.newBuilder().build();
+	}
+	
+	@Override
+	public ResponseFlush requestFlush(RequestFlush requestFlush) {
+		//Don't do anything for flush requests
+		return ResponseFlush.newBuilder().build();
 	}
 }

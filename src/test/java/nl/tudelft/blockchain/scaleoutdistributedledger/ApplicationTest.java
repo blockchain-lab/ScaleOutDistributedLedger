@@ -19,6 +19,7 @@ public class ApplicationTest {
 	private Application instance;
 	private Thread serverMock;
 	private TransactionSender transactionSenderMock;
+	private TransactionReceiver transactionReceiverMock;
 	private LocalStore localStoreMock;
 
 	/**
@@ -29,8 +30,9 @@ public class ApplicationTest {
 		this.localStoreMock = mock(LocalStore.class);
 		this.serverMock = mock(Thread.class);
 		this.transactionSenderMock = mock(TransactionSender.class);
+		this.transactionReceiverMock = mock(TransactionReceiver.class);
 
-		this.instance = new Application(this.localStoreMock, this.serverMock, this.transactionSenderMock);
+		this.instance = new Application(this.localStoreMock, this.serverMock, this.transactionSenderMock, this.transactionReceiverMock);
 		when(this.localStoreMock.getMainChain()).thenReturn(spy(new TendermintChainMock()));
 		when(this.localStoreMock.getOwnNode()).thenReturn(new OwnNode(0));
 	}

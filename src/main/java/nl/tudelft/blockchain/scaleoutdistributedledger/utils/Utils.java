@@ -63,6 +63,21 @@ public final class Utils {
 	}
 	
 	/**
+	 * Converts a byte array into a hexadecimal string starting with 0x.
+	 * @param bytes - array of bytes to be converted
+	 * @return hexadecimal string
+	 */
+	public static String bytesTo0xHexString(byte[] bytes) {
+		StringBuilder buffer = new StringBuilder(bytes.length * 2 + 2);
+		buffer.append("0x");
+		for (byte b : bytes) {
+			buffer.append(HEX[(b >> 4) & 0xF]);
+			buffer.append(HEX[b & 0xF]);
+		}
+		return buffer.toString();
+	}
+	
+	/**
 	 * Converts a hexadecimal String to a byte array.
 	 * @param hex - the hexadecimal string
 	 * @return      the byte array

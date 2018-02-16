@@ -26,28 +26,30 @@ import java.util.stream.IntStream;
 public final class SimulationMain {
 	//SETTINGS
 	//number of local nodes to generate
-	public static final int LOCAL_NODES_NUMBER = 6;
+	public static final int LOCAL_NODES_NUMBER = 30;
 	//number of total nodes in the system
-	public static final int TOTAL_NODES_NUMBER = 6;
+	public static final int TOTAL_NODES_NUMBER = 30;
 	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
 	public static final int NODES_FROM_NUMBER = 0;
 	//Whether this main is the master coordinator of the simulation
 	//Note that the master should always be started first
 	public static final boolean IS_MASTER = true;
 	//The duration of the simulation in seconds.
-	public static final int SIMULATION_DURATION = 600;
+	public static final int SIMULATION_DURATION = 6000;
 	//Maximum number of blocks waiting to be sent (no new transaction will be created in the mean time)
-	public static final int MAX_BLOCKS_PENDING = 50;
+	public static final int MAX_BLOCKS_PENDING = 500;
 	//The initial delay in milliseconds to wait before checking what blocks can be sent.
-	public static final long INITIAL_SENDING_DELAY = 5000;
+	public static final long INITIAL_SENDING_DELAY = 2000;
 	//The time in milliseconds between send checks.
-	public static final long SENDING_WAIT_TIME = 5000;
+	public static final long SENDING_WAIT_TIME = 2000;
+	//The time between checking to deliver sent messages.
+	public static final long DELIVER_RECHECK_TIME = 200;
 	//The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
 	public static final int REQUIRED_COMMITS = 2;
 	// The number of transactions that are registered in one batch.
-	public static final int REGISTER_TRANSACTIONS_EVERY = 10;
+	public static final int REGISTER_TRANSACTIONS_EVERY = 20;
 	//The transaction pattern that is used.
-	public static final ITransactionPattern TRANSACTION_PATTERN = new UniformRandomTransactionPattern(10, 20, 100, 200, 10);
+	public static final ITransactionPattern TRANSACTION_PATTERN = new UniformRandomTransactionPattern(10, 10, 500, 500, 10);
 	//The initial amount of money each node has.
 	public static final long INITIAL_MONEY = 1000000;
 

@@ -28,6 +28,9 @@ public class Proof {
 	private final Map<Node, List<Block>> chainUpdates;
 	
 	private final Map<Node, ChainView> chainViews = new HashMap<>();
+	
+	@Getter
+	private long requiredHeight;
 
 	/**
 	 * Constructor.
@@ -45,6 +48,7 @@ public class Proof {
 	 * @throws IOException - error while getting node info from tracker
 	 */
 	public Proof(ProofMessage proofMessage, LocalStore localStore) throws IOException {
+		this.requiredHeight = proofMessage.getRequiredHeight();
 		this.chainUpdates = new HashMap<>();
 
 		// Decode the transactions while skipping sources

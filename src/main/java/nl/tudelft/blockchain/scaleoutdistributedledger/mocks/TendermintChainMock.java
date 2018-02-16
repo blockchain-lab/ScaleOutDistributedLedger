@@ -54,4 +54,9 @@ public class TendermintChainMock implements MainChain {
 	
 	@Override
 	public void stop() {}
+	
+	@Override
+	public long getCurrentHeight() {
+		return 0;
+	}
 }

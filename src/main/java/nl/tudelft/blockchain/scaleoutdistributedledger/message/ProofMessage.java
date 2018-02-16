@@ -1,21 +1,18 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
 import lombok.Getter;
+import lombok.Setter;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.CommunicationHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
 
 /**
  * Proof message for netty.
@@ -32,6 +29,9 @@ public class ProofMessage extends Message {
 	 */
 	@Getter
 	private final Map<Integer, List<BlockMessage>> chainUpdates;
+	
+	@Getter @Setter
+	private long requiredHeight;
 	
 	/**
 	 * Constructor.
@@ -57,11 +57,7 @@ public class ProofMessage extends Message {
 
 	@Override
 	public void handle(LocalStore localStore) {
-		try {
-			CommunicationHelper.receiveTransaction(new Proof(this, localStore), localStore);
-		} catch (IOException e) {
-			Log.log(Level.SEVERE, "Exception while handling proof message", e);
-		}
+		localStore.getApplication().getTransactionReceiver().receiveTransaction(this);
 	}
 	
 	@Override

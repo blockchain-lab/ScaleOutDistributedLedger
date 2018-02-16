@@ -140,10 +140,12 @@ public class TransactionSender implements Runnable {
 		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " starting sending transaction: " + transaction);
 		long startingTime = System.currentTimeMillis();
 		Node to = transaction.getReceiver();
+		long requiredHeight = localStore.getMainChain().getCurrentHeight();
 
 		ProofConstructor proofConstructor = new ProofConstructor(transaction);
 		Proof proof = proofConstructor.constructProof();
 		ProofMessage msg = new ProofMessage(proof);
+		msg.setRequiredHeight(requiredHeight);
 		
 		//Check if the proof creation took a long time and log it.
 		long timeDelta = System.currentTimeMillis() - startingTime;

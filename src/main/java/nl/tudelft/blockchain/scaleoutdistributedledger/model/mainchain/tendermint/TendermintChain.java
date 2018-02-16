@@ -1,10 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model.mainchain.tendermint;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import com.github.jtendermint.jabci.socket.TSocket;
@@ -33,10 +35,11 @@ public final class TendermintChain implements MainChain {
 	private ExecutorService threadPool;
 	private Set<Sha256Hash> cache;
 	private final Object cacheLock = new Object();
-	@Getter
-	private long currentHeight;
+	private AtomicLong updatingHeight = new AtomicLong();
+	private AtomicLong currentHeight = new AtomicLong();
 	@Getter
 	private Application app;
+	private byte[] hash;
 
 	/**
 	 * Create and start the ABCI app (server) to connect with Tendermint on the default port (46658).
@@ -92,14 +95,14 @@ public final class TendermintChain implements MainChain {
 		this.initClient();
 		this.initialUpdateCache();
 
-		Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort);
+		Log.log(Level.INFO, "Successfully started Tendermint chain (ABCI server + client); server on " + DEFAULT_ADDRESS + ":" + abciServerPort, getNodeId());
 	}
 	/**
 	 * Called on start of the instance.
 	 */
 	private void initClient() {
 		this.client = new ABCIClient(DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
-		Log.log(Level.INFO, "Started ABCI Client on " + DEFAULT_ADDRESS + ":" + (abciServerPort - 1));
+		Log.log(Level.INFO, "Started ABCI Client on " + DEFAULT_ADDRESS + ":" + (abciServerPort - 1), getNodeId());
 	}
 
 	/**
@@ -114,7 +117,7 @@ public final class TendermintChain implements MainChain {
 				updated = true;
 			} catch (Exception e) {
 				int retryTime = 2;
-				Log.log(Level.INFO, "Could not update cache on startup, trying again in " + retryTime + "s.");
+				Log.log(Level.INFO, "Could not update cache on startup, trying again in " + retryTime + "s.", getNodeId());
 				Log.log(Level.FINE, "", e);
 				try {
 					Thread.sleep(retryTime * 1000);
@@ -149,25 +152,48 @@ public final class TendermintChain implements MainChain {
 		if (height == -1) {
 			height = this.client.status().getLong("latest_block_height");
 		}
-
-		for (long i = currentHeight + 1; i <= height; i++) {
+		
+		//Update the updatingHeight to the new value
+		long curHeight = updatingHeight.getAndAccumulate(height, Math::max);
+		if (height <= curHeight) {
+			//Nothing to update, so block until actually at given height
+			awaitHeight(height);
+			return;
+		}
+		
+		for (long i = curHeight + 1; i <= height; i++) {
 			List<BlockAbstract> abstractsAtCurrentHeight = this.client.query(i);
 			if (abstractsAtCurrentHeight == null) {
-				Log.log(Level.WARNING, "Could not get block at height " + i + ", perhaps the tendermint rpc is not (yet) running (or broken)");
+				Log.log(Level.WARNING, "Could not get block at height " + i + ", perhaps the tendermint rpc is not (yet) running (or broken)", getNodeId());
 				return;
 			}
 			synchronized (cacheLock) {
 				for (BlockAbstract abs : abstractsAtCurrentHeight) {
-					cache.add(abs.getBlockHash());
+					addToCache(abs.getBlockHash());
 				}
 			}
 		}
-		if (currentHeight < height) {
-			Log.log(Level.FINE, "Successfully updated the Tendermint cache for node " + this.app.getLocalStore().getOwnNode().getId()
-					+ " from height " + currentHeight + " -> " + height	+ ", number of cached hashes of abstracts on main chain is now " + cache.size());
+		
+		//Await until actually at original height (to prevent inconsistent state)
+		awaitHeight(curHeight);
+		currentHeight.getAndAccumulate(height, Math::max);
+
+		Log.log(Level.FINE, "Successfully updated the Tendermint cache from height "
+				+ curHeight + " -> " + height	+ ", number of cached hashes of abstracts on main chain is now " + cache.size(), getNodeId());
+	}
+	
+	/**
+	 * Waits until actualCurrentHeight becomes at least the given height.
+	 * @param height - the height
+	 */
+	private void awaitHeight(long height) {
+		try {
+			while (currentHeight.get() < height) {
+				Thread.sleep(100L);
+			}
+		} catch (InterruptedException ex) {
+			Log.log(Level.WARNING, "Interrupted while waiting for height to become " + height, getNodeId());
 		}
-		// For concurrency reasons use the maximum
-		currentHeight = Math.max(currentHeight, height);
 	}
 
 	/**
@@ -181,13 +207,14 @@ public final class TendermintChain implements MainChain {
 
 	@Override
 	public Sha256Hash commitAbstract(BlockAbstract abs) {
-		byte[] hash = client.commit(abs);
+		byte[] hash = client.commitAsync(abs);
+//		byte[] hash = client.commit(abs);
 		if (hash == null) {
-			Log.log(Level.INFO, "Commiting abstract to tendermint failed");
+			Log.log(Level.INFO, "Commiting abstract to tendermint failed", getNodeId());
 			return null;
 		} else {
 			abs.setAbstractHash(Sha256Hash.withHash(hash));
-			return Sha256Hash.withHash(hash);
+			return abs.getAbstractHash();
 		}
 	}
 	
@@ -209,11 +236,58 @@ public final class TendermintChain implements MainChain {
 	}
 
 	/**
-	 * Only to be used for initial block.
-	 * @param genesisBlockHash the hash of the first block (genesis block)
-	 * @return true if succeeded, false otherwise
+	 * Adds the given block hash to the cache.
+	 * 
+	 * @param blockHash - the hash of the block
+	 * @return          - true if succeeded, false otherwise
 	 */
-	boolean addToCache(Sha256Hash genesisBlockHash) {
-		return cache.add(genesisBlockHash);
+	boolean addToCache(Sha256Hash blockHash) {
+		synchronized (cacheLock) {
+			if (cache.add(blockHash)) {
+				byte[] bytes = blockHash.getBytes();
+				if (this.hash == null) {
+					this.hash = Arrays.copyOf(bytes, bytes.length);
+				} else {
+					for (int i = 0; i < bytes.length; i++) {
+						this.hash[i] += bytes[i];
+					}
+				}
+				
+				return true;
+			}
+			
+			return false;
+		}
+	}
+	
+	void setCurrentHeight(long height) {
+		if (!currentHeight.compareAndSet(height - 1, height)) {
+			Log.log(Level.SEVERE, "Previous height mismatches!", getNodeId());
+		}
+		
+		Log.log(Level.INFO, "Updated to height " + height, getNodeId());
+	}
+	
+	/**
+	 * @return - the current height
+	 */
+	public long getCurrentHeight() {
+		return currentHeight.get();
+	}
+	
+	/**
+	 * @return - the hash of the current state
+	 */
+	public byte[] getStateHash() {
+		synchronized (cacheLock) {
+			return Arrays.copyOf(hash, hash.length);
+		}
+	}
+	
+	/**
+	 * @return - the id of the node
+	 */
+	protected int getNodeId() {
+		return app.getLocalStore().getOwnNode().getId();
 	}
 }
