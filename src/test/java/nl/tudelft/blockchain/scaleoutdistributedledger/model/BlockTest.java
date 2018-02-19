@@ -44,9 +44,9 @@ public class BlockTest {
 	 */
 	@Test
 	public void testGetHash_Valid() {
-		String hash = "334777d018eb8d1acd2d04a3f26b973169920d1c81937241a2b24c0cf0b9b448";
+		String hash = "ef958fe3c00f72cccaaa1347b044885c0eb9ab757ecdb2e9d709f07af0cd9253";
 		
-		assertTrue(this.block.getHash().toString().equals(hash));
+		assertEquals(hash, this.block.getHash().toString());
 	}
 	
 	/**
@@ -56,7 +56,7 @@ public class BlockTest {
 	public void testGetHash_Invalid() {
 		String hash = "004777d018eb8d1acd2d04a3f26b973169920d1c81937241a2b24c0cf0b9b448";
 		
-		assertFalse(this.block.getHash().toString().equals(hash));
+		assertNotEquals(hash, this.block.getHash().toString());
 	}
 
 	/**

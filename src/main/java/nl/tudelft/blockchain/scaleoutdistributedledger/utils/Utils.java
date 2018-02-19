@@ -1,8 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Base64;
 import java.util.logging.Level;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
 
 /**
  * Class for helper functions.
@@ -46,6 +50,104 @@ public final class Utils {
 			(byte) (number >> 8),
 			(byte) number
 		};
+	}
+	
+	/**
+	 * Writes the given number as a short to the given stream.
+	 * @param stream - the stream to write to
+	 * @param number - the number to write
+	 * @throws IOException - If writing to the stream triggers an IOException.
+	 */
+	public static void writeShort(OutputStream stream, int number) throws IOException {
+		stream.write(number >> 8);
+		stream.write(number);
+	}
+	
+	/**
+	 * Writes the given number as an int to the given stream.
+	 * @param stream - the stream to write to
+	 * @param number - the number to write
+	 * @throws IOException - If writing to the stream triggers an IOException.
+	 */
+	public static void writeInt(OutputStream stream, int number) throws IOException {
+		stream.write(number >> 24);
+		stream.write(number >> 16);
+		stream.write(number >> 8);
+		stream.write(number);
+	}
+	
+	/**
+	 * Writes the given number as a long to the given stream.
+	 * @param stream - the stream to write to
+	 * @param number - the number to write
+	 * @throws IOException - If writing to the stream triggers an IOException.
+	 */
+	public static void writeLong(OutputStream stream, long number) throws IOException {
+		stream.write((byte) (number >> 56));
+		stream.write((byte) (number >> 48));
+		stream.write((byte) (number >> 40));
+		stream.write((byte) (number >> 32));
+		stream.write((byte) (number >> 24));
+		stream.write((byte) (number >> 16));
+		stream.write((byte) (number >> 8));
+		stream.write((byte) number);
+	}
+	
+	/**
+	 * Writes the given nodeId to the given stream, either as a byte or as a short depending on
+	 * {@link SimulationMain#TOTAL_NODES_NUMBER}.
+	 * @param stream - the stream to write to
+	 * @param nodeId - the nodeId to write
+	 * @throws IOException - If writing to the stream triggers an IOException.
+	 */
+	@SuppressWarnings("unused")
+	public static void writeNodeId(OutputStream stream, int nodeId) throws IOException {
+		if (SimulationMain.TOTAL_NODES_NUMBER < 128) {
+			stream.write(nodeId);
+		} else {
+			stream.write(nodeId >> 8);
+			stream.write(nodeId);
+		}
+	}
+	
+	/**
+	 * Reads a node id from the given array of bytes, starting at the given index.
+	 * @param bytes - the byte array to read from
+	 * @param index - the index to read at
+	 * @return - the read node id
+	 */
+	@SuppressWarnings("unused")
+	public static int readNodeId(byte[] bytes, int index) {
+		if (SimulationMain.TOTAL_NODES_NUMBER < 128) {
+			return bytes[index];
+		} else {
+			return bytes[index] << 8 |
+				  (bytes[index + 1] & 0xFF);
+		}
+	}
+	
+	/**
+	 * Reads a short from the given array of bytes, starting at the given index.
+	 * @param bytes - the byte array to read from
+	 * @param index - the index to read at
+	 * @return - the read short
+	 */
+	public static int readShort(byte[] bytes, int index) {
+		return bytes[index] << 8 |
+			  (bytes[index + 1] & 0xFF);
+	}
+	
+	/**
+	 * Reads an int from the given array of bytes, starting at the given index.
+	 * @param bytes - the byte array to read from
+	 * @param index - the index to read at
+	 * @return - the read int
+	 */
+	public static int readInt(byte[] bytes, int index) {
+		return bytes[index] << 24 |
+			  (bytes[index + 1] & 0xFF) << 16 |
+			  (bytes[index + 2] & 0xFF) << 8 |
+			  (bytes[index + 3] & 0xFF);
 	}
 	
 	/**

@@ -2,10 +2,10 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import lombok.Getter;
 import lombok.Setter;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
-import org.apache.commons.lang3.SerializationException;
-import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -37,7 +37,7 @@ public class BlockAbstract implements Serializable {
 	private byte[] signature;
 
 	@Setter	@Getter
-	private Sha256Hash abstractHash;
+	private transient Sha256Hash abstractHash;
 
 	/**
 	 * Constructor.
@@ -61,14 +61,17 @@ public class BlockAbstract implements Serializable {
 	 * @return - the byte array conversion; or null if serialization fails.
 	 */
 	public byte[] toBytes() {
-		byte[] ret;
-		try {
-			ret = SerializationUtils.serialize(this);
-		} catch (SerializationException e) {
-			Log.log(Level.WARNING, "Could not serialize the BlockAbstract to bytes", e);
-			ret = null;
+		int length = 2 + 4 + blockHash.getBytes().length + signature.length;
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(length)) {
+			Utils.writeNodeId(outputStream, ownerNodeId);
+			Utils.writeInt(outputStream, blockNumber);
+			outputStream.write(blockHash.getBytes());
+			outputStream.write(signature);
+			return outputStream.toByteArray();
+		} catch (IOException ex) {
+			Log.log(Level.WARNING, "Could not serialize the BlockAbstract to bytes", ex);
+			return null;
 		}
-		return ret;
 	}
 
 	/**
@@ -78,15 +81,24 @@ public class BlockAbstract implements Serializable {
 	 * @param bytes - the data to construct from
 	 * @return - the abstract represented by the bytes; null if the deserialization fails.
 	 */
+	@SuppressWarnings("unused")
 	public static BlockAbstract fromBytes(byte[] bytes) {
-		BlockAbstract block;
 		try {
-			block = SerializationUtils.deserialize(bytes);
-		} catch (SerializationException | ClassCastException e) {
-			Log.log(Level.WARNING, "Could not deserialize BlockAbstract from bytes", e);
-			block = null;
+			int ownerId = Utils.readNodeId(bytes, 0);
+			int index = SimulationMain.TOTAL_NODES_NUMBER < 128 ? 1 : 2;
+			int blockNumber = Utils.readInt(bytes, index);
+			index += 4;
+			
+			Sha256Hash blockHash = Sha256Hash.withHash(Arrays.copyOfRange(bytes, index, index + Sha256Hash.LENGTH));
+			index += Sha256Hash.LENGTH;
+			
+			byte[] signature = Arrays.copyOfRange(bytes, index, bytes.length);
+			
+			return new BlockAbstract(ownerId, blockNumber, blockHash, signature);
+		} catch (Exception ex) {
+			Log.log(Level.WARNING, "Could not deserialize BlockAbstract from bytes", ex);
+			return null;
 		}
-		return block;
 	}
 
 	/**
@@ -125,9 +137,9 @@ public class BlockAbstract implements Serializable {
 	 */
 	public static byte[] calculateBytesForSignature(int ownerId, int blockNumber, Sha256Hash hash) {
 		byte[] attrInBytes;
-		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-			outputStream.write(Utils.intToByteArray(ownerId));
-			outputStream.write(Utils.intToByteArray(blockNumber));
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(2 + 4 + hash.getBytes().length)) {
+			Utils.writeShort(outputStream, ownerId);
+			Utils.writeInt(outputStream, blockNumber);
 			outputStream.write(hash.getBytes());
 			attrInBytes = outputStream.toByteArray();
 		} catch (IOException ex) {
@@ -153,7 +165,6 @@ public class BlockAbstract implements Serializable {
 		hash = 47 * hash + this.blockNumber;
 		hash = 47 * hash + Objects.hashCode(this.blockHash);
 		hash = 47 * hash + Arrays.hashCode(this.signature);
-		hash = 47 * hash + Objects.hashCode(this.abstractHash);
 		return hash;
 	}
 

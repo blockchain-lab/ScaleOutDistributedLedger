@@ -126,9 +126,9 @@ public class Block {
 		// Convert attributes of abstract into an array of bytes, for the signature
 		// Important to keep the order of writings
 		byte[] attrInBytes;
-		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-			outputStream.write(Utils.intToByteArray(this.owner.getId()));
-			outputStream.write(Utils.intToByteArray(this.number));
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(2 + 4 + getHash().getBytes().length)) {
+			Utils.writeShort(outputStream, this.owner.getId());
+			Utils.writeInt(outputStream, this.number);
 			outputStream.write(getHash().getBytes());
 			attrInBytes = outputStream.toByteArray();
 		} catch (IOException ex) {
@@ -211,15 +211,15 @@ public class Block {
 	 */
 	private Sha256Hash calculateHash() {
 		// Convert attributes of block into an array of bytes
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(4 + Sha256Hash.LENGTH + 2 + this.transactions.size() * Sha256Hash.LENGTH);
 		try {
 			// Important to keep the order of writings
-			outputStream.write(Utils.intToByteArray(this.number));
+			Utils.writeInt(outputStream, this.number);
 			
 			byte[] prevBlockHash = (this.previousBlock != null) ? this.previousBlock.getHash().getBytes() : new byte[0];
 			outputStream.write(prevBlockHash);
 			if (this.owner != null) {
-				outputStream.write(Utils.intToByteArray(this.owner.getId()));
+				Utils.writeShort(outputStream, this.owner.getId());
 			}
 			
 			for (Transaction tx : this.transactions) {

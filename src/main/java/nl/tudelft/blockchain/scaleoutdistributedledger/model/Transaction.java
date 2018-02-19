@@ -128,16 +128,16 @@ public class Transaction implements Comparable<Transaction> {
 	 */
 	private Sha256Hash calculateHash() {
 		// Convert attributes of transaction into an array of bytes
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(4 + 2 + 2 + 8 + 8 + 32 * this.source.size());
 		try {
 			// Important to keep the order of writings
-			outputStream.write(Utils.intToByteArray(this.number));
+			Utils.writeInt(outputStream, this.number);
 			if (this.sender != null) {
-				outputStream.write(Utils.intToByteArray(this.sender.getId()));
+				Utils.writeShort(outputStream, this.sender.getId());
 			}
-			outputStream.write(Utils.intToByteArray(this.receiver.getId()));
-			outputStream.write(Utils.longToByteArray(this.amount));
-			outputStream.write(Utils.longToByteArray(this.remainder));
+			Utils.writeShort(outputStream, this.receiver.getId());
+			Utils.writeLong(outputStream, this.amount);
+			Utils.writeLong(outputStream, this.remainder);
 			
 			for (Transaction tx : this.source) {
 				outputStream.write(tx.getHash().getBytes());

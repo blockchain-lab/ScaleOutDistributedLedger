@@ -36,7 +36,7 @@ public class ABCIClientTest extends SilencedTestClass {
 	@Test
 	public void testCommitSuccess() {
 		String hash = "AAFF";
-		BlockAbstract abs = new BlockAbstract(0, 0, null, null);
+		BlockAbstract abs = new BlockAbstract(0, 0, new Sha256Hash("a"), new byte[] { 0 });
 		JSONObject json = new JSONObject();
 		json.put("result", json);
 		json.put("deliver_tx", json);
@@ -52,7 +52,7 @@ public class ABCIClientTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testCommitError() {
-		BlockAbstract abs = new BlockAbstract(0, 0, null, null);
+		BlockAbstract abs = new BlockAbstract(0, 0, new Sha256Hash("a"), new byte[] { 0 });
 		JSONObject json = new JSONObject();
 		JSONObject jsonError = new JSONObject();
 		json.put("error", jsonError);
@@ -67,7 +67,7 @@ public class ABCIClientTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testCommitFail() {
-		BlockAbstract abs = new BlockAbstract(0, 0, null, null);
+		BlockAbstract abs = new BlockAbstract(0, 0, new Sha256Hash("a"), new byte[] { 0 });
 
 		doReturn(null).when(instance).sendRequest(anyString(), any());
 		assertNull(instance.commit(abs));
@@ -115,8 +115,8 @@ public class ABCIClientTest extends SilencedTestClass {
 	 */
 	@Test
 	public void testQueryHeightSuccess() {
-		BlockAbstract abs1 = new BlockAbstract(0, 0, Sha256Hash.withHash(Utils.hexStringToBytes("11FF")), null);
-		BlockAbstract abs2 = new BlockAbstract(0, 0, Sha256Hash.withHash(Utils.hexStringToBytes("AABB")), null);
+		BlockAbstract abs1 = new BlockAbstract(0, 0, new Sha256Hash(Utils.hexStringToBytes("11FF")), new byte[] { 0 });
+		BlockAbstract abs2 = new BlockAbstract(0, 0, new Sha256Hash(Utils.hexStringToBytes("AABB")), new byte[] { 0 });
 
 		JSONObject json = new JSONObject();
 		JSONArray jsonArray = new JSONArray();

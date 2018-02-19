@@ -1,9 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.Arrays;
 import java.util.TreeSet;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
@@ -29,7 +27,7 @@ public class TransactionMessage extends Message {
 	private final long amount, remainder;
 
 	@Getter
-	private final Set<TransactionSource> source;
+	private final TransactionSource[] source;
 
 	@Getter
 	private final Sha256Hash hash;
@@ -55,22 +53,23 @@ public class TransactionMessage extends Message {
 		this.receiverId = (byte) transaction.getReceiver().getId();
 		this.amount = transaction.getAmount();
 		this.remainder = transaction.getRemainder();
-		this.source = new HashSet<>();
+		this.source = new TransactionSource[transaction.getSource().size()];
+		int i = 0;
 		// Optimization: categorize each transaction already known (or not) by the receiver
 		for (Transaction sourceTransaction : transaction.getSource()) {
 			Node sourceSender = sourceTransaction.getSender();
 			if (sourceTransaction.getBlockNumber().isPresent()) {
 				if (sourceSender == null) {
 					// Genesis transaction
-					this.source.add(new TransactionSource(
+					this.source[i++] = new TransactionSource(
 							sourceTransaction.getReceiver().getId(),
 							sourceTransaction.getBlockNumber().getAsInt(),
-							sourceTransaction.getNumber()));
+							sourceTransaction.getNumber());
 				} else {
-					this.source.add(new TransactionSource(
+					this.source[i++] = new TransactionSource(
 							sourceSender.getId(),
 							sourceTransaction.getBlockNumber().getAsInt(),
-							sourceTransaction.getNumber()));
+							sourceTransaction.getNumber());
 				}
 			} else {
 				throw new IllegalStateException("Transaction without blocknumber found");
@@ -109,7 +108,7 @@ public class TransactionMessage extends Message {
 		if (amount != other.amount) return false;
 		if (remainder != other.remainder) return false;
 		if (blockNumber != other.blockNumber) return false;
-		if (!source.equals(other.source)) return false;
+		if (Arrays.equals(source, other.source)) return false;
 		return true;
 	}
 
@@ -122,7 +121,7 @@ public class TransactionMessage extends Message {
 		result = prime * result + this.receiverId;
 		result = prime * result + (int) (this.amount ^ (this.amount >>> 32));
 		result = prime * result + (int) (this.remainder ^ (this.remainder >>> 32));
-		result = prime * result + Objects.hashCode(this.source);
+		result = prime * result + Arrays.hashCode(this.source);
 		result = prime * result + this.blockNumber;
 		return result;
 	}
@@ -137,7 +136,7 @@ public class TransactionMessage extends Message {
 		.append(", remainder=").append(remainder)
 		.append(", source=[");
 		
-		if (source.isEmpty()) {
+		if (source.length == 0) {
 			return sb.append("]").toString();
 		}
 		
