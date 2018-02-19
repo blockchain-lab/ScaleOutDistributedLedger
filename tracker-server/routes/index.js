@@ -3,6 +3,7 @@ const router = express.Router();
 import app from '../app';
 import NodeList from '../model/NodeList';
 const sseMW = require('./../helpers/sse');
+const fs = require('fs');
 import Transaction from '../model/Transaction';
 import TransactionList from '../model/TransactionList';
 
@@ -113,6 +114,7 @@ router.post('/reset', (req, res) => {
 	app.nodeList = new NodeList();
 	app.transactionList = new TransactionList();
 	res.json({success: true});
+	initDataHeartbeat();
 });
 
 /**
@@ -145,6 +147,33 @@ function updateSseClients() {
     sseClients.forEach(sseConnection => sseConnection.send(
     	{nodes: nodes, edges: edges, numbers: app.transactionList.getNumbers()}));
 }
+
+function initDataHeartbeat() {
+    setInterval(() => {
+        app.transactionList.addNumbersToArray();
+    }, 5000);
+}
+
+/**
+ * Write all data.
+ */
+router.post('/write-data', (req, res) => {
+    const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+    const csvWriter = createCsvWriter({
+        path: './data.csv',
+        header: [
+            {id: 'numberOfTransactions', title:'numberOfTransactions'},
+            {id: 'averageNumberOfBlocks', title:'averageNumberOfBlocks'},
+            {id: 'averageNumberOfChains', title:'averageNumberOfChains'}
+        ]
+    });
+    fs.writeFile('./nodelist.json', JSON.stringify(app.nodeList, null, 2) , 'utf-8');
+    fs.writeFile('./transactionlist.json', JSON.stringify(app.transactionList, null, 2) , 'utf-8');
+    csvWriter.writeRecords(app.transactionList.getNumbersArray()).then(() => {
+        console.log("Writing to csv done!");
+        res.json(app.transactionList.getNumbersArray());
+    });
+});
 
 /**
  * send a heartbeat signal to all SSE clients, once every interval seconds (or every 3 seconds if no interval is specified)

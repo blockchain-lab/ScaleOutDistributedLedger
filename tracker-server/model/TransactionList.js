@@ -12,6 +12,7 @@ class TransactionList {
         this.numberOfTransactions = 0;
         this.numberOfChains = 0;
         this.numberOfBlocks = 0;
+        this.numbersArray = [];
     }
 
     /**
@@ -90,6 +91,24 @@ class TransactionList {
             averageNumberOfBlocks: averageNumberOfBlocks,
             averageNumberOfChains: averageNumberOfChains
         };
+    }
+
+    /**
+     * Adds numbers data point to the array.
+     */
+    addNumbersToArray() {
+        const numbers = this.getNumbers();
+        if(numbers.numberOfTransactions !== 0 || numbers.averageNumberOfBlocks !== 0 || numbers.averageNumberOfChains !== 0) {
+            this.numbersArray.push(numbers);
+        }
+    }
+
+    /**
+     * Gets the numbers array.
+     * @returns {Array}
+     */
+    getNumbersArray() {
+        return this.numbersArray;
     }
 }
 
