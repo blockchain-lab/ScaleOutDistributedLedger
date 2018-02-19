@@ -19,7 +19,7 @@ public class BlockMessage extends Message {
 	private final int number;
 	
 	@Getter
-	private final int ownerId;
+	private final byte ownerId;
 
 	@Getter
 	private final List<TransactionMessage> transactions;
@@ -34,7 +34,7 @@ public class BlockMessage extends Message {
 		if (block.getOwner() == null) {
 			this.ownerId = Transaction.GENESIS_SENDER;
 		} else {
-			this.ownerId = block.getOwner().getId();
+			this.ownerId = (byte) block.getOwner().getId();
 		}
 		this.transactions = new ArrayList<>();
 		for (Transaction transaction : block.getTransactions()) {

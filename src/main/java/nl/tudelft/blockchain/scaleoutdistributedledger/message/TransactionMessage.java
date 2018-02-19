@@ -23,7 +23,7 @@ public class TransactionMessage extends Message {
 	private final int number;
 
 	@Getter
-	private final int senderId, receiverId;
+	private final byte senderId, receiverId;
 
 	@Getter
 	private final long amount, remainder;
@@ -50,9 +50,9 @@ public class TransactionMessage extends Message {
 		if (transaction.getSender() == null) {
 			this.senderId = Transaction.GENESIS_SENDER;
 		} else {
-			this.senderId = transaction.getSender().getId();
+			this.senderId = (byte) transaction.getSender().getId();
 		}
-		this.receiverId = transaction.getReceiver().getId();
+		this.receiverId = (byte) transaction.getReceiver().getId();
 		this.amount = transaction.getAmount();
 		this.remainder = transaction.getRemainder();
 		this.source = new HashSet<>();
@@ -157,7 +157,7 @@ public class TransactionMessage extends Message {
 	public static class TransactionSource implements Serializable {
 		private static final long serialVersionUID = 1L;
 		
-		private final int owner;
+		private final byte owner;
 		private final int id;
 		private final int blockNumber;
 		
@@ -167,9 +167,16 @@ public class TransactionMessage extends Message {
 		 * @param id - the id of the transaction
 		 */
 		public TransactionSource(int owner, int blockNumber, int id) {
-			this.owner = owner;
+			this.owner = (byte) owner;
 			this.id = id;
 			this.blockNumber = blockNumber;
+		}
+		
+		/**
+		 * @return - the owner of this transaction source
+		 */
+		public int getOwner() {
+			return owner;
 		}
 
 		@Override
