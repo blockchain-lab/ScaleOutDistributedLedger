@@ -4,7 +4,6 @@ import lombok.Getter;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 
 import java.util.ArrayList;
@@ -18,18 +17,12 @@ public class BlockMessage extends Message {
 
 	@Getter
 	private final int number;
-
-	@Getter
-	private final int previousBlockNumber;
 	
 	@Getter
 	private final int ownerId;
 
 	@Getter
 	private final List<TransactionMessage> transactions;
-
-	@Getter
-	private final Sha256Hash hash;
 	
 	/**
 	 * Constructor.
@@ -37,13 +30,6 @@ public class BlockMessage extends Message {
 	 */
 	public BlockMessage(Block block) {
 		this.number = block.getNumber();
-		Block prevBlock = block.getPreviousBlock();
-		if (prevBlock != null) {
-			this.previousBlockNumber = prevBlock.getNumber();
-		} else {
-			// It's a genesis block
-			this.previousBlockNumber = -1;
-		}
 		// It's a genesis block
 		if (block.getOwner() == null) {
 			this.ownerId = Transaction.GENESIS_SENDER;
@@ -54,7 +40,6 @@ public class BlockMessage extends Message {
 		for (Transaction transaction : block.getTransactions()) {
 			this.transactions.add(new TransactionMessage(transaction));
 		}
-		this.hash = block.getHash();
 	}
 
 	@Override

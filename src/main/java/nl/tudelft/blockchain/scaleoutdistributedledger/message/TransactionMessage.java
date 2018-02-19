@@ -110,7 +110,7 @@ public class TransactionMessage extends Message {
 		if (remainder != other.remainder) return false;
 		if (blockNumber != other.blockNumber) return false;
 		if (!source.equals(other.source)) return false;
-		return hash.equals(other.hash);
+		return true;
 	}
 
 	@Override
@@ -123,7 +123,6 @@ public class TransactionMessage extends Message {
 		result = prime * result + (int) (this.amount ^ (this.amount >>> 32));
 		result = prime * result + (int) (this.remainder ^ (this.remainder >>> 32));
 		result = prime * result + Objects.hashCode(this.source);
-		result = prime * result + Objects.hashCode(this.hash);
 		result = prime * result + this.blockNumber;
 		return result;
 	}
