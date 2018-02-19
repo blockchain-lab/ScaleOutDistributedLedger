@@ -78,14 +78,13 @@ public class SocketClient {
     public boolean sendMessage(Node node, Object msg) throws InterruptedException {
         Channel channel = connections.get(node);
         if (channel == null || !channel.isOpen()) {
-            Log.log(Level.FINE, "No open connection found, connecting...");
+            Log.log(Level.INFO, "No open connection found, connecting...");
             ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
             if (!future.await().isSuccess()) {
                 // Could not connect
             	Log.log(Level.SEVERE, "Unable to connect to " + node.getAddress() + ":" + node.getPort(), future.cause());
                 return false;
             }
-            assert future.isDone();
             channel = future.channel();
             future.channel().closeFuture().addListener((ChannelFutureListener) channelFuture -> Log.log(Level.FINE, "Client detected channel close"));
             Log.log(Level.FINE, "Client connected to server!");

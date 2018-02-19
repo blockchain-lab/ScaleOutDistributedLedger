@@ -24,7 +24,7 @@ import java.util.logging.Level;
 public class SocketServer implements Runnable {
 
     // In seconds, time connections are kept open after messages.
-    private static final int CHANNEL_TIMEOUT = 30;
+    private static final int CHANNEL_TIMEOUT = 0;
     // The maximum message size in bytes.
     private static final int MAX_MESSAGE_SIZE = 5 * 1024 * 1024;
 
@@ -52,7 +52,7 @@ public class SocketServer implements Runnable {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.DEBUG))
+                    .handler(new LoggingHandler(LogLevel.WARN))
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {

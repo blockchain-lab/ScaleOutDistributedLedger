@@ -88,7 +88,7 @@ public class Chain {
 	 * @return - the new lastBlockNr
 	 */
 	private int fixNextCommitted(Block block, int lastUpdateBlockNr, int lastBlockNr, LocalStore localStore) {
-		if (block.getNumber() != lastUpdateBlockNr && !localStore.getMainChain().isInCache(block)) return lastBlockNr;
+		if (block.getNumber() != lastUpdateBlockNr && !localStore.getMainChain().isPresent(block)) return lastBlockNr;
 		
 		Block prev = block;
 		while (prev != null && prev.getNumber() > lastBlockNr) {

@@ -29,12 +29,6 @@ public interface MainChain {
 	 * @return true if there is a block abstract of the given block, false otherwise.
 	 */
 	public boolean isPresent(Block block);
-	
-	/**
-	 * @param block - the block to check
-	 * @return      - true if the given block is in the cache, false otherwise
-	 */
-	public boolean isInCache(Block block);
 
 	/**
 	 * Initializes the tendermint chain.

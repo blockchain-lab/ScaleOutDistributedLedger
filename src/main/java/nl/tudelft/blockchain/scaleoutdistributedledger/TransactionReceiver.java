@@ -1,8 +1,8 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -19,7 +19,7 @@ public class TransactionReceiver implements Runnable {
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
-	private final LinkedList<ProofMessage> queue = new LinkedList<>();
+	private final LinkedBlockingQueue<ProofMessage> queue = new LinkedBlockingQueue<>();
 	
 	/**
 	 * Creates a new TransactionReceiver.
@@ -53,11 +53,10 @@ public class TransactionReceiver implements Runnable {
 	 * Delivers all transactions that can be delivered.
 	 */
 	public void deliverAllTransactionsThatCanBeDelivered() {
-		long currentHeight = localStore.getMainChain().getCurrentHeight();
 		ProofMessage proofMsg = queue.peek();
 		while (proofMsg != null) {
 			//We cannot deliver this proof message yet. To preserve FIFO, just stop.
-			if (proofMsg.getRequiredHeight() > currentHeight) break;
+			if (proofMsg.getRequiredHeight() > localStore.getMainChain().getCurrentHeight()) break;
 			proofMsg = queue.poll();
 			deliverProof(proofMsg);
 			

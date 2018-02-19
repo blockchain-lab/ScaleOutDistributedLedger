@@ -4,9 +4,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import com.github.jtendermint.jabci.socket.TSocket;
@@ -32,11 +29,9 @@ public final class TendermintChain implements MainChain {
 	private ABCIServer handler;
 	private ABCIClient client;
 	private TSocket socket;
-	private ExecutorService threadPool;
 	private Set<Sha256Hash> cache;
 	private final Object cacheLock = new Object();
-	private AtomicLong updatingHeight = new AtomicLong();
-	private AtomicLong currentHeight = new AtomicLong();
+	private volatile long currentHeight;
 	@Getter
 	private Application app;
 	private byte[] hash;
@@ -88,7 +83,6 @@ public final class TendermintChain implements MainChain {
 	 */
 	@Override
 	public void init() {
-		this.threadPool = Executors.newSingleThreadExecutor();
 		Thread t = new Thread(() -> socket.start(abciServerPort));
 		t.setName("Main Chain Socket");
 		t.start();
@@ -131,18 +125,6 @@ public final class TendermintChain implements MainChain {
 
 	/**
 	 * Update the cache of the chain.
-	 * This method starts a separate thread, so the cache is not yet updated on returning from this call.
-	 *
-	 * @param height - The height to update to, if -1 check the needed height with Tendermint
-	 */
-	protected void updateCache(long height) {
-		// If in startup
-		if (client == null) return;
-		this.threadPool.submit(() -> updateCacheBlocking(height));
-	}
-
-	/**
-	 * Update the cache of the chain.
 	 * Note that this method is blocking and execution may therefore take a while,
 	 * It is recommended to use {@link TendermintChain#updateCache(long)} instead.
 	 *
@@ -153,15 +135,11 @@ public final class TendermintChain implements MainChain {
 			height = this.client.status().getLong("latest_block_height");
 		}
 		
-		//Update the updatingHeight to the new value
-		long curHeight = updatingHeight.getAndAccumulate(height, Math::max);
-		if (height <= curHeight) {
-			//Nothing to update, so block until actually at given height
-			awaitHeight(height);
-			return;
-		}
+		//Nothing to update, so block until actually at given height
+		long oldHeight = currentHeight;
+		if (height <= currentHeight) return;
 		
-		for (long i = curHeight + 1; i <= height; i++) {
+		for (long i = currentHeight + 1; i <= height; i++) {
 			List<BlockAbstract> abstractsAtCurrentHeight = this.client.query(i);
 			if (abstractsAtCurrentHeight == null) {
 				Log.log(Level.WARNING, "Could not get block at height " + i + ", perhaps the tendermint rpc is not (yet) running (or broken)", getNodeId());
@@ -174,26 +152,10 @@ public final class TendermintChain implements MainChain {
 			}
 		}
 		
-		//Await until actually at original height (to prevent inconsistent state)
-		awaitHeight(curHeight);
-		currentHeight.getAndAccumulate(height, Math::max);
+		currentHeight = height;
 
 		Log.log(Level.FINE, "Successfully updated the Tendermint cache from height "
-				+ curHeight + " -> " + height	+ ", number of cached hashes of abstracts on main chain is now " + cache.size(), getNodeId());
-	}
-	
-	/**
-	 * Waits until actualCurrentHeight becomes at least the given height.
-	 * @param height - the height
-	 */
-	private void awaitHeight(long height) {
-		try {
-			while (currentHeight.get() < height) {
-				Thread.sleep(100L);
-			}
-		} catch (InterruptedException ex) {
-			Log.log(Level.WARNING, "Interrupted while waiting for height to become " + height, getNodeId());
-		}
+				+ oldHeight + " -> " + height	+ ", number of cached hashes of abstracts on main chain is now " + cache.size(), getNodeId());
 	}
 
 	/**
@@ -228,12 +190,6 @@ public final class TendermintChain implements MainChain {
 		Sha256Hash blockHash = block.getHash();
 		return cache.contains(blockHash);
 	}
-	
-	@Override
-	public boolean isInCache(Block block) {
-		Sha256Hash blockHash = block.getHash();
-		return cache.contains(blockHash);
-	}
 
 	/**
 	 * Adds the given block hash to the cache.
@@ -260,19 +216,19 @@ public final class TendermintChain implements MainChain {
 		}
 	}
 	
-	void setCurrentHeight(long height) {
-		if (!currentHeight.compareAndSet(height - 1, height)) {
-			Log.log(Level.SEVERE, "Previous height mismatches!", getNodeId());
-		}
-		
-		Log.log(Level.INFO, "Updated to height " + height, getNodeId());
+	@Override
+	public long getCurrentHeight() {
+		return currentHeight;
 	}
 	
 	/**
-	 * @return - the current height
+	 * Sets the current height.
+	 * @param height - the height to set to
 	 */
-	public long getCurrentHeight() {
-		return currentHeight.get();
+	void setCurrentHeight(long height) {
+		currentHeight = height;
+		
+		Log.log(Level.INFO, "Updated to height " + height, getNodeId());
 	}
 	
 	/**
