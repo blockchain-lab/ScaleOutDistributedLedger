@@ -34,7 +34,7 @@ public class TransactionSender implements Runnable {
 	 */
 	public TransactionSender(LocalStore localStore) {
 		this.localStore = localStore;
-		this.socketClient = new SocketClient();
+		this.socketClient = new SocketClient(localStore.getOwnNode().getId());
 		this.chain = localStore.getOwnNode().getChain();
 		
 		this.executor.schedule(this, SimulationMain.INITIAL_SENDING_DELAY, TimeUnit.MILLISECONDS);

@@ -9,7 +9,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
@@ -30,11 +29,15 @@ public class SocketClient {
     private Bootstrap bootstrap;
 
     private EventLoopGroup group;
+    
+    private final int ownNodeId;
 
     /**
      * Constructor.
+     * @param ownNodeId - the id of the own node
      */
-    public SocketClient() {
+    public SocketClient(int ownNodeId) {
+    	this.ownNodeId = ownNodeId;
         this.connections = new HashMap<>();
         this.initSocketClient();
     }
@@ -63,7 +66,7 @@ public class SocketClient {
      * Shuts down the client server.
      */
     public void shutdown() {
-        Log.log(Level.INFO, "Shutting down socket client...");
+        Log.log(Level.INFO, "Shutting down socket client...", ownNodeId);
         group.shutdownGracefully();
     }
 
@@ -78,27 +81,26 @@ public class SocketClient {
     public boolean sendMessage(Node node, Object msg) throws InterruptedException {
         Channel channel = connections.get(node);
         if (channel == null || !channel.isOpen()) {
-            Log.log(Level.INFO, "No open connection found, connecting...");
+            Log.log(Level.FINE, "No open connection found, connecting to " + node.getId(), ownNodeId);
             ChannelFuture future = bootstrap.connect(node.getAddress(), node.getPort());
             if (!future.await().isSuccess()) {
                 // Could not connect
-            	Log.log(Level.SEVERE, "Unable to connect to " + node.getAddress() + ":" + node.getPort(), future.cause());
+            	Log.log(Level.SEVERE, "[" + ownNodeId + "] Unable to connect to " + node.getAddress() + ":" + node.getPort(), future.cause());
                 return false;
             }
             channel = future.channel();
-            future.channel().closeFuture().addListener((ChannelFutureListener) channelFuture -> Log.log(Level.FINE, "Client detected channel close"));
-            Log.log(Level.FINE, "Client connected to server!");
+            Log.log(Level.FINE, "connected to " + node.getId(), ownNodeId);
         }
 
         ChannelFuture future = channel.writeAndFlush(msg);
-        Log.log(Level.FINE, "Message sent by client");
+        Log.log(Level.FINE, "Message sent to " + node.getId(), ownNodeId);
 
         this.connections.put(node, future.channel());
 
         future.await();
         
         if (!future.isSuccess()) {
-        	Log.log(Level.SEVERE, "Failed to send message", future.cause());
+        	Log.log(Level.SEVERE, "[" + ownNodeId + "] Failed to send message", future.cause());
         	return false;
         }
         
