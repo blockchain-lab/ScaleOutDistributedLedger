@@ -74,11 +74,10 @@ $(document).ready(function() {
 
     var counter = 12;
 
-    $("#graph_button").on('click', function() {
-        edges[0].value += 1;
-        counter += 1;
-        $(".odometer").text(counter);
-        network.setData({nodes: nodes, edges: edges});
-        network.redraw();
+    $("#saveButton").on("click", function() {
+        $.ajax({
+            method: 'POST',
+            url: '/write-data'
+        });
     });
 });
