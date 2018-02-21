@@ -4,9 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.SDLByteArrayOutputStream;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -126,11 +125,11 @@ public class Block {
 		// Convert attributes of abstract into an array of bytes, for the signature
 		// Important to keep the order of writings
 		byte[] attrInBytes;
-		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(2 + 4 + getHash().getBytes().length)) {
-			Utils.writeShort(outputStream, this.owner.getId());
-			Utils.writeInt(outputStream, this.number);
-			outputStream.write(getHash().getBytes());
-			attrInBytes = outputStream.toByteArray();
+		try (SDLByteArrayOutputStream stream = new SDLByteArrayOutputStream(2 + 4 + getHash().getBytes().length)) {
+			stream.writeShort(this.owner.getId());
+			stream.writeInt(this.number);
+			stream.write(getHash().getBytes());
+			attrInBytes = stream.getByteArray();
 		} catch (IOException ex) {
 			throw new IllegalStateException("Unable to write to outputstream", ex);
 		}
@@ -211,26 +210,28 @@ public class Block {
 	 */
 	private Sha256Hash calculateHash() {
 		// Convert attributes of block into an array of bytes
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(4 + Sha256Hash.LENGTH + 2 + this.transactions.size() * Sha256Hash.LENGTH);
-		try {
+		int prevBlockLength = this.previousBlock != null ? Sha256Hash.LENGTH : 0;
+		try (SDLByteArrayOutputStream stream = new SDLByteArrayOutputStream(4 + prevBlockLength + 2 + this.transactions.size() * Sha256Hash.LENGTH)) {
 			// Important to keep the order of writings
-			Utils.writeInt(outputStream, this.number);
+			stream.writeInt(this.number);
 			
 			byte[] prevBlockHash = (this.previousBlock != null) ? this.previousBlock.getHash().getBytes() : new byte[0];
-			outputStream.write(prevBlockHash);
+			stream.write(prevBlockHash);
 			if (this.owner != null) {
-				Utils.writeShort(outputStream, this.owner.getId());
+				stream.writeShort(this.owner.getId());
+			} else {
+				stream.writeShort(-1);
 			}
 			
 			for (Transaction tx : this.transactions) {
-				outputStream.write(tx.getHash().getBytes());
+				stream.write(tx.getHash().getBytes());
 			}
+			
+			return new Sha256Hash(stream.getByteArray());
 		} catch (IOException ex) {
-			Log.log(Level.SEVERE, null, ex);
+			Log.log(Level.SEVERE, "Unable to calculate hash of block!", ex);
+			return null;
 		}
-		byte[] blockInBytes = outputStream.toByteArray();
-
-		return new Sha256Hash(blockInBytes);
 	}
 
 	/**

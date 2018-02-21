@@ -1,24 +1,28 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import lombok.Getter;
-import lombok.Setter;
-
-import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
-
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Proof message for netty.
  */
 public class ProofMessage extends Message {
-	private static final long serialVersionUID = 1L;
+	public static final int MESSAGE_ID = 0;
 
 	@Getter
 	private final TransactionMessage transactionMessage;
@@ -54,10 +58,63 @@ public class ProofMessage extends Message {
 			}
 		}
 	}
+	
+	private ProofMessage(TransactionMessage transactionMessage, Map<Integer, List<BlockMessage>> chainUpdates, long requiredHeight) {
+		this.transactionMessage = transactionMessage;
+		this.chainUpdates = chainUpdates;
+		this.requiredHeight = requiredHeight;
+	}
 
 	@Override
 	public void handle(LocalStore localStore) {
 		localStore.getApplication().getTransactionReceiver().receiveTransaction(this);
+	}
+	
+	@Override
+	public int getMessageId() {
+		return MESSAGE_ID;
+	}
+	
+	@Override
+	public void writeToStream(ByteBufOutputStream stream) throws IOException {
+		transactionMessage.writeToStream(stream);
+		
+		stream.writeLong(requiredHeight);
+		
+		Utils.writeNodeId(stream, chainUpdates.size());
+		for (Entry<Integer, List<BlockMessage>> entry : chainUpdates.entrySet()) {
+			Utils.writeNodeId(stream, entry.getKey());
+			stream.writeInt(entry.getValue().size());
+			for (BlockMessage bm : entry.getValue()) {
+				bm.writeToStream(stream);
+			}
+		}
+	}
+	
+	/**
+	 * @param stream       - the stream to read from
+	 * @return             - the ProofMessage that was read
+	 * @throws IOException - If reading from the stream causes an IOException.
+	 */
+	public static ProofMessage readFromStream(ByteBufInputStream stream) throws IOException {
+		TransactionMessage tm = TransactionMessage.readFromStream(stream);
+		long requiredHeight = stream.readLong();
+		
+		int chainUpdatesSize = Utils.readNodeId(stream);
+		Map<Integer, List<BlockMessage>> chainUpdates = new HashMap<>(chainUpdatesSize);
+		for (int i = 0; i < chainUpdatesSize; i++) {
+			int nodeId = Utils.readNodeId(stream);
+			int blockCount = stream.readInt();
+			
+			List<BlockMessage> blockMessages = new ArrayList<>(blockCount);
+			for (int j = 0; j < blockCount; j++) {
+				blockMessages.add(BlockMessage.readFromStream(stream));
+			}
+			
+			chainUpdates.put(nodeId, blockMessages);
+		}
+
+		return new ProofMessage(tm, chainUpdates, requiredHeight);
 	}
 	
 	@Override

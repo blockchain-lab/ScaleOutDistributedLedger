@@ -17,6 +17,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
+import lombok.Getter;
+
 /**
  * Class which handles sending of transactions.
  */
@@ -24,6 +26,7 @@ public class TransactionSender implements Runnable {
 	
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
+	@Getter
 	private final SocketClient socketClient;
 	private final Chain chain;
 	private int alreadySent;

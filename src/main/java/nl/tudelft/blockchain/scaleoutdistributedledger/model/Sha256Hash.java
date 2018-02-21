@@ -1,15 +1,19 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.logging.Level;
+
 import lombok.Getter;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
 /**
  * Class to wrap a SHA256 hash.
@@ -48,6 +52,11 @@ public class Sha256Hash implements Serializable {
 			Log.log(Level.SEVERE, null, ex);
 		}
 	}
+	
+	/**
+	 * Private constructor for {@link #withHash(byte[])}.
+	 */
+	private Sha256Hash() { }
 
 	/**
 	 * Get a {@link Sha256Hash} with the given hash.
@@ -56,7 +65,7 @@ public class Sha256Hash implements Serializable {
 	 * @return - an object with the given hash
 	 */
 	public static Sha256Hash withHash(byte[] hash) {
-		Sha256Hash res = new Sha256Hash(new byte[0]);
+		Sha256Hash res = new Sha256Hash();
 		res.bytes = hash;
 		return res;
 	}
@@ -79,4 +88,12 @@ public class Sha256Hash implements Serializable {
 		return Utils.bytesToHexString(this.bytes);
 	}
 	
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		stream.write(bytes);
+	}
+
+	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+		this.bytes = new byte[LENGTH];
+		stream.read(bytes);
+	}
 }

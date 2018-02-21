@@ -3,15 +3,14 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import lombok.Getter;
 import lombok.Setter;
 
-import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.SDLByteArrayOutputStream;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.io.ByteArrayOutputStream;
 import java.security.SignatureException;
 import java.util.Arrays;
 import java.util.Objects;
@@ -61,13 +60,13 @@ public class BlockAbstract implements Serializable {
 	 * @return - the byte array conversion; or null if serialization fails.
 	 */
 	public byte[] toBytes() {
-		int length = 2 + 4 + blockHash.getBytes().length + signature.length;
-		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(length)) {
-			Utils.writeNodeId(outputStream, ownerNodeId);
-			Utils.writeInt(outputStream, blockNumber);
-			outputStream.write(blockHash.getBytes());
-			outputStream.write(signature);
-			return outputStream.toByteArray();
+		int length = Utils.NODEID_LENGTH + 4 + blockHash.getBytes().length + signature.length;
+		try (SDLByteArrayOutputStream stream = new SDLByteArrayOutputStream(length)) {
+			stream.writeNodeId(ownerNodeId);
+			stream.writeInt(blockNumber);
+			stream.write(blockHash.getBytes());
+			stream.write(signature);
+			return stream.getByteArray();
 		} catch (IOException ex) {
 			Log.log(Level.WARNING, "Could not serialize the BlockAbstract to bytes", ex);
 			return null;
@@ -81,11 +80,12 @@ public class BlockAbstract implements Serializable {
 	 * @param bytes - the data to construct from
 	 * @return - the abstract represented by the bytes; null if the deserialization fails.
 	 */
-	@SuppressWarnings("unused")
 	public static BlockAbstract fromBytes(byte[] bytes) {
 		try {
-			int ownerId = Utils.readNodeId(bytes, 0);
-			int index = SimulationMain.TOTAL_NODES_NUMBER < 128 ? 1 : 2;
+			int index = 0;
+			int ownerId = Utils.readNodeId(bytes, index);
+			index += Utils.NODEID_LENGTH;
+			
 			int blockNumber = Utils.readInt(bytes, index);
 			index += 4;
 			
@@ -137,11 +137,11 @@ public class BlockAbstract implements Serializable {
 	 */
 	public static byte[] calculateBytesForSignature(int ownerId, int blockNumber, Sha256Hash hash) {
 		byte[] attrInBytes;
-		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(2 + 4 + hash.getBytes().length)) {
-			Utils.writeShort(outputStream, ownerId);
-			Utils.writeInt(outputStream, blockNumber);
-			outputStream.write(hash.getBytes());
-			attrInBytes = outputStream.toByteArray();
+		try (SDLByteArrayOutputStream stream = new SDLByteArrayOutputStream(2 + 4 + hash.getBytes().length)) {
+			stream.writeShort(ownerId);
+			stream.writeInt(blockNumber);
+			stream.write(hash.getBytes());
+			attrInBytes = stream.getByteArray();
 		} catch (IOException ex) {
 			throw new IllegalStateException("Unable to write to outputstream", ex);
 		}
@@ -150,12 +150,24 @@ public class BlockAbstract implements Serializable {
 	}
 	
 	private void writeObject(ObjectOutputStream stream) throws IOException {
-		stream.defaultWriteObject();
+		Utils.writeNodeId(stream, ownerNodeId);
+		stream.writeInt(blockNumber);
+		stream.write(blockHash.getBytes());
+		stream.writeShort(signature.length);
+		stream.write(signature);
 	}
 
-	private void readObject(ObjectInputStream stream) throws IOException,
-			ClassNotFoundException {
-		stream.defaultReadObject();
+	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+		this.ownerNodeId = Utils.readNodeId(stream);
+		this.blockNumber = stream.readInt();
+		
+		byte[] hashBytes = new byte[Sha256Hash.LENGTH];
+		stream.read(hashBytes);
+		this.blockHash = Sha256Hash.withHash(hashBytes);
+		
+		int sigLength = stream.readUnsignedShort();
+		this.signature = new byte[sigLength];
+		stream.read(this.signature);
 	}
 
 	@Override

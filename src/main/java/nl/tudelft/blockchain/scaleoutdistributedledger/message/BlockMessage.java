@@ -1,28 +1,32 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import lombok.Getter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import lombok.Getter;
 
 /**
  * Block message for netty.
  */
 public class BlockMessage extends Message {
-	private static final long serialVersionUID = 1L;
+	public static final int MESSAGE_ID = 1;
 
 	@Getter
 	private final int number;
 	
 	@Getter
-	private final byte ownerId;
+	private final int ownerId;
 
 	@Getter
-	private final List<TransactionMessage> transactions;
+	private final TransactionMessage[] transactions;
 	
 	/**
 	 * Constructor.
@@ -34,17 +38,57 @@ public class BlockMessage extends Message {
 		if (block.getOwner() == null) {
 			this.ownerId = Transaction.GENESIS_SENDER;
 		} else {
-			this.ownerId = (byte) block.getOwner().getId();
+			this.ownerId = block.getOwner().getId();
 		}
-		this.transactions = new ArrayList<>();
+		this.transactions = new TransactionMessage[block.getTransactions().size()];
+		int i = 0;
 		for (Transaction transaction : block.getTransactions()) {
-			this.transactions.add(new TransactionMessage(transaction));
+			this.transactions[i++] = new TransactionMessage(transaction);
 		}
+	}
+	
+	private BlockMessage(int number, int ownerId, TransactionMessage[] transactions) {
+		this.number = number;
+		this.ownerId = ownerId;
+		this.transactions = transactions;
 	}
 
 	@Override
 	public void handle(LocalStore localStore) {
 		// Do nothing.
+	}
+	
+	@Override
+	public int getMessageId() {
+		return MESSAGE_ID;
+	}
+	
+	@Override
+	public void writeToStream(ByteBufOutputStream stream) throws IOException {
+		//Write contents
+		stream.writeInt(number);
+		Utils.writeNodeId(stream, ownerId);
+		stream.writeShort(transactions.length);
+		for (TransactionMessage tm : transactions) {
+			tm.writeToStream(stream);
+		}
+	}
+	
+	/**
+	 * @param stream       - the stream to read from
+	 * @return             - the BlockMessage that was read
+	 * @throws IOException - If reading from the stream causes an IOException.
+	 */
+	public static BlockMessage readFromStream(ByteBufInputStream stream) throws IOException {
+		int number = stream.readInt();
+		int ownerId = Utils.readNodeId(stream);
+		int transactionCount = stream.readUnsignedShort();
+		TransactionMessage[] transactions = new TransactionMessage[transactionCount];
+		for (int i = 0; i < transactionCount; i++) {
+			transactions[i] = TransactionMessage.readFromStream(stream);
+		}
+		
+		return new BlockMessage(number, ownerId, transactions);
 	}
 
 	/**
@@ -63,7 +107,7 @@ public class BlockMessage extends Message {
 	public String toString() {
 		StringBuilder sb = new StringBuilder(64);
 		sb.append("BlockMessage<nr=").append(number).append(", owner=").append(ownerId).append(", transactions=[");
-		if (transactions.isEmpty()) return sb.append("]").toString();
+		if (transactions.length == 0) return sb.append("]").toString();
 		
 		for (TransactionMessage tm : transactions) {
 			sb.append("\n      ").append(tm);

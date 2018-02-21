@@ -1,6 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.OptionalInt;
@@ -9,7 +8,7 @@ import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.TransactionMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.SDLByteArrayOutputStream;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -128,26 +127,27 @@ public class Transaction implements Comparable<Transaction> {
 	 */
 	private Sha256Hash calculateHash() {
 		// Convert attributes of transaction into an array of bytes
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(4 + 2 + 2 + 8 + 8 + 32 * this.source.size());
-		try {
+		try (SDLByteArrayOutputStream stream = new SDLByteArrayOutputStream(4 + 2 + 2 + 8 + 8 + Sha256Hash.LENGTH * this.source.size())) {
 			// Important to keep the order of writings
-			Utils.writeInt(outputStream, this.number);
+			stream.writeInt(this.number);
 			if (this.sender != null) {
-				Utils.writeShort(outputStream, this.sender.getId());
+				stream.writeShort(this.sender.getId());
+			} else {
+				stream.writeShort(-1);
 			}
-			Utils.writeShort(outputStream, this.receiver.getId());
-			Utils.writeLong(outputStream, this.amount);
-			Utils.writeLong(outputStream, this.remainder);
+			stream.writeShort(this.receiver.getId());
+			stream.writeLong(this.amount);
+			stream.writeLong(this.remainder);
 			
 			for (Transaction tx : this.source) {
-				outputStream.write(tx.getHash().getBytes());
+				stream.write(tx.getHash().getBytes());
 			}
+			
+			return new Sha256Hash(stream.getByteArray());
 		} catch (IOException ex) {
-			Log.log(Level.SEVERE, null, ex);
+			Log.log(Level.SEVERE, "Unable to calculate hash", ex);
+			return null;
 		}
-		byte[] transactionInBytes = outputStream.toByteArray();
-		
-		return new Sha256Hash(transactionInBytes);
 	}
 	
 	/**

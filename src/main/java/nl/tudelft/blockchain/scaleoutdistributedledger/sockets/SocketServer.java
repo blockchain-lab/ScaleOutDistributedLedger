@@ -1,5 +1,10 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.sockets;
 
+import java.util.logging.Level;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -7,26 +12,16 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
-
-import java.util.logging.Level;
 
 /**
  * Socket server.
  */
 public class SocketServer implements Runnable {
-
+	// The maximum message size in bytes.
+    public static final int MAX_MESSAGE_SIZE = 5 * 1024 * 1024;
     // In seconds, time connections are kept open after messages.
     private static final int CHANNEL_TIMEOUT = 0;
-    // The maximum message size in bytes.
-    private static final int MAX_MESSAGE_SIZE = 5 * 1024 * 1024;
 
     private int port;
     private LocalStore localStore;
@@ -58,8 +53,8 @@ public class SocketServer implements Runnable {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             ChannelPipeline p = socketChannel.pipeline();
                             p.addLast(new IdleStateHandler(0, 0, CHANNEL_TIMEOUT),
-                                    new ObjectEncoder(),
-                                    new ObjectDecoder(MAX_MESSAGE_SIZE, ClassResolvers.cacheDisabled(null)),
+                                    new MessageEncoder(),
+                                    new MessageDecoder(MAX_MESSAGE_SIZE),
                                     new SocketServerHandler(localStore));
                         }
                     });

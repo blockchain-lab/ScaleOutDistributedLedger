@@ -1,6 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.TreeSet;
 
@@ -8,32 +8,35 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 import lombok.Getter;
 
 /**
  * Transaction message for netty.
  */
 public class TransactionMessage extends Message {
-	private static final long serialVersionUID = 1L;
+	public static final int MESSAGE_ID = 2;
 
 	@Getter
 	private final int number;
+	
+	@Getter
+	private final int blockNumber;
 
 	@Getter
-	private final byte senderId, receiverId;
+	private final int senderId, receiverId;
 
 	@Getter
 	private final long amount, remainder;
 
 	@Getter
-	private final TransactionSource[] source;
-
-	@Getter
 	private final Sha256Hash hash;
 	
 	@Getter
-	private final int blockNumber;
+	private final TransactionSource[] source;
 
 	/**
 	 * Constructor.
@@ -44,15 +47,17 @@ public class TransactionMessage extends Message {
 			throw new RuntimeException("Block number not present");
 		}
 		this.number = transaction.getNumber();
+		this.blockNumber = transaction.getBlockNumber().getAsInt();
 		// It's a genesis transaction
 		if (transaction.getSender() == null) {
 			this.senderId = Transaction.GENESIS_SENDER;
 		} else {
-			this.senderId = (byte) transaction.getSender().getId();
+			this.senderId = transaction.getSender().getId();
 		}
-		this.receiverId = (byte) transaction.getReceiver().getId();
+		this.receiverId = transaction.getReceiver().getId();
 		this.amount = transaction.getAmount();
 		this.remainder = transaction.getRemainder();
+		this.hash = transaction.getHash();
 		this.source = new TransactionSource[transaction.getSource().size()];
 		int i = 0;
 		// Optimization: categorize each transaction already known (or not) by the receiver
@@ -75,8 +80,28 @@ public class TransactionMessage extends Message {
 				throw new IllegalStateException("Transaction without blocknumber found");
 			}
 		}
-		this.hash = transaction.getHash();
-		this.blockNumber = transaction.getBlockNumber().getAsInt();
+	}
+	
+	/**
+	 * @param number      - the number
+	 * @param blockNumber - the block number
+	 * @param senderId    - the node id of the sender
+	 * @param receiverId  - the node id of the receiver
+	 * @param amount      - the amount
+	 * @param remainder   - the remainder
+	 * @param hash        - the hash
+	 * @param source      - the sources
+	 */
+	private TransactionMessage(int number, int blockNumber, int senderId, int receiverId, long amount, long remainder,
+			Sha256Hash hash, TransactionSource[] source) {
+		this.number = number;
+		this.blockNumber = blockNumber;
+		this.senderId = senderId;
+		this.receiverId = receiverId;
+		this.amount = amount;
+		this.remainder = remainder;
+		this.hash = hash;
+		this.source = source;
 	}
 
 	/**
@@ -94,6 +119,53 @@ public class TransactionMessage extends Message {
 	@Override
 	public void handle(LocalStore localStore) {
 		// Do nothing
+	}
+	
+	@Override
+	public int getMessageId() {
+		return MESSAGE_ID;
+	}
+	
+	@Override
+	public void writeToStream(ByteBufOutputStream stream) throws IOException {
+		//Write contents
+		stream.writeInt(number);
+		stream.writeInt(blockNumber);
+		Utils.writeNodeId(stream, senderId);
+		Utils.writeNodeId(stream, receiverId);
+		stream.writeLong(amount);
+		stream.writeLong(remainder);
+		stream.write(hash.getBytes());
+		stream.writeShort(source.length);
+		for (TransactionSource ts : source) {
+			ts.writeToStream(stream);
+		}
+	}
+	
+	/**
+	 * @param stream       - the stream to read from
+	 * @return             - the TransactionMessage that was read
+	 * @throws IOException - If reading from the stream causes an IOException.
+	 */
+	public static TransactionMessage readFromStream(ByteBufInputStream stream) throws IOException {
+		int number = stream.readInt();
+		int blockNumber = stream.readInt();
+		int senderId = Utils.readNodeId(stream);
+		int receiverId = Utils.readNodeId(stream);
+		long amount = stream.readLong();
+		long remainder = stream.readLong();
+		
+		byte[] hashBytes = new byte[Sha256Hash.LENGTH];
+		stream.read(hashBytes);
+		Sha256Hash hash = Sha256Hash.withHash(hashBytes);
+		
+		int sourceCount = stream.readUnsignedShort();
+		TransactionSource[] source = new TransactionSource[sourceCount];
+		for (int i = 0; i < sourceCount; i++) {
+			source[i] = TransactionSource.readFromStream(stream);
+		}
+		
+		return new TransactionMessage(number, blockNumber, senderId, receiverId, amount, remainder, hash, source);
 	}
 	
 	@Override
@@ -153,12 +225,10 @@ public class TransactionMessage extends Message {
 	 * Class to represent a transaction source.
 	 */
 	@Getter
-	public static class TransactionSource implements Serializable {
-		private static final long serialVersionUID = 1L;
-		
-		private final byte owner;
-		private final int id;
-		private final int blockNumber;
+	public static class TransactionSource {
+		private int owner;
+		private int id;
+		private int blockNumber;
 		
 		/**
 		 * @param owner - the id of the owner of the transaction
@@ -166,16 +236,31 @@ public class TransactionMessage extends Message {
 		 * @param id - the id of the transaction
 		 */
 		public TransactionSource(int owner, int blockNumber, int id) {
-			this.owner = (byte) owner;
+			this.owner = owner;
 			this.id = id;
 			this.blockNumber = blockNumber;
 		}
+
+		/**
+		 * @param stream       - the stream to write to
+		 * @throws IOException - If writing to the stream causes an IOException.
+		 */
+		public void writeToStream(ByteBufOutputStream stream) throws IOException {
+			Utils.writeNodeId(stream, owner);
+			stream.writeInt(id);
+			stream.writeInt(blockNumber);
+		}
 		
 		/**
-		 * @return - the owner of this transaction source
+		 * @param stream       - the stream to read from
+		 * @return             - the read TransactionSource
+		 * @throws IOException - If reading from the stream causes an IOException.
 		 */
-		public int getOwner() {
-			return owner;
+		public static TransactionSource readFromStream(ByteBufInputStream stream) throws IOException {
+			int owner = Utils.readNodeId(stream);
+			int id = stream.readInt();
+			int blockNumber = stream.readInt();
+			return new TransactionSource(owner, blockNumber, id);
 		}
 
 		@Override

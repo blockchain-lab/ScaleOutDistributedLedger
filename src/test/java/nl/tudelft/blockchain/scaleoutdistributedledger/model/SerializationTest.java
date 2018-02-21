@@ -146,7 +146,7 @@ public class SerializationTest {
 		// Check
 		assertEquals(this.genesisBlock.getNumber(), genesisBlockMessage.getNumber());
 		assertEquals(Transaction.GENESIS_SENDER, genesisBlockMessage.getOwnerId());
-		assertEquals(this.genesisBlock.getTransactions().size(), genesisBlockMessage.getTransactions().size());
+		assertEquals(this.genesisBlock.getTransactions().size(), genesisBlockMessage.getTransactions().length);
 	}
 	
 	/**
@@ -194,7 +194,7 @@ public class SerializationTest {
 		// Check
 		assertEquals(aliceBlock.getNumber(), blockMessage.getNumber());
 		assertEquals(aliceBlock.getOwner().getId(), blockMessage.getOwnerId());
-		assertEquals(aliceBlock.getTransactions().size(), blockMessage.getTransactions().size());
+		assertEquals(aliceBlock.getTransactions().size(), blockMessage.getTransactions().length);
 	}
 	
 	/**
