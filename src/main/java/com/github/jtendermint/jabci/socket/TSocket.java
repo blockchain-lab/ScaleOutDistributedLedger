@@ -294,7 +294,7 @@ public class TSocket extends ASocket {
          */
         public void writeMessage(GeneratedMessageV3 message) throws IOException {
             if (message != null) {
-                HANDLER_LOG.debug("writing message " + message.getAllFields().keySet());
+//                HANDLER_LOG.debug("writing message " + message.getAllFields().keySet());
                 writeMessage(message.toByteArray());
             }
         }
