@@ -114,7 +114,7 @@ public class Application {
 	 */
 	public synchronized void startTransacting() {
 		if (isTransacting()) throw new IllegalStateException("There is already a transaction pattern running!");
-		this.executor = new Thread(this.transactionExecutable);
+		this.executor = new Thread(this.transactionExecutable, "transaction-pattern-" + localStore.getOwnNode().getId());
 		this.executor.setUncaughtExceptionHandler((t, ex) -> 
 			Log.log(Level.SEVERE, "Node " + localStore.getOwnNode().getId() + ": Uncaught exception in transaction pattern executor!", ex)
 		);

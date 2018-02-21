@@ -16,6 +16,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
+import nl.tudelft.blockchain.scaleoutdistributedledger.utils.NamedThreadFactory;
 
 import lombok.Getter;
 
@@ -24,7 +25,7 @@ import lombok.Getter;
  */
 public class TransactionSender implements Runnable {
 	
-	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+	private final ScheduledExecutorService executor;
 	private final LocalStore localStore;
 	@Getter
 	private final SocketClient socketClient;
@@ -37,9 +38,10 @@ public class TransactionSender implements Runnable {
 	 */
 	public TransactionSender(LocalStore localStore) {
 		this.localStore = localStore;
-		this.socketClient = new SocketClient(localStore.getOwnNode().getId());
+		this.socketClient = new SocketClient(localStore);
 		this.chain = localStore.getOwnNode().getChain();
-		
+		NamedThreadFactory ntf = new NamedThreadFactory("transaction-sender-" + localStore.getOwnNode().getId());
+		this.executor = Executors.newScheduledThreadPool(1, ntf);
 		this.executor.schedule(this, SimulationMain.INITIAL_SENDING_DELAY, TimeUnit.MILLISECONDS);
 	}
 	
@@ -140,7 +142,6 @@ public class TransactionSender implements Runnable {
 	 * @throws InterruptedException - If the current thread was interrupted while sending.
 	 */
 	private boolean sendTransaction(Transaction transaction) throws InterruptedException, IOException {
-		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " starting sending transaction: " + transaction);
 		long startingTime = System.currentTimeMillis();
 		Node to = transaction.getReceiver();
 		long requiredHeight = localStore.getMainChain().getCurrentHeight();
@@ -156,10 +157,8 @@ public class TransactionSender implements Runnable {
 			Log.log(Level.WARNING, "Proof creation took " + timeDelta + " ms for transaction: " + transaction);
 		}
 		
-		Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " now actually sending transaction: " + transaction);
 		if (socketClient.sendMessage(to, msg)) {
 			to.updateMetaKnowledge(proof);
-			Log.log(Level.FINE, "Node " + transaction.getSender().getId() + " done sending transaction: " + transaction);
 			return true;
 		}
 		

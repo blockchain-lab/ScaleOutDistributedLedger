@@ -48,7 +48,6 @@ public interface ITransactionPattern extends Serializable {
 	 * @throws InterruptedException - if the action is interrupted
 	 */
 	public default void doAction(LocalStore localStore) throws InterruptedException {
-		Log.log(Level.FINER, "Start doAction", localStore.getOwnNode().getId());
 		OwnNode ownNode = localStore.getOwnNode();
 		int ownNodeId = ownNode.getId();
 

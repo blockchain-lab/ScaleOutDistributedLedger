@@ -1,10 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
@@ -15,31 +12,45 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationExce
 /**
  * Class which handles receiving transactions.
  */
-public class TransactionReceiver implements Runnable {
+public class TransactionReceiver extends Thread {
 	
-	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	private final LocalStore localStore;
 	private final LinkedBlockingQueue<ProofMessage> queue = new LinkedBlockingQueue<>();
+	private volatile boolean stop;
 	
 	/**
 	 * Creates a new TransactionReceiver.
 	 * @param localStore - the local store
 	 */
 	public TransactionReceiver(LocalStore localStore) {
+		super("transaction-receiver-" + localStore.getOwnNode().getId());
 		this.localStore = localStore;
-		this.executor.schedule(this, SimulationMain.DELIVER_RECHECK_TIME, TimeUnit.MILLISECONDS);
+		this.start();
 	}
 	
 	@Override
 	public void run() {
-		//Deliver all and reschedule
-		try {
-			deliverAllTransactionsThatCanBeDelivered();
-		} catch (Exception ex) {
-			Log.log(Level.SEVERE, "Uncaught exception in transaction receiver!");
-		} finally {
-			executor.schedule(this, SimulationMain.DELIVER_RECHECK_TIME, TimeUnit.MILLISECONDS);
+		while (true) {
+			try {
+				deliverOneTransaction();
+			} catch (InterruptedException ex) {
+				if (stop) break;
+			} catch (Exception ex) {
+				Log.log(Level.SEVERE, "Uncaught exception in transaction receiver!", ex);
+			}
 		}
+	}
+
+	/**
+	 * Delivers a single transaction.
+	 * @throws InterruptedException - If we are interrupted while waiting.
+	 */
+	protected void deliverOneTransaction() throws InterruptedException {
+		ProofMessage proofMsg = queue.take();
+		while (proofMsg.getRequiredHeight() > localStore.getMainChain().getCurrentHeight()) {
+			Thread.sleep(SimulationMain.DELIVER_RECHECK_TIME);
+		}
+		deliverProof(proofMsg);
 	}
 	
 	/**
@@ -47,21 +58,6 @@ public class TransactionReceiver implements Runnable {
 	 */
 	public void receiveTransaction(ProofMessage proofMsg) {
 		queue.add(proofMsg);
-	}
-	
-	/**
-	 * Delivers all transactions that can be delivered.
-	 */
-	public void deliverAllTransactionsThatCanBeDelivered() {
-		ProofMessage proofMsg = queue.peek();
-		while (proofMsg != null) {
-			//We cannot deliver this proof message yet. To preserve FIFO, just stop.
-			if (proofMsg.getRequiredHeight() > localStore.getMainChain().getCurrentHeight()) break;
-			proofMsg = queue.poll();
-			deliverProof(proofMsg);
-			
-			proofMsg = queue.peek();
-		}
 	}
 	
 	/**
@@ -86,7 +82,8 @@ public class TransactionReceiver implements Runnable {
 	 * Pending transactions will not be delivered.
 	 */
 	public void shutdownNow() {
-		executor.shutdownNow();
+		stop = true;
+		this.interrupt();
 	}
 	
 	/**
@@ -103,8 +100,6 @@ public class TransactionReceiver implements Runnable {
 			return false;
 		}
 		
-		Log.log(Level.FINE, "Received transaction: " + proof.getTransaction());
-		
 		if (proof.getTransaction().getReceiver().getId() != localStore.getOwnNode().getId()) {
 			Log.log(Level.WARNING, "Received a transaction that isn't for us: " + proof.getTransaction());
 			return false;
@@ -118,7 +113,6 @@ public class TransactionReceiver implements Runnable {
 		}
 
 		Log.log(Level.INFO, "Received and validated transaction: " + proof.getTransaction());
-		Log.log(Level.FINE, "Transaction " + proof.getTransaction() + " is valid, applying updates...");
 		proof.applyUpdates(localStore);
 		TrackerHelper.registerTransaction(proof);
 

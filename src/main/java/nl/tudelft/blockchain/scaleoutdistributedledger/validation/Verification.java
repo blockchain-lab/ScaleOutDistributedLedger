@@ -175,15 +175,15 @@ public class Verification {
 	 * @param setB - the second set
 	 * @return       true if the intersection is empty, false otherwise
 	 */
-	private static <T> boolean intersectEmpty(Set<T> setA, Set<T> setB) {
+	private static boolean intersectEmpty(Set<Transaction> setA, Set<Transaction> setB) {
 		//Loop over the smallest set. Contains in hash sets is O(1).
-		if (setA.size() >= setB.size()) {
-			for (T element : setA) {
+		if (setA.size() <= setB.size()) {
+			for (Transaction element : setA) {
 				if (setB.contains(element)) return false;
 			}
 			return true;
 		} else {
-			for (T element : setB) {
+			for (Transaction element : setB) {
 				if (setA.contains(element)) return false;
 			}
 			return true;

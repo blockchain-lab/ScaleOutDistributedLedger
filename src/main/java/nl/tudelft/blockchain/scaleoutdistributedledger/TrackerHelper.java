@@ -225,7 +225,7 @@ public final class TrackerHelper {
 		request.setEntity(requestEntity);
 		JSONObject response = new JSONObject(IOUtils.toString(CLIENT.execute(request).getEntity().getContent()));
 		if (response.getBoolean("success")) {
-			Log.log(Level.INFO, "Successfully registered " + transactionArray.length() + " transactions to tracker server");
+			Log.log(Level.FINE, "Successfully registered " + transactionArray.length() + " transactions to tracker server");
 		} else {
 			Log.log(Level.WARNING, "Error while registering transactions");
 		}

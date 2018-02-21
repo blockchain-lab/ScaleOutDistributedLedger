@@ -59,7 +59,7 @@ public class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseCheckTx requestCheckTx(RequestCheckTx requestCheckTx) {
-		Log.log(Level.FINER, "[TENDERMINT] New BlockAbstract proposed", chain.getNodeId());
+//		Log.log(Level.FINER, "[TENDERMINT] New BlockAbstract proposed", chain.getNodeId());
 
 		// Comment the next line when using a mock chain
 		BlockAbstract abs = BlockAbstract.fromBytes(requestCheckTx.getTx().toByteArray());
@@ -89,8 +89,6 @@ public class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseCommit requestCommit(RequestCommit requestCommit) {
-		Log.log(Level.FINER, "[TENDERMINT] Commit TMBlock " + committingHeight, chain.getNodeId());
-		
 		//TODO Save current state to add persistence
 		byte[] appHash;
 		synchronized (lastLock) {
@@ -114,9 +112,6 @@ public class ABCIServer implements ABCIAPI {
 		BlockAbstract abs = BlockAbstract.fromBytes(requestDeliverTx.getTx().toByteArray());
 		if (abs != null) {
 			chain.addToCache(abs.getBlockHash());
-			Log.log(Level.FINER, "[TENDERMINT] Received BlockAbstract for "
-					+ "<Node " + abs.getOwnerNodeId() + "; Block " + abs.getBlockNumber() + "> "
-					+ "in TMBlock " + committingHeight, chain.getNodeId());
 		} else {
 			Log.log(Level.WARNING, "[TENDERMINT] Received invalid BlockAbstract!", chain.getNodeId());
 		}
@@ -126,13 +121,6 @@ public class ABCIServer implements ABCIAPI {
 	
 	@Override
 	public ResponseEndBlock requestEndBlock(RequestEndBlock requestEndBlock) {
-		Log.log(Level.FINER, "[TENDERMINT] End TMBlock " + committingHeight, chain.getNodeId());
-		
-		//Force update method
-//		if (height > 0) {
-//			Log.log(Level.FINE, "[TENDERMINT] Block #" + height + " ended, going to update the cache");
-//			chain.updateCache(height);
-//		}
 		return ResponseEndBlock.newBuilder().build();
 	}
 
@@ -169,13 +157,11 @@ public class ABCIServer implements ABCIAPI {
 
 	@Override
 	public ResponseQuery requestQuery(RequestQuery requestQuery) {
-		Log.log(Level.FINER, "[TENDERMINT] Chain queried", chain.getNodeId());
 		return ResponseQuery.newBuilder().setCode(CodeType.OK).build();
 	}
 
 	@Override
 	public ResponseSetOption requestSetOption(RequestSetOption requestSetOption) {
-		Log.log(Level.FINER, "[TENDERMINT] requestSetOption " + requestSetOption.toString(), chain.getNodeId());
 		return ResponseSetOption.newBuilder().build();
 	}
 	

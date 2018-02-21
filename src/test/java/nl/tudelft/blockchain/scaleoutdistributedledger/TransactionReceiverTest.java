@@ -96,7 +96,7 @@ public class TransactionReceiverTest {
 		Proof proof = new Proof(transaction);
 		
 		this.transactionReceiver.receiveTransaction(new ProofMessage(proof));
-		this.transactionReceiver.deliverAllTransactionsThatCanBeDelivered();
+		this.transactionReceiver.deliverOneTransaction();
 		
 		assertTrue(this.localStore.getUnspent().contains(transaction));
 	}
@@ -105,13 +105,14 @@ public class TransactionReceiverTest {
 	 * Test for {@link TransactionReceiver#receiveTransaction}.
 	 */
 	@Test
+	@SneakyThrows
 	public void testReceiveTransaction_InvalidReceiver() {
 		// Create Transaction and Proof
 		Transaction transaction = this.createTransactionFromGenesis(this.bobNode, this.charlieNode, 100, 900);
 		Proof proof = new Proof(transaction);
 		
 		this.transactionReceiver.receiveTransaction(new ProofMessage(proof));
-		this.transactionReceiver.deliverAllTransactionsThatCanBeDelivered();
+		this.transactionReceiver.deliverOneTransaction();
 		assertFalse(this.localStore.getUnspent().contains(transaction));
 	}
 	
@@ -119,13 +120,14 @@ public class TransactionReceiverTest {
 	 * Test for {@link TransactionReceiver#receiveTransaction}.
 	 */
 	@Test
+	@SneakyThrows
 	public void testReceiveTransaction_InvalidAmount() {
 		// Create Transaction and Proof
 		Transaction transaction = this.createTransactionFromGenesis(this.bobNode, this.ownNode, 9999, 900);
 		Proof proof = new Proof(transaction);
 		
 		this.transactionReceiver.receiveTransaction(new ProofMessage(proof));
-		this.transactionReceiver.deliverAllTransactionsThatCanBeDelivered();
+		this.transactionReceiver.deliverOneTransaction();
 		
 		assertFalse(this.localStore.getUnspent().contains(transaction));
 	}

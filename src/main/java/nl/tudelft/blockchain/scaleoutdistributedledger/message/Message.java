@@ -1,7 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
@@ -55,11 +54,9 @@ public abstract class Message {
     		case UpdateNodesMessage.MESSAGE_ID:
     			return new UpdateNodesMessage();
     		case TransactionPatternMessage.MESSAGE_ID:
-    			try (ObjectInputStream ois = new ObjectInputStream(stream)) {
-    				return (Message) ois.readObject();
-    			} catch (ClassNotFoundException ex) {
-					throw new IOException("Unable to read TransactionPatternMessage from stream: ClassNotFound", ex);
-				}
+    			return TransactionPatternMessage.readFromStream(stream);
+    		case HandshakeMessage.MESSAGE_ID:
+    			return HandshakeMessage.readFromStream(stream);
 			default:
 				Log.log(Level.SEVERE, "Received unknown message ID: " + msgId);
 				throw new IllegalArgumentException("Unknown message type!");

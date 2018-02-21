@@ -3,6 +3,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.sockets;
 import java.util.HashMap;
 import java.util.logging.Level;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.Message;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
@@ -30,13 +31,15 @@ public class SocketClient {
     private EventLoopGroup group;
     
     private final int ownNodeId;
+    private final LocalStore localStore;
 
     /**
      * Constructor.
-     * @param ownNodeId - the id of the own node
+     * @param localStore - the local store
      */
-    public SocketClient(int ownNodeId) {
-    	this.ownNodeId = ownNodeId;
+    public SocketClient(LocalStore localStore) {
+    	this.localStore = localStore;
+    	this.ownNodeId = localStore == null ? -1 : localStore.getOwnNode().getId();
         this.connections = new HashMap<>();
         this.initSocketClient();
     }
@@ -57,7 +60,7 @@ public class SocketClient {
                         ChannelPipeline p = socketChannel.pipeline();
                         p.addLast(new MessageEncoder(),
                                 new MessageDecoder(SocketServer.MAX_MESSAGE_SIZE),
-                                new SocketClientHandler());
+                                new SocketClientHandler(localStore));
                     }
                 });
     }

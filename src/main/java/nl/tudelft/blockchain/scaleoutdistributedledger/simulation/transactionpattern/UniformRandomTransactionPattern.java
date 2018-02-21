@@ -7,6 +7,7 @@ import java.util.Random;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
+import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 
 /**
  * Random transaction pattern that uses a uniform distribution.
@@ -83,6 +84,20 @@ public class UniformRandomTransactionPattern extends RandomTransactionPattern {
 		return Math.min(amount, available);
 	}
 	
+	@Override
+	public CancellableInfiniteRunnable<LocalStore> getRunnable(LocalStore localStore) {
+		if (this.seed != null) {
+			this.random.setSeed(this.seed + localStore.getOwnNode().getId());
+		}
+		
+		return new CancellableInfiniteRunnable<LocalStore>(
+				localStore,
+				this::doAction,
+				this::timeUntilNextAction,
+				this::onStop
+		);
+	}
+	
 	private void writeObject(ObjectOutputStream stream) throws IOException {
 		stream.defaultWriteObject();
 	}
@@ -90,8 +105,5 @@ public class UniformRandomTransactionPattern extends RandomTransactionPattern {
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		stream.defaultReadObject();
 		this.random = new Random();
-		if (this.seed != null) {
-			this.random.setSeed(this.seed);
-		}
 	}
 }

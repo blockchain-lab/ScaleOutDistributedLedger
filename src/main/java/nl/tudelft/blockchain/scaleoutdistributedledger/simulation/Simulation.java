@@ -48,7 +48,7 @@ public class Simulation {
 	 * @param isMaster - if this simulation is the master
 	 */
 	public Simulation(boolean isMaster) {
-		this.socketClient = new SocketClient(-1);
+		this.socketClient = new SocketClient(null);
 		this.state = SimulationState.STOPPED;
 		this.nodes = new HashMap<>();
 		this.isMaster = isMaster;
