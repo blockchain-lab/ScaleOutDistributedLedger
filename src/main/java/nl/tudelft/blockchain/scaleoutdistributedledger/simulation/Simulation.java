@@ -88,7 +88,8 @@ public class Simulation {
 				Node node = nodeEntry.getValue();
 				int nodeNumber = nodeEntry.getKey();
 
-				Application app = new Application(true);
+				//TODO IMPORTANT CRITICAL - DISABLES TENDERMINT
+				Application app = new Application(false);
 				List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
 
 				try {

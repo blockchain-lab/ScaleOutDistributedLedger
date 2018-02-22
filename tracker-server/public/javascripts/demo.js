@@ -8,6 +8,7 @@ $(document).ready(function() {
         $(".transactions").text(data.numbers.numberOfTransactions);
         $(".chains").text(data.numbers.averageNumberOfChains);
         $(".blocks").text(data.numbers.averageNumberOfBlocks);
+        $(".setC").text(data.numbers.averageSetCSize);
     };
 
     window.odometerOptions = {

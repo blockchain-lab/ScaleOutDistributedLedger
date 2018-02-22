@@ -48,11 +48,11 @@ router.post('/register-node', (req, res) => {
 });
 
 router.post('/register-transaction', (req, res) => {
-	if(!isPresent(req.body.from) || !isPresent(req.body.to) || !isPresent(req.body.amount)|| !isPresent(req.body.remainder)|| !isPresent(req.body.numberOfChains) || !isPresent(req.body.numberOfBlocks)) {
+	if(!isPresent(req.body.from) || !isPresent(req.body.to) || !isPresent(req.body.amount)|| !isPresent(req.body.remainder)|| !isPresent(req.body.chainsNr) || !isPresent(req.body.blocksNr)) {
 		res.status(403);
-		res.json({success: false, err: 'Specify from, to, amount, remainder, remainder, numberOfChains and numberOfBlocks'});
+		res.json({success: false, err: 'Specify from, to, amount, remainder, remainder, numberOfChains and blocksNr'});
 	} else {
-		const tx = new Transaction(req.body.from, req.body.to, req.body.amount, req.body.remainder, req.body.numberOfChains, req.body.numberOfBlocks);
+		const tx = new Transaction(req.body.from, req.body.to, req.body.amount, req.body.remainder, req.body.chainsNr, req.body.blocksNr, req.body.knowledge, req.body.setC);
 		app.transactionList.addTransaction(tx);
 		updateSseClients();
         res.json({success: true});
@@ -65,7 +65,7 @@ router.post('/register-transactions', (req, res) => {
         res.json({success: false, err: 'Specify array of transactions'});
     } else {
         req.body.transactions.forEach(tx => {
-            app.transactionList.addTransaction(new Transaction(tx.from, tx.to, tx.amount, tx.remainder, tx.numberOfChains, tx.numberOfBlocks));
+            app.transactionList.addTransaction(new Transaction(tx.from, tx.to, tx.amount, tx.remainder, tx.chainsNr, tx.blocksNr, tx.knowledge, tx.setC));
         });
         updateSseClients();
         res.json({success: true});
@@ -164,7 +164,8 @@ router.post('/write-data', (req, res) => {
         header: [
             {id: 'numberOfTransactions', title:'numberOfTransactions'},
             {id: 'averageNumberOfBlocks', title:'averageNumberOfBlocks'},
-            {id: 'averageNumberOfChains', title:'averageNumberOfChains'}
+            {id: 'averageNumberOfChains', title:'averageNumberOfChains'},
+            {id: 'averageSetCSize', title:'averageSetCSize'}
         ]
     });
     fs.writeFile('./nodelist.json', JSON.stringify(app.nodeList, null, 2) , 'utf-8');

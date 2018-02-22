@@ -13,10 +13,9 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.Simulation;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
-import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.UniformRandomTransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
@@ -24,35 +23,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
  * Main class for running a simulation.
  */
 public final class SimulationMain {
-	//SETTINGS
-	//number of local nodes to generate
-	public static final int LOCAL_NODES_NUMBER = 30;
-	//number of total nodes in the system
-	public static final int TOTAL_NODES_NUMBER = 30;
-	//number from which our nodes are (e.g if we run nodes (2, 3, 4), then this should be 2
-	public static final int NODES_FROM_NUMBER = 0;
-	//Whether this main is the master coordinator of the simulation
-	//Note that the master should always be started first
-	public static final boolean IS_MASTER = true;
-	//The duration of the simulation in seconds.
-	public static final int SIMULATION_DURATION = 6000;
-	//Maximum number of blocks waiting to be sent (no new transaction will be created in the mean time)
-	public static final int MAX_BLOCKS_PENDING = 500;
-	//The initial delay in milliseconds to wait before checking what blocks can be sent.
-	public static final long INITIAL_SENDING_DELAY = 2000;
-	//The time in milliseconds between send checks.
-	public static final long SENDING_WAIT_TIME = 2000;
-	//The time between checking to deliver sent messages.
-	public static final long DELIVER_RECHECK_TIME = 200;
-	//The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
-	public static final int REQUIRED_COMMITS = 2;
-	// The number of transactions that are registered in one batch.
-	public static final int REGISTER_TRANSACTIONS_EVERY = 20;
-	//The transaction pattern that is used.
-	public static final ITransactionPattern TRANSACTION_PATTERN = new UniformRandomTransactionPattern(10, 10, 500, 500, 10);
-	//The initial amount of money each node has.
-	public static final long INITIAL_MONEY = 1000000;
-
 	private SimulationMain() {}
 	
 	/**
@@ -60,7 +30,9 @@ public final class SimulationMain {
 	 * @throws Exception - If an exception occurs.
 	 */
 	public static void main(String[] args) throws Exception {
-		List<Integer> nodeNumbersToRunLocally = IntStream.rangeClosed(NODES_FROM_NUMBER, NODES_FROM_NUMBER + LOCAL_NODES_NUMBER - 1)
+		List<Integer> nodeNumbersToRunLocally = IntStream.rangeClosed(
+				Settings.INSTANCE.nodesFromNumber,
+				Settings.INSTANCE.nodesFromNumber + Settings.INSTANCE.localNodesNumber - 1)
 				.boxed().collect(Collectors.toList());
 
 		// --- PHASE 0: cleanup ---
@@ -83,7 +55,7 @@ public final class SimulationMain {
 
 		//update nodes from the tracker
 		Map<Integer, Node> nodes = TrackerHelper.getNodes();
-		Block genesisBlock = TendermintHelper.generateGenesisBlock(INITIAL_MONEY, nodes);
+		Block genesisBlock = TendermintHelper.generateGenesisBlock(Settings.INSTANCE.initialMoney, nodes);
 
 		//generate genesis.json for all local nodes
 		TendermintHelper.generateGenesisFiles(new Date(),
@@ -92,8 +64,8 @@ public final class SimulationMain {
 
 
 		// --- PHASE 3: start the actual simulation ---
-		Simulation simulation = new Simulation(IS_MASTER);
-		simulation.setTransactionPattern(TRANSACTION_PATTERN);
+		Simulation simulation = new Simulation(Settings.INSTANCE.isMaster);
+		simulation.setTransactionPattern(Settings.INSTANCE.getTransactionPattern());
 		simulation.runNodesLocally(nodes, ownNodes, genesisBlock, nodeToKeyPair);
 
 		// Wait for all nodes to have initialized
@@ -106,7 +78,7 @@ public final class SimulationMain {
 
 
 		// --- PHASE 4: stop the simulation ---
-		Thread.sleep(SIMULATION_DURATION * 1000);
+		Thread.sleep(Settings.INSTANCE.simulationDuration * 1000);
 
 		//Stop the simulation and wait for nodes to stop.
 		simulation.stop();
@@ -136,7 +108,7 @@ public final class SimulationMain {
 	 */
 	private static void waitForInitialize() throws IOException, InterruptedException {
 		Log.log(Level.INFO, "Waiting on nodes to initialize");
-		while (TOTAL_NODES_NUMBER != TrackerHelper.getRunning()) {
+		while (Settings.INSTANCE.totalNodesNumber != TrackerHelper.getRunning()) {
 			Thread.sleep(1000);
 		}
 		Log.log(Level.INFO, "All nodes have initialized");
@@ -149,7 +121,7 @@ public final class SimulationMain {
 	 */
 	private static void waitForRegister() throws IOException, InterruptedException {
 		Log.log(Level.INFO, "Waiting on nodes to register");
-		while (TOTAL_NODES_NUMBER != TrackerHelper.getRegistered()) {
+		while (Settings.INSTANCE.totalNodesNumber != TrackerHelper.getRegistered()) {
 			Thread.sleep(1000);
 		}
 		Log.log(Level.INFO, "All nodes have registered");
@@ -163,11 +135,11 @@ public final class SimulationMain {
 	 */
 	private static Map<Integer, OwnNode> registerOwnNodes(Map<Integer, Ed25519Key> nodeToKeyPair) throws IOException {
 		Map<Integer, byte[]> localPublicKeys = convertToPublicKeys(nodeToKeyPair);
-		Map<Integer, OwnNode> ownNodes = new HashMap<>(LOCAL_NODES_NUMBER);
+		Map<Integer, OwnNode> ownNodes = new HashMap<>(Settings.INSTANCE.localNodesNumber);
 
-		for (int i = 0; i < LOCAL_NODES_NUMBER; i++) {
+		for (int i = 0; i < Settings.INSTANCE.localNodesNumber; i++) {
 			int basePort = Application.NODE_PORT + i * 4;
-			int nodeID = NODES_FROM_NUMBER + i;
+			int nodeID = Settings.INSTANCE.nodesFromNumber + i;
 			ownNodes.put(nodeID, TrackerHelper.registerNode(basePort, localPublicKeys.get(nodeID), nodeID));
 		}
 		return ownNodes;
@@ -183,14 +155,14 @@ public final class SimulationMain {
 
 		// Reset the tracker server when you are running the tracker server
 		try {
-			if (IS_MASTER) {
+			if (Settings.INSTANCE.isMaster) {
 				TrackerHelper.resetTrackerServer();
 			} else {
 				// Check if the tracker is running
 				TrackerHelper.getStatus();
 			}
 		} catch (IOException e) {
-			Log.log(Level.SEVERE, "Tracker not running, please start it on '" + Application.TRACKER_SERVER_ADDRESS + "'");
+			Log.log(Level.SEVERE, "Tracker not running, please start it on '" + Settings.INSTANCE.trackerUrl + "'");
 			Log.log(Level.INFO, "The tracker can be started using `npm start` in the tracker-server folder");
 			return false;
 		}

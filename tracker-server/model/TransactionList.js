@@ -12,6 +12,7 @@ class TransactionList {
         this.numberOfTransactions = 0;
         this.numberOfChains = 0;
         this.numberOfBlocks = 0;
+        this.setCSize = {};
         this.numbersArray = [];
     }
 
@@ -23,6 +24,7 @@ class TransactionList {
         this.numberOfTransactions += 1;
         this.numberOfChains += transaction.numberOfChains;
         this.numberOfBlocks += transaction.numberOfBlocks;
+        this.setCSize[transaction.from] = transaction.setC.length;
 
         // Make sure we use a consistent key for all transactions between the same two nodes
         let key = [transaction.from, transaction.to];
@@ -77,19 +79,29 @@ class TransactionList {
 
     /**
      * Returns a JSON object containing some interesting number.
-     * @returns {{numberOfTransactions: number, averageNumberOfBlocks: number, averageNumberOfChains: number}}
+     * @returns {{numberOfTransactions: number, averageNumberOfBlocks: number, averageNumberOfChains: number, averageSetCSize: number}}
      */
     getNumbers() {
         let averageNumberOfChains = 0,
-            averageNumberOfBlocks = 0;
+            averageNumberOfBlocks = 0,
+            averageSetCSize = 0,
+            sumSetCSize = 0,
+            count = 0;
         if(this.numberOfTransactions !== 0) {
             averageNumberOfBlocks = this.numberOfBlocks / this.numberOfTransactions;
             averageNumberOfChains = this.numberOfChains / this.numberOfTransactions;
+            
+            for (var key in this.setCSize) {
+                sumSetCSize += this.setCSize[key];
+                count++;
+            }
+            averageSetCSize = sumSetCSize / count;
         }
         return {
             numberOfTransactions: this.numberOfTransactions,
             averageNumberOfBlocks: averageNumberOfBlocks,
-            averageNumberOfChains: averageNumberOfChains
+            averageNumberOfChains: averageNumberOfChains,
+            averageSetCSize: averageSetCSize
         };
     }
 
@@ -98,7 +110,7 @@ class TransactionList {
      */
     addNumbersToArray() {
         const numbers = this.getNumbers();
-        if(numbers.numberOfTransactions !== 0 || numbers.averageNumberOfBlocks !== 0 || numbers.averageNumberOfChains !== 0) {
+        if(numbers.numberOfTransactions !== 0 || numbers.averageNumberOfBlocks !== 0 || numbers.averageNumberOfChains !== 0 || numbers.averageSetCSize !== 0) {
             this.numbersArray.push(numbers);
         }
     }

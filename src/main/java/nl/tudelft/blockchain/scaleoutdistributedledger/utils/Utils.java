@@ -3,23 +3,18 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Base64;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
-
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
 /**
  * Class for helper functions.
  */
 public final class Utils {
-	@SuppressWarnings("unused")
-	public static final int NODEID_LENGTH = SimulationMain.TOTAL_NODES_NUMBER < 255 ? 1 : 2;
+	public static final int NODEID_LENGTH = Settings.INSTANCE.totalNodesNumber < 255 ? 1 : 2;
 	
 	private static final char[] HEX = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
@@ -31,14 +26,13 @@ public final class Utils {
 	
 	/**
 	 * Writes the given nodeId to the given stream, either as a byte or as a short depending on
-	 * {@link SimulationMain#TOTAL_NODES_NUMBER}.
+	 * {@link SimulationMain#totalNodesNumber}.
 	 * @param stream - the stream to write to
 	 * @param nodeId - the nodeId to write
 	 * @throws IOException - If writing to the stream triggers an IOException.
 	 */
-	@SuppressWarnings("unused")
 	public static void writeNodeId(DataOutput stream, int nodeId) throws IOException {
-		if (SimulationMain.TOTAL_NODES_NUMBER < 255) {
+		if (Settings.INSTANCE.totalNodesNumber < 255) {
 			stream.writeByte(nodeId);
 		} else {
 			stream.writeShort(nodeId);
@@ -51,9 +45,8 @@ public final class Utils {
 	 * @return - the read node id
 	 * @throws IOException - If reading from the stream causes an IOException.
 	 */
-	@SuppressWarnings("unused")
 	public static int readNodeId(DataInput stream) throws IOException {
-		if (SimulationMain.TOTAL_NODES_NUMBER < 255) {
+		if (Settings.INSTANCE.totalNodesNumber < 255) {
 			byte b = stream.readByte();
 			return b == -1 ? -1 : b & 0xFF;
 		} else {
@@ -68,9 +61,8 @@ public final class Utils {
 	 * @param index - the index to read at
 	 * @return - the read node id
 	 */
-	@SuppressWarnings("unused")
 	public static int readNodeId(byte[] bytes, int index) {
-		if (SimulationMain.TOTAL_NODES_NUMBER < 255) {
+		if (Settings.INSTANCE.totalNodesNumber < 255) {
 			byte b = bytes[index];
 			return b == -1 ? -1 : b & 0xFF;
 		} else {

@@ -3,6 +3,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.utils;
 import java.io.ByteArrayOutputStream;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
 /**
  * Extension of a ByteArrayOutputStream with some convenience methods.
@@ -70,12 +71,11 @@ public class SDLByteArrayOutputStream extends ByteArrayOutputStream {
 	
 	/**
 	 * Writes the given nodeId to this stream, either as a byte or as a short depending on
-	 * {@link SimulationMain#TOTAL_NODES_NUMBER}.
+	 * {@link Settings#totalNodesNumber}.
 	 * @param nodeId - the nodeId to write
 	 */
-	@SuppressWarnings("unused")
 	public void writeNodeId(int nodeId) {
-		if (SimulationMain.TOTAL_NODES_NUMBER < 255) {
+		if (Settings.INSTANCE.totalNodesNumber < 255) {
 			write(nodeId);
 		} else {
 			writeShort(nodeId);

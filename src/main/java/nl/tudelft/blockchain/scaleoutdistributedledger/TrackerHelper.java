@@ -6,6 +6,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.TransactionRegistration;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -35,7 +36,7 @@ import java.util.logging.Level;
  * Helper class for interacting with the tracker.
  */
 public final class TrackerHelper {
-	private static final String TRACKER_URL = String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT);
+//	public static final String TRACKER_URL = String.format("http://%s:%d", Application.TRACKER_SERVER_ADDRESS, Application.TRACKER_SERVER_PORT);
 
 	private static volatile Queue<TransactionRegistration> transactionsToRegister = new LinkedBlockingQueue<>();
 	private static final CloseableHttpClient CLIENT = HttpClientBuilder.create().build();
@@ -174,15 +175,16 @@ public final class TrackerHelper {
 	/**
 	 * Registers a transaction to a queue, ready to be send to the server.
 	 * @param proof - the proof used to send the transaction.
+	 * @param localStore - the local store
 	 */
-	public static void registerTransaction(Proof proof) {
-		transactionsToRegister.add(new TransactionRegistration(proof.getTransaction(), proof.getChainUpdates().size(), proof.getNumberOfBlocks()));
+	public static void registerTransaction(Proof proof, LocalStore localStore) {
+		transactionsToRegister.add(new TransactionRegistration(proof.getTransaction(), proof.getChainUpdates().size(), proof.getNumberOfBlocks(), localStore));
 
 		//Check if we should send both before and in the synchronized block, to prevent blocking.
-		if (transactionsToRegister.size() < SimulationMain.REGISTER_TRANSACTIONS_EVERY) return;
+		if (transactionsToRegister.size() < Settings.INSTANCE.registerTransactionsEvery) return;
 
 		synchronized (TrackerHelper.class) {
-			if (transactionsToRegister.size() < SimulationMain.REGISTER_TRANSACTIONS_EVERY) return;
+			if (transactionsToRegister.size() < Settings.INSTANCE.registerTransactionsEvery) return;
 
 			//Swap the queue out with a new one
 			Queue<TransactionRegistration> toSend = transactionsToRegister;
@@ -213,15 +215,17 @@ public final class TrackerHelper {
 			json.put("to", next.getTransaction().getReceiver().getId());
 			json.put("amount", next.getTransaction().getAmount());
 			json.put("remainder", next.getTransaction().getRemainder());
-			json.put("numberOfChains", next.getNumberOfChains());
-			json.put("numberOfBlocks", next.getNumberOfBlocks());
+			json.put("chainsNr", next.getNumberOfChains());
+			json.put("blocksNr", next.getNumberOfBlocks());
+			json.put("knowledge", next.getKnowledge());
+			json.put("setC", next.getSetC());
 			transactionArray.put(json);
 		}
 		JSONObject json = new JSONObject();
 		json.put("transactions", transactionArray);
 
 		StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-		HttpPost request = new HttpPost(TRACKER_URL + "/register-transactions");
+		HttpPost request = new HttpPost(Settings.INSTANCE.trackerUrl + "/register-transactions");
 		request.setEntity(requestEntity);
 		JSONObject response = new JSONObject(IOUtils.toString(CLIENT.execute(request).getEntity().getContent()));
 		if (response.getBoolean("success")) {
@@ -240,7 +244,7 @@ public final class TrackerHelper {
 	 */
 	public static boolean postToTracker(String endPoint, JSONObject json) throws IOException {
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpPost request = new HttpPost(TRACKER_URL + endPoint);
+			HttpPost request = new HttpPost(Settings.INSTANCE.trackerUrl + endPoint);
 
 			if (json != null) {
 				StringEntity requestEntity = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
@@ -260,7 +264,7 @@ public final class TrackerHelper {
 	 */
 	public static JSONObject getToTracker(String endPoint) throws IOException {
 		try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-			HttpGet request = new HttpGet(TRACKER_URL + endPoint);
+			HttpGet request = new HttpGet(Settings.INSTANCE.trackerUrl + endPoint);
 			return new JSONObject(IOUtils.toString(client.execute(request).getEntity().getContent()));
 		}
 	}

@@ -6,6 +6,7 @@ import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.message.ProofMessage;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.validation.ValidationException;
 
@@ -47,8 +48,9 @@ public class TransactionReceiver extends Thread {
 	 */
 	protected void deliverOneTransaction() throws InterruptedException {
 		ProofMessage proofMsg = queue.take();
-		while (proofMsg.getRequiredHeight() > localStore.getMainChain().getCurrentHeight()) {
-			Thread.sleep(SimulationMain.DELIVER_RECHECK_TIME);
+		final long required = proofMsg.getRequiredHeight();
+		while (required > localStore.getMainChain().getCurrentHeight()) {
+			Thread.sleep(Settings.INSTANCE.deliverRecheckTime);
 		}
 		deliverProof(proofMsg);
 	}
@@ -114,7 +116,7 @@ public class TransactionReceiver extends Thread {
 
 		Log.log(Level.INFO, "Received and validated transaction: " + proof.getTransaction());
 		proof.applyUpdates(localStore);
-		TrackerHelper.registerTransaction(proof);
+		TrackerHelper.registerTransaction(proof, localStore);
 
 		if (proof.getTransaction().getAmount() > 0) {
 			localStore.addUnspentTransaction(proof.getTransaction());

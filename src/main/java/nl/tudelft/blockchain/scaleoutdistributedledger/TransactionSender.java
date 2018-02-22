@@ -14,6 +14,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.NamedThreadFactory;
@@ -42,7 +43,7 @@ public class TransactionSender implements Runnable {
 		this.chain = localStore.getOwnNode().getChain();
 		NamedThreadFactory ntf = new NamedThreadFactory("transaction-sender-" + localStore.getOwnNode().getId());
 		this.executor = Executors.newScheduledThreadPool(1, ntf);
-		this.executor.schedule(this, SimulationMain.INITIAL_SENDING_DELAY, TimeUnit.MILLISECONDS);
+		this.executor.schedule(this, Settings.INSTANCE.initialSendingDelay, TimeUnit.MILLISECONDS);
 	}
 	
 	@Override
@@ -51,9 +52,9 @@ public class TransactionSender implements Runnable {
 		try {
 			sendAllBlocksThatCanBeSent();
 		} catch (Exception ex) {
-			Log.log(Level.SEVERE, "Uncaught exception in transaction sender!");
+			Log.log(Level.SEVERE, "Uncaught exception in transaction sender!", ex);
 		} finally {
-			executor.schedule(this, SimulationMain.SENDING_WAIT_TIME, TimeUnit.MILLISECONDS);
+			executor.schedule(this, Settings.INSTANCE.sendingWaitTime, TimeUnit.MILLISECONDS);
 		}
 	}
 	
@@ -75,10 +76,10 @@ public class TransactionSender implements Runnable {
 		}
 		
 		//Not enough commits
-		if (committed.size() < SimulationMain.REQUIRED_COMMITS) return;
+		if (committed.size() < Settings.INSTANCE.requiredCommits) return;
 		
 		//Send all the blocks that we haven't sent up to the committed block (inclusive)
-		int lastToSend = committed.get(committed.size() - SimulationMain.REQUIRED_COMMITS);
+		int lastToSend = committed.get(committed.size() - Settings.INSTANCE.requiredCommits);
 		for (int blockNr = alreadySent + 1; blockNr <= lastToSend; blockNr++) {
 			sendBlock(chain.getBlocks().get(blockNr));
 		}

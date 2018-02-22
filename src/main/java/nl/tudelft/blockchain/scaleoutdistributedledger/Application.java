@@ -18,8 +18,8 @@ import lombok.Getter;
  * Class to run a node.
  */
 public class Application {
-	public static final String TRACKER_SERVER_ADDRESS = "localhost";
-	public static final int TRACKER_SERVER_PORT = 3000;
+//	public static final String TRACKER_SERVER_ADDRESS = "localhost"; //"10.213.0.102";
+//	public static final int TRACKER_SERVER_PORT = 3000;
 	public static final int NODE_PORT = 40000;
 	
 	@Getter

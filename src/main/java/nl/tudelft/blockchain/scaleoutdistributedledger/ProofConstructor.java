@@ -118,9 +118,6 @@ public class ProofConstructor {
 		//low to high block numbers. This means that the given list will contain all elements that we already have + some extra.
 		//So we can start at the index equal to what we already have.
 		
-		assert current.containsAll(toAdd);
-		assert current.size() < toAdd.size();
-		
 		int startBlockNr = current.size();
 		List<Block> added = toAdd.subList(startBlockNr, toAdd.size());
 		current.addAll(added);

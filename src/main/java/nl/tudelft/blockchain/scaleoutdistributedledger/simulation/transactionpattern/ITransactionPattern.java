@@ -1,13 +1,13 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.SimulationMain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Chain;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.CancellableInfiniteRunnable;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 
@@ -26,7 +26,9 @@ public interface ITransactionPattern extends Serializable {
 	/**
 	 * @return - the number of blocks to create before committing to the main chain
 	 */
-	public int getCommitEvery();
+	public default int getCommitEvery() {
+		return Settings.INSTANCE.commitEvery;
+	}
 	
 	/**
 	 * Selects the node to send money to.
@@ -52,7 +54,7 @@ public interface ITransactionPattern extends Serializable {
 		int ownNodeId = ownNode.getId();
 
 		// Make sure we have some room
-		if (localStore.getApplication().getTransactionSender().blocksWaiting() >= SimulationMain.MAX_BLOCKS_PENDING) {
+		if (localStore.getApplication().getTransactionSender().blocksWaiting() >= Settings.INSTANCE.maxBlocksPending) {
 			Log.log(Level.INFO, "Too many blocks pending, skipping transaction creation!", ownNodeId);
 			return;
 		}
@@ -115,7 +117,7 @@ public interface ITransactionPattern extends Serializable {
 	 */
 	public default void commitExtraEmpty(LocalStore localStore) {
 		Chain ownChain = localStore.getOwnNode().getChain();
-		for (int i = 0; i < SimulationMain.REQUIRED_COMMITS + 1; i++) {
+		for (int i = 0; i < Settings.INSTANCE.requiredCommits + 1; i++) {
 			Block block = ownChain.appendNewBlock();
 			block.commit(localStore);
 		}
@@ -125,7 +127,9 @@ public interface ITransactionPattern extends Serializable {
 	 * @param localStore - the local store
 	 * @return             the time until the next action
 	 */
-	public long timeUntilNextAction(LocalStore localStore);
+	public default long timeUntilNextAction(LocalStore localStore) {
+		return Settings.INSTANCE.roundTime;
+	}
 	
 	/**
 	 * Called once whenever we stop running.

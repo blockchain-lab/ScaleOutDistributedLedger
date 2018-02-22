@@ -18,7 +18,7 @@ import java.util.logging.Level;
  * Handler for socket server.
  */
 public class SocketServerHandler extends ChannelInboundHandlerAdapter {
-
+	public static final boolean USE_TWO_WAY_SOCKETS = false;
 	private final LocalStore localStore;
 
 	/**
@@ -35,20 +35,30 @@ public class SocketServerHandler extends ChannelInboundHandlerAdapter {
 			((Message) msg).handle(localStore);
 			
 			if (msg instanceof HandshakeMessage) {
-				int senderId = ((HandshakeMessage) msg).getSenderId();
-				Node node = localStore.getNode(senderId);
-
-				if (node == null) {
-					Log.log(Level.WARNING, "Unable to find node " + senderId);
-				} else {
-					Map<Node, Channel> connections = localStore.getApplication().getTransactionSender().getSocketClient().getConnections();
-					if (connections.putIfAbsent(node, ctx.channel()) != null) {
-						Log.log(Level.WARNING, "There are 2 sockets connecting node " + localStore.getOwnNode().getId() + " and " + node.getId());
-					}
-				}
+				handleHandshake(ctx, (HandshakeMessage) msg);
 			}
 		} else {
 			Log.log(Level.SEVERE, "Invalid message, not a message instance");
+		}
+	}
+
+	/**
+	 * Handles a handshake message.
+	 * @param ctx - the context
+	 * @param msg - the handshake message
+	 */
+	private void handleHandshake(ChannelHandlerContext ctx, HandshakeMessage msg) {
+		if (!USE_TWO_WAY_SOCKETS) return;
+		
+		Node node = localStore.getNode(msg.getMessageId());
+
+		if (node == null) {
+			Log.log(Level.WARNING, "Unable to find node " + msg.getMessageId());
+		} else {
+			Map<Node, Channel> connections = localStore.getApplication().getTransactionSender().getSocketClient().getConnections();
+			if (connections.putIfAbsent(node, ctx.channel()) != null) {
+				Log.log(Level.WARNING, "There are 2 sockets connecting node " + localStore.getOwnNode().getId() + " and " + node.getId());
+			}
 		}
 	}
 

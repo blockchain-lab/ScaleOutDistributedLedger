@@ -31,6 +31,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
@@ -40,8 +41,6 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 public final class TendermintHelper {
 
 	private static final String NODE_FOLDER_NAME_PREFIX = "node";
-	//the directory to store the file (will create separate directories in it for each node)
-	private static final String TENDERMINT_NODES_FOLDER = "Z:\\tendermint-nodes";
 	//the executable binary of tendermint
 	private static final String TENDERMINT_BINARY = "./tendermint.exe";
 	//The level at which tendermint logs (error, info, debug, none). E.g. "consensus:debug,*:error"
@@ -132,7 +131,7 @@ public final class TendermintHelper {
 	}
 
 	private static String getNodeFilesLocation(int nodeNumber) {
-		return new File(TENDERMINT_NODES_FOLDER, NODE_FOLDER_NAME_PREFIX + nodeNumber).toString();
+		return new File(Settings.INSTANCE.tendermintNodesFolder, NODE_FOLDER_NAME_PREFIX + nodeNumber).toString();
 	}
 
 	/**
@@ -326,7 +325,7 @@ public final class TendermintHelper {
 	 */
 	private static Process startProcess(String command, int nodeNumber) throws IOException {
 		//Determine the home folder for tendermint
-		File tmHomeFile = new File(TENDERMINT_NODES_FOLDER, NODE_FOLDER_NAME_PREFIX + nodeNumber);
+		File tmHomeFile = new File(Settings.INSTANCE.tendermintNodesFolder, NODE_FOLDER_NAME_PREFIX + nodeNumber);
 		String tmHome = tmHomeFile.toString();
 		
 		ProcessBuilder pb = new ProcessBuilder();
@@ -368,7 +367,7 @@ public final class TendermintHelper {
 	 * @param nodeNumber    - the node to write the config for
 	 */
 	public static void writeConfig(int nodeBasePort, List<String> peerAddresses, int nodeNumber) {
-		File nodeFolder = new File(TENDERMINT_NODES_FOLDER, NODE_FOLDER_NAME_PREFIX + nodeNumber);
+		File nodeFolder = new File(Settings.INSTANCE.tendermintNodesFolder, NODE_FOLDER_NAME_PREFIX + nodeNumber);
 		File configFile = new File(nodeFolder, "config.toml");
 		Map<String, Object> toWrite = new HashMap<>();
 		toWrite.put("proxy_app", "tcp://127.0.0.1:" + (nodeBasePort + 3));
@@ -461,7 +460,7 @@ public final class TendermintHelper {
 	 */
 	public static void cleanTendermintFiles() {
 		try {
-			FileUtils.deleteDirectory(new File(TENDERMINT_NODES_FOLDER));
+			FileUtils.deleteDirectory(new File(Settings.INSTANCE.tendermintNodesFolder));
 		} catch (IOException ex) {
 			Log.log(Level.WARNING, "Could not delete Tendermint folder");
 		}
