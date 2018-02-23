@@ -9,6 +9,7 @@ class TransactionList {
     constructor() {
         // Store transactions in a dictionary
         this.transactions = {};
+        this.transactions2 = [];
         this.numberOfTransactions = 0;
         this.numberOfChains = 0;
         this.numberOfBlocks = 0;
@@ -24,7 +25,8 @@ class TransactionList {
         this.numberOfTransactions += 1;
         this.numberOfChains += transaction.numberOfChains;
         this.numberOfBlocks += transaction.numberOfBlocks;
-        this.setCSize[transaction.from] = transaction.setC.length;
+        this.setCSize[transaction.to] = transaction.setC.length;
+        this.transactions2.push(transaction);
 
         // Make sure we use a consistent key for all transactions between the same two nodes
         let key = [transaction.from, transaction.to];

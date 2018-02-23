@@ -13,6 +13,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.NotEnoughMoney
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
 import lombok.Getter;
 
@@ -80,14 +81,8 @@ public class TransactionCreator {
 	 * @return the best TransactionTuple or null if the sender doesn't have enough money
 	 */
 	protected TransactionTuple bestSources() {
-		//Step 1: Group all unspent transactions that have the same chain requirements.
-		Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
-		for (Transaction transaction : localStore.getUnspent()) {
-			TransactionTuple tuple = new TransactionTuple(this, transaction);
-			candidateMap.merge(tuple.getChainsRequired(), tuple, TransactionTuple::mergeNonOverlappingSameChainsTuple);
-		}
-		
-		Collection<TransactionTuple> candidates = candidateMap.values();
+		//Step 1: Collect candidate transactions
+		Collection<TransactionTuple> candidates = collectCandidates();
 
 		//Step 2: Check if we can cover the transaction amount with a single transaction (group).
 		firstRound(candidates);
@@ -125,6 +120,34 @@ public class TransactionCreator {
 		
 		//We didn't find an absolute best.
 		return currentBestTuple;
+	}
+
+	/**
+	 * Collects candidate transactions.
+	 * If {@link Settings#grouping} is enabled, then transactions with the same requirements are
+	 * grouped together.
+	 * @return - a collection with transaction candidates.
+	 */
+	protected Collection<TransactionTuple> collectCandidates() {
+		final Set<Transaction> unspent = localStore.getUnspent();
+		if (Settings.INSTANCE.grouping) {
+			//Group all unspent transactions that have the same chain requirements.
+			Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
+			for (Transaction transaction : unspent) {
+				TransactionTuple tuple = new TransactionTuple(this, transaction);
+				candidateMap.merge(tuple.getChainsRequired(), tuple, TransactionTuple::mergeNonOverlappingSameChainsTuple);
+			}
+			
+			Collection<TransactionTuple> candidates = candidateMap.values();
+			return candidates;
+		} else {
+			//No grouping, just convert them into tuples
+			Set<TransactionTuple> candidates = new HashSet<>(unspent.size());
+			for (Transaction transaction : unspent) {
+				candidates.add(new TransactionTuple(this, transaction));
+			}
+			return candidates;
+		}
 	}
 
 	/**

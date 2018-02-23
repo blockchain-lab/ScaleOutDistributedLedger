@@ -48,6 +48,9 @@ public class Settings {
 	//The initial amount of money each node has.
 	public long initialMoney = 1000000;
 	
+	//If transactions should be grouped
+	public boolean grouping;
+	
 	//------------------------------------ Transaction sender ------------------------------------
 	public String _____TRANSACTION_SENDER_____ = "";
 	//The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.
