@@ -149,7 +149,7 @@ public class Proof {
 	private void verify(Transaction transaction, LocalStore localStore) throws ProofValidationException {
 		if (transaction.isLocallyVerified()) return;
 
-		int blockNumber = transaction.getBlockNumber().orElse(-1);
+		int blockNumber = transaction.getBlockNumber();
 		if (blockNumber == -1) {
 			throw new ProofValidationException("The transaction has no block number, so we cannot validate it.");
 		}
@@ -234,7 +234,7 @@ public class Proof {
 	 * @throws ProofValidationException - If the given transaction is not a valid genesis transaction.
 	 */
 	private void verifyGenesisTransaction(Transaction transaction, LocalStore localStore) throws ProofValidationException {
-		int blockNumber = transaction.getBlockNumber().orElse(-1);
+		int blockNumber = transaction.getBlockNumber();
 		if (blockNumber != 0) {
 			throw new ProofValidationException("Genesis transaction " + transaction + " is invalid: block number is not 0");
 		}
@@ -301,7 +301,7 @@ public class Proof {
 		
 		//TODO Do we want to cut off at known blocks?
 		int alreadyKnown = metaKnowledge.getFirstUnknownBlockNumber(owner);
-		int blockNumber = transaction.getBlockNumber().getAsInt();
+		int blockNumber = transaction.getBlockNumber();
 		if (alreadyKnown >= blockNumber) return;
 		
 		chains.add(owner.getChain());
@@ -325,9 +325,8 @@ public class Proof {
 		if (owner == null || owner == receiver) return;
 		
 		//Skip transactions that are already known
-		MetaKnowledge metaKnowledge = receiver.getMetaKnowledge();
-		int lastKnown = metaKnowledge.getLastKnownBlockNumber(owner);
-		int blockNumber = transaction.getBlockNumber().getAsInt();
+		final int lastKnown = receiver.getMetaKnowledge().getLastKnownBlockNumber(owner.getId());
+		final int blockNumber = transaction.getBlockNumber();
 		if (lastKnown >= blockNumber) return;
 		
 		//Store the highest block number.

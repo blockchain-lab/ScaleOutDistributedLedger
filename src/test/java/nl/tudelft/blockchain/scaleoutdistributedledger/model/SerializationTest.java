@@ -164,7 +164,7 @@ public class SerializationTest {
 		assertEquals(this.transaction.getAmount(), transactionMessage.getAmount());
 		assertEquals(this.transaction.getRemainder(), transactionMessage.getRemainder());
 		assertEquals(this.transaction.getHash(), transactionMessage.getHash());
-		assertEquals(this.transaction.getBlockNumber().getAsInt(), transactionMessage.getBlockNumber());
+		assertEquals(this.transaction.getBlockNumber(), transactionMessage.getBlockNumber());
 	}
 	
 	/**

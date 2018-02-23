@@ -43,11 +43,11 @@ public class TransactionMessage extends Message {
 	 * @param transaction - the original transaction object
 	 */
 	public TransactionMessage(Transaction transaction) {
-		if (!transaction.getBlockNumber().isPresent()) {
+		if (transaction.getBlockNumber() == -1) {
 			throw new RuntimeException("Block number not present");
 		}
 		this.number = transaction.getNumber();
-		this.blockNumber = transaction.getBlockNumber().getAsInt();
+		this.blockNumber = transaction.getBlockNumber();
 		// It's a genesis transaction
 		if (transaction.getSender() == null) {
 			this.senderId = Transaction.GENESIS_SENDER;
@@ -63,17 +63,17 @@ public class TransactionMessage extends Message {
 		// Optimization: categorize each transaction already known (or not) by the receiver
 		for (Transaction sourceTransaction : transaction.getSource()) {
 			Node sourceSender = sourceTransaction.getSender();
-			if (sourceTransaction.getBlockNumber().isPresent()) {
+			if (sourceTransaction.getBlockNumber() != -1) {
 				if (sourceSender == null) {
 					// Genesis transaction
 					this.source[i++] = new TransactionSource(
 							sourceTransaction.getReceiver().getId(),
-							sourceTransaction.getBlockNumber().getAsInt(),
+							sourceTransaction.getBlockNumber(),
 							sourceTransaction.getNumber());
 				} else {
 					this.source[i++] = new TransactionSource(
 							sourceSender.getId(),
-							sourceTransaction.getBlockNumber().getAsInt(),
+							sourceTransaction.getBlockNumber(),
 							sourceTransaction.getNumber());
 				}
 			} else {

@@ -150,7 +150,7 @@ public class Verification {
 	 * @param cache - the cache to use
 	 */
 	public void validateGenesisTransaction(Transaction transaction, LocalStore localStore, HashMap<Transaction, Boolean> cache) {
-		if (transaction.getBlockNumber().orElse(0) != 0) {
+		if (transaction.getBlockNumber() != 0) {
 			throw new ValidationException("Genesis Transaction " + transaction + " is invalid: its block number is not 0");
 		}
 		

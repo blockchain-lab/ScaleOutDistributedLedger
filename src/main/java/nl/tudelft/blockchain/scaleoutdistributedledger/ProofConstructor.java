@@ -41,7 +41,7 @@ public class ProofConstructor {
 		if (!toSend.isEmpty()) return proof;
 		
 		MetaKnowledge metaKnowledge = receiver.getMetaKnowledge();
-		int mainBlockNr = mainTransaction.getBlockNumber().getAsInt();
+		int mainBlockNr = mainTransaction.getBlockNumber();
 		Block nextCommitted = sender.getChain().getBlocks().get(mainBlockNr).getNextCommittedBlock();
 		List<Block> ownBlocks = metaKnowledge.getBlocksToSend(sender, nextCommitted.getNumber());
 		
@@ -80,7 +80,7 @@ public class ProofConstructor {
 			//Skip all sources in genesis blocks, our own blocks and in receiver blocks
 			if (owner == null || owner == this.sender || owner == this.receiver) continue;
 			
-			int blockNumber = source.getBlockNumber().getAsInt();
+			int blockNumber = source.getBlockNumber();
 			
 			Block block = owner.getChain().getBlocks().get(blockNumber);
 			int nextCommittedBlockNr = block.getNextCommittedBlock().getNumber();

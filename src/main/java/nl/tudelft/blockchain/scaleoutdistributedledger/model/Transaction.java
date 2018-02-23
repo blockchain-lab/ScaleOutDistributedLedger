@@ -2,7 +2,6 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.OptionalInt;
 import java.util.TreeSet;
 import java.util.logging.Level;
 
@@ -39,7 +38,7 @@ public class Transaction implements Comparable<Transaction> {
 	// Custem getter
 	private Sha256Hash hash;
 	
-	private OptionalInt blockNumber;
+	private int blockNumber;
 
 	// Only temporarily used while decoding
 	@Getter @Setter
@@ -64,7 +63,7 @@ public class Transaction implements Comparable<Transaction> {
 		this.remainder = remainder;
 		this.source = source;
 		this.number = number;
-		this.blockNumber = OptionalInt.empty();
+		this.blockNumber = sender == null ? Block.GENESIS_BLOCK_NUMBER : -1;
 	}
 	
 	/**
@@ -83,17 +82,17 @@ public class Transaction implements Comparable<Transaction> {
 
 	/**
 	 * Returns the number of the block (if it is in a block).
-	 * @return - the number of the block that this transaction is in, if known
+	 * @return - the number of the block that this transaction is in or -1 if unknown
 	 */
-	public OptionalInt getBlockNumber() {
-		if (!this.blockNumber.isPresent()) {
+	public int getBlockNumber() {
+		if (this.blockNumber == -1) {
 			// It's a genesis transaction
 			if (this.sender == null) {
-				this.blockNumber = OptionalInt.of(Block.GENESIS_BLOCK_NUMBER);
+				this.blockNumber = Block.GENESIS_BLOCK_NUMBER;
 			} else {
 				for (Block block : sender.getChain().getBlocks()) {
 					if (block.getTransactions().contains(this)) {
-						this.blockNumber = OptionalInt.of(block.getNumber());
+						this.blockNumber = block.getNumber();
 						break;
 					}
 				}
@@ -107,7 +106,7 @@ public class Transaction implements Comparable<Transaction> {
 	 * @param number - the block number
 	 */
 	public void setBlockNumber(int number) {
-		this.blockNumber = OptionalInt.of(number);
+		this.blockNumber = number;
 	}
 
 	/**
@@ -182,8 +181,9 @@ public class Transaction implements Comparable<Transaction> {
 		} else if (!sender.equals(other.sender)) return false;
 		if (amount != other.amount) return false;
 		if (remainder != other.remainder) return false;
+		if (blockNumber != other.blockNumber) return false;
 		if (!source.equals(other.source)) return false;
-		if (!blockNumber.equals(other.blockNumber)) return false;
+		
 		return true;
 	}
 

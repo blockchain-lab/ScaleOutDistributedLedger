@@ -52,7 +52,8 @@ public class TransactionRegistration {
 			if (ownId > node.getId()) {
 				if (!(ownId - node.getId() <= limit)) setC.add(node.getId());
 			} else {
-				if (!(ownId <= (node.getId() + limit) % total)) setC.add(node.getId());
+				final int count = total - ownId - node.getId();
+				if (!(count <= limit && count >= 0)) setC.add(node.getId());
 			}
 		}
 	}
