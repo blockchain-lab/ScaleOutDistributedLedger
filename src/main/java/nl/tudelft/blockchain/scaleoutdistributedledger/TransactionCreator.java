@@ -212,7 +212,7 @@ public class TransactionCreator {
 		Map<Node, Integer> chains = new HashMap<>();
 		
 		int nrOfNodes = localStore.getNodes().size();
-		Proof.appendChains2(nrOfNodes, transaction, receiver, chains);
+		Proof.appendChains2(nrOfNodes - 1, transaction, receiver, chains);
 		BitSet bitset = chains
 				.keySet()
 				.stream()

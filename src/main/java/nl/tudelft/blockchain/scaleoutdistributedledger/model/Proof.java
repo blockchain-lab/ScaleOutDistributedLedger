@@ -315,13 +315,13 @@ public class Proof {
 	/**
 	 * Recursively calls itself with all the sources of the given transaction. Transactions which
 	 * are in the chain of {@code receiver} are ignored.
-	 * @param nrOfNodes   - the total number of nodes
+	 * @param nrOfNodes   - the total number of nodes minus one
 	 * @param transaction - the transaction to check the sources of
 	 * @param receiver    - the node receiving the transaction
 	 * @param chains      - the map of chains to append to
 	 */
-	public static void appendChains2(int nrOfNodes, Transaction transaction, Node receiver, Map<Node, Integer> chains) {
-		Node owner = transaction.getSender();
+	public static void appendChains2(final int nrOfNodes, Transaction transaction, Node receiver, Map<Node, Integer> chains) {
+		final Node owner = transaction.getSender();
 		if (owner == null || owner == receiver) return;
 		
 		//Skip transactions that are already known
@@ -332,7 +332,7 @@ public class Proof {
 		//Store the highest block number.
 		//Now consider this chain up to the last committed block
 		chains.merge(owner, blockNumber, Math::max);
-		if (chains.size() >= nrOfNodes - 1) return;
+		if (chains.size() >= nrOfNodes) return;
 		
 		//Check all the sources
 		for (Transaction source : transaction.getSource()) {

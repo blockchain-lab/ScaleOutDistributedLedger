@@ -70,7 +70,6 @@ public class MetaKnowledge extends HashMap<Integer, Integer> {
 	 * @return - the number of the last block from the given node that is known by owner
 	 */
 	public int getLastKnownBlockNumber(int nodeId) {
-		if (nodeId == owner.getId()) return owner.getChain().getLastBlockNumber();
 		return getOrDefault(nodeId, -1);
 	}
 	
