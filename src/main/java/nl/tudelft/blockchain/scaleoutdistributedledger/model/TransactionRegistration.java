@@ -49,11 +49,13 @@ public class TransactionRegistration {
 			
 			knowledge.put(node.getId(), lastBlock);
 			
-			if (ownId > node.getId()) {
-				if (!(ownId - node.getId() <= limit)) setC.add(node.getId());
+			int j = node.getId() + limit;
+			if (ownId > node.getId() && ownId <= j) {
+				//Good
+			} else if (ownId <= (j % total)) {
+				//Good
 			} else {
-				final int count = total - ownId - node.getId();
-				if (!(count <= limit && count >= 0)) setC.add(node.getId());
+				setC.add(node.getId());
 			}
 		}
 	}
