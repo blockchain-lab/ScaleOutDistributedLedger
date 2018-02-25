@@ -1,10 +1,12 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -129,13 +131,41 @@ public class TransactionCreator {
 	 * @return - a collection with transaction candidates.
 	 */
 	protected Collection<TransactionTuple> collectCandidates() {
-		final Set<Transaction> unspent = localStore.getUnspent();
+		final Set<Transaction> unspent;
+		final long available;
+		synchronized (localStore.unspent) {
+			unspent = localStore.getUnspent();
+			available = localStore.getAvailableMoney();
+		}
+		
+		//We treat our genesis money in a special way
+		final long genesisAmount = Settings.INSTANCE.initialMoney / 2;
+		Transaction genesisMoney = null;
+		
 		if (Settings.INSTANCE.grouping) {
 			//Group all unspent transactions that have the same chain requirements.
 			Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
 			for (Transaction transaction : unspent) {
+				if (genesisMoney == null && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
+					genesisMoney = transaction;
+					continue;
+				}
+				
 				TransactionTuple tuple = new TransactionTuple(this, transaction);
 				candidateMap.merge(tuple.getChainsRequired(), tuple, TransactionTuple::mergeNonOverlappingSameChainsTuple);
+			}
+			
+			//Avoid grouping genesis money together with other transactions.
+			if (genesisMoney != null) {
+				TransactionTuple tuple = new GenesisTransactionTuple(this, genesisMoney);
+				if (available - genesisMoney.getRemainder() < this.amount) {
+					//There is not enough money to cover the transaction with anything but the genesis money.
+					List<TransactionTuple> tbr = new ArrayList<>(1);
+					tbr.add(tuple);
+					return tbr;
+				}
+				
+				candidateMap.put(null, tuple);
 			}
 			
 			Collection<TransactionTuple> candidates = candidateMap.values();
@@ -143,7 +173,15 @@ public class TransactionCreator {
 		} else {
 			//No grouping, just convert them into tuples
 			Set<TransactionTuple> candidates = new HashSet<>(unspent.size());
+			
+			boolean genesisFound = false;
 			for (Transaction transaction : unspent) {
+				if (!genesisFound && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
+					genesisFound = true;
+					candidates.add(new GenesisTransactionTuple(this, transaction));
+					continue;
+				}
+				
 				candidates.add(new TransactionTuple(this, transaction));
 			}
 			return candidates;
@@ -158,17 +196,27 @@ public class TransactionCreator {
 		while (it.hasNext()) {
 			TransactionTuple tuple = it.next();
 			int chainsRequired = tuple.getChainsRequired().cardinality();
-			if (chainsRequired >= currentBest) {
+			if (chainsRequired > currentBest) {
+				//Worse than current --> remove
 				it.remove();
-				continue;
-			}
-
-			if (tuple.getAmount() >= amount) {
-				//Single tuple able to cover the whole transaction
+			} else if (chainsRequired == currentBest) {
+				//Equally good to current. We prefer other tuples over the genesis money.
+				if (currentBestTuple instanceof GenesisTransactionTuple && tuple.getAmount() >= amount) {
+					//Single tuple able to cover the whole transaction
+					currentBest = chainsRequired;
+					currentBestTuple = tuple;
+				}
+				
+				//TODO Pick combination with smallest Set C?
+				it.remove();
+			} else if (tuple.getAmount() >= amount) {
+				//Single tuple, better than current and able to cover the entire transaction
 				currentBest = chainsRequired;
 				currentBestTuple = tuple;
 				it.remove();
 			}
+			
+			//Any tuples not removed need to be checked again in the next round, to see if they group to something nice.
 		}
 	}
 

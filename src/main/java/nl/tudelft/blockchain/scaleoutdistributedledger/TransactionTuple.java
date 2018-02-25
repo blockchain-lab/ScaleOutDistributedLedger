@@ -17,7 +17,7 @@ public class TransactionTuple {
 	private final TransactionCreator creator;
 	
 	@Getter
-	private int amount;
+	private long amount;
 	
 	@Getter
 	private TreeSet<Transaction> transactions = new TreeSet<>();
@@ -128,7 +128,7 @@ public class TransactionTuple {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + chainsRequired.hashCode();
-		result = prime * result + amount;
+		result = prime * result + (int) amount;
 		result = prime * result + transactions.hashCode();
 		return result;
 	}

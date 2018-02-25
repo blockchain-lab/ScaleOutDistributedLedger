@@ -22,6 +22,8 @@ import java.util.Set;
  */
 public class LocalStore {
 	
+	protected final Set<Transaction> unspent = new HashSet<>();
+	
 	@Getter
 	private final Application application;
 	
@@ -33,8 +35,6 @@ public class LocalStore {
 	
 	@Getter
 	private final Verification verification = new Verification();
-	
-	private final Set<Transaction> unspent = new HashSet<>();
 
 	@Getter
 	private final MainChain mainChain;
