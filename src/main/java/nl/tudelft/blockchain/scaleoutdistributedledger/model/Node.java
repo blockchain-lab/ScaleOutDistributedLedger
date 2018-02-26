@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
+
 /**
  * Node class.
  */
@@ -29,7 +31,7 @@ public class Node {
 	private int port;
 	
 	@Getter
-	private MetaKnowledge metaKnowledge = new MetaKnowledge(this);
+	private MetaKnowledge metaKnowledge;
 
 	/**
 	 * Constructor.
@@ -38,6 +40,11 @@ public class Node {
 	public Node(int id) {
 		this.id = id;
 		this.chain = new Chain(this);
+		if (Settings.INSTANCE.cheatyMetaKnowledge) {
+			metaKnowledge = new CheatyMetaKnowledge(this);
+		} else {
+			metaKnowledge = new MetaKnowledge(this);
+		}
 	}
 
 	/**
@@ -53,6 +60,11 @@ public class Node {
 		this.address = address;
 		this.port = port;
 		this.chain = new Chain(this);
+		if (Settings.INSTANCE.cheatyMetaKnowledge) {
+			metaKnowledge = new CheatyMetaKnowledge(this);
+		} else {
+			metaKnowledge = new MetaKnowledge(this);
+		}
 	}
 	
 	/**

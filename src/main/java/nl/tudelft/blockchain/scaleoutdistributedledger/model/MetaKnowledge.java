@@ -16,7 +16,7 @@ public class MetaKnowledge extends HashMap<Integer, Integer> {
 	 * @return - the node that this meta knowledge belongs to
 	 */
 	@Getter
-	private final Node owner;
+	protected final Node owner;
 	
 	/**
 	 * @param owner - the owner of this meta knowledge

@@ -23,6 +23,8 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
  * Main class for running a simulation.
  */
 public final class SimulationMain {
+	private static Simulation simulation;
+	
 	private SimulationMain() {}
 	
 	/**
@@ -64,7 +66,7 @@ public final class SimulationMain {
 
 
 		// --- PHASE 3: start the actual simulation ---
-		Simulation simulation = new Simulation(Settings.INSTANCE.isMaster);
+		simulation = new Simulation(Settings.INSTANCE.isMaster);
 		simulation.setTransactionPattern(Settings.INSTANCE.getTransactionPattern());
 		simulation.runNodesLocally(nodes, ownNodes, genesisBlock, nodeToKeyPair);
 
@@ -185,5 +187,14 @@ public final class SimulationMain {
 			publicKeys.put(e.getKey(), e.getValue().getPublicKey());
 		}
 		return publicKeys;
+	}
+	
+	/**
+	 * WARNING: This method has the potential to leak state!
+	 * @param nodeId - the id of the node
+	 * @return - the application of the node with the given id, or null if unavailable
+	 */
+	public static Application getApplicationOfNode(int nodeId) {
+		return simulation.getApplicationOfNode(nodeId);
 	}
 }

@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
@@ -85,7 +84,6 @@ public class Simulation {
 		//Init the applications
 		localApplications = new Application[ownNodes.size()];
 		tendermintProcesses = new Process[ownNodes.size()];
-		AtomicInteger counter = new AtomicInteger(0);
 		List<Thread> startingThreads = new LinkedList<>();
 		for (Entry<Integer, OwnNode> nodeEntry : ownNodes.entrySet()) {
 			startingThreads.add(new Thread(() -> {
@@ -95,15 +93,14 @@ public class Simulation {
 				Application app = new Application(Settings.INSTANCE.enableTendermint);
 				List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
 
-				int id = counter.getAndIncrement();
 				try {
-					tendermintProcesses[id] = TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
+					tendermintProcesses[nodeNumber] = TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
 					app.init(node.getPort(), genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 				} catch (Exception ex) {
 					Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + node.getPort() + "!", ex);
 				}
 
-				localApplications[id] = app;
+				localApplications[nodeNumber] = app;
 			}));
 
 		}
@@ -264,5 +261,14 @@ public class Simulation {
 	 */
 	protected void setLocalApplications(Application... applications) {
 		this.localApplications = applications;
+	}
+	
+	/**
+	 * @param nodeId - the id of the node
+	 * @return - the application of the given node
+	 */
+	public Application getApplicationOfNode(int nodeId) {
+		if (localApplications == null) return null;
+		return localApplications[nodeId];
 	}
 }
