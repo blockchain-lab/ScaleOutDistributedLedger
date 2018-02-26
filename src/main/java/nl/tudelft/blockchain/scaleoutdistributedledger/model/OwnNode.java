@@ -54,7 +54,7 @@ public class OwnNode extends Node {
 		
 		outer:
 			for (int i = 0; i < disallowedChains.length; i++) {
-				for (int j = i; j < i + g; j++) {
+				for (int j = i + 1; j <= i + g; j++) {
 					if (j % total == this.id) {
 						disallowedChains[i] = false;
 						continue outer;
