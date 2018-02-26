@@ -76,7 +76,9 @@ public final class SimulationMain {
 		Thread.sleep(5000);
 		simulation.start();
 
-
+		//Stop tendermint if it is not enabled
+		if (!Settings.INSTANCE.enableTendermint) simulation.stopTendermint();
+		
 		// --- PHASE 4: stop the simulation ---
 		Thread.sleep(Settings.INSTANCE.simulationDuration * 1000);
 

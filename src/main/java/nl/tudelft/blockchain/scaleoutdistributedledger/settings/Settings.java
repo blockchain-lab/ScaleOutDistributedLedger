@@ -80,6 +80,8 @@ public class Settings {
 	public String _____TENDERMINT_____ = "";
 	//the directory to store the file (will create separate directories in it for each node)
 	public String tendermintNodesFolder = "Z:\\tendermint-nodes";
+	//If tendermint should be enabled
+	public boolean enableTendermint;
 	
 	@JsonIgnore
 	private NewTransactionPattern transactionPattern;

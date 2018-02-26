@@ -256,9 +256,10 @@ public final class TendermintHelper {
 	 * @param nodeBasePort - the base port for the node (ie the lowest assigned port for the node, the port+0)
 	 * @param peerAddresses - a list of addresses (with ports, which should be basePort+1) of *other* nodes
 	 * @param nodeNumber - the number of the node to run
+	 * @return - the tendermint process
 	 * @throws IOException - if an I/O error occurs
 	 */
-	public static void runTendermintNode(int nodeBasePort, List<String> peerAddresses, int nodeNumber) throws IOException {
+	public static Process runTendermintNode(int nodeBasePort, List<String> peerAddresses, int nodeNumber) throws IOException {
 		//First write config file
 		writeConfig(nodeBasePort, peerAddresses, nodeNumber);
 		
@@ -292,6 +293,7 @@ public final class TendermintHelper {
 		final Process ps = startProcess(script.toString(), nodeNumber);
 		
 		Runtime.getRuntime().addShutdownHook(new Thread(ps::destroy));
+		return ps;
 	}
 
 	/**

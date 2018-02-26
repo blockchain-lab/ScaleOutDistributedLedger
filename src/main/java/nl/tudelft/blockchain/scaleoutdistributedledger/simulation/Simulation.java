@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -18,6 +19,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Ed25519Key;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.tendermint.TendermintHelper;
 import nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern.ITransactionPattern;
 import nl.tudelft.blockchain.scaleoutdistributedledger.sockets.SocketClient;
@@ -40,6 +42,7 @@ public class Simulation {
 	private Map<Integer, Node> nodes;
 	
 	private Application[] localApplications;
+	private Process[] tendermintProcesses;
 	private final SocketClient socketClient;
 	private final boolean isMaster;
 	
@@ -81,25 +84,26 @@ public class Simulation {
 		this.nodes = nodes;
 		//Init the applications
 		localApplications = new Application[ownNodes.size()];
+		tendermintProcesses = new Process[ownNodes.size()];
 		AtomicInteger counter = new AtomicInteger(0);
 		List<Thread> startingThreads = new LinkedList<>();
-		for (Map.Entry<Integer, OwnNode> nodeEntry : ownNodes.entrySet()) {
+		for (Entry<Integer, OwnNode> nodeEntry : ownNodes.entrySet()) {
 			startingThreads.add(new Thread(() -> {
 				Node node = nodeEntry.getValue();
 				int nodeNumber = nodeEntry.getKey();
 
-				//TODO IMPORTANT CRITICAL - DISABLES TENDERMINT
-				Application app = new Application(false);
+				Application app = new Application(Settings.INSTANCE.enableTendermint);
 				List<String> addressesForThisNode = generateAddressesForNodeForTendermintP2P(nodeNumber, nodes);
 
+				int id = counter.getAndIncrement();
 				try {
-					TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
+					tendermintProcesses[id] = TendermintHelper.runTendermintNode(node.getPort(), addressesForThisNode, nodeNumber);
 					app.init(node.getPort(), genesisBlock.genesisCopy(), nodeToKeyPair.get(nodeNumber), ownNodes.get(nodeNumber));
 				} catch (Exception ex) {
 					Log.log(Level.SEVERE, "Unable to initialize local node " + nodeNumber + " on port " + node.getPort() + "!", ex);
 				}
 
-				localApplications[counter.getAndIncrement()] = app;
+				localApplications[id] = app;
 			}));
 
 		}
@@ -109,7 +113,7 @@ public class Simulation {
 	private List<String> generateAddressesForNodeForTendermintP2P(Integer i, Map<Integer, Node> nodes) {
 		List<String> ret = new ArrayList<>(nodes.size() - 1);
 
-		for (Map.Entry<Integer, Node> e : nodes.entrySet()) {
+		for (Entry<Integer, Node> e : nodes.entrySet()) {
 			int curNodeNumber = e.getKey();
 			if (curNodeNumber == i) continue;
 			Node node = nodes.get(curNodeNumber);
@@ -134,6 +138,16 @@ public class Simulation {
 			sum += app.getLocalStore().getAvailableMoney();
 		}
 		Log.log(Level.INFO, String.format("Total amount of moneyz left in the system is %d.", sum));
+	}
+	
+	/**
+	 * Stops tendermint.
+	 */
+	public void stopTendermint() {
+		if (tendermintProcesses == null) return;
+		for (Process process : tendermintProcesses) {
+			process.destroy();
+		}
 	}
 	
 	/**
