@@ -8,7 +8,7 @@ class TransactionList {
      */
     constructor() {
         // Store transactions in a dictionary
-        this.transactions = {};
+        this.transactions = [];
         this.transactions2 = [];
         this.numberOfTransactions = 0;
         this.numberOfChains = 0;
@@ -27,42 +27,7 @@ class TransactionList {
         this.numberOfBlocks += transaction.numberOfBlocks;
         this.setCSize[transaction.to] = transaction.setC.length;
         this.transactions2.push(transaction);
-
-        // Make sure we use a consistent key for all transactions between the same two nodes
-        let key = [transaction.from, transaction.to];
-        if(transaction.from > transaction.to)
-            key = [transaction.to, transaction.from];
-
-        if(!this.transactions[key])
-            this.transactions[key] = [transaction];
-        else
-            this.transactions[key].push(transaction);
-    }
-
-    /**
-     * Gets the edge weight between two nodes.
-     * @param node1 - the first node
-     * @param node2 - the second node
-     * @returns {number}
-     */
-    getEdgeWeight(node1, node2) {
-        let key = [node1, node2];
-        if(node1 > node2) {
-            key = [node2, node1];
-        }
-        return this.getEdgeWeightWithKey(key);
-    }
-
-    /**
-     * Gets the edge weight for a certain key.
-     * @param key - the key
-     * @returns {number}
-     */
-    getEdgeWeightWithKey(key) {
-        if(!this.transactions[key]) return 0;
-
-        // TODO: something other than number of transactions?
-        return this.transactions[key].length;
+        this.transactions[transaction.to] = transaction;
     }
 
     /**
@@ -71,10 +36,11 @@ class TransactionList {
      */
     getGraphEdges() {
         const edges = [];
-        for (const key of Object.keys(this.transactions)) {
-            const keyArray = key.split(",");
-            const weight = this.getEdgeWeightWithKey(key);
-            edges.push({from: keyArray[0], to: keyArray[1], value: weight});
+        //Draw edge if knowledge, weight of highest
+        for (let i = 0; i < this.transactions.length; i++) {
+            for (let knowKey in this.transactions[i].knowledge) {
+                edges.push({from: i, to: knowKey, value: this.transactions[i][knowKey]});
+            }
         }
         return edges;
     }

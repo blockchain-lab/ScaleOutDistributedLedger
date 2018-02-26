@@ -5,10 +5,10 @@ $(document).ready(function() {
         // $(".odometer").text(counter);
         network.setData({nodes: data.nodes, edges: data.edges});
         network.redraw();
-        $(".transactions").text(data.numbers.numberOfTransactions);
-        $(".chains").text(data.numbers.averageNumberOfChains);
-        $(".blocks").text(data.numbers.averageNumberOfBlocks);
-        $(".setC").text(data.numbers.averageSetCSize);
+        $(".transactions").text(Math.round(data.numbers.numberOfTransactions * 10000) / 10000);
+        $(".chains").text(Math.round(data.numbers.averageNumberOfChains * 10000) / 10000);
+        $(".blocks").text(Math.round(data.numbers.averageNumberOfBlocks * 10000) / 10000);
+        $(".setC").text(Math.round(data.numbers.averageSetCSize * 10000) / 10000);
     };
 
     window.odometerOptions = {
