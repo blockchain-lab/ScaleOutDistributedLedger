@@ -140,13 +140,14 @@ public class TransactionCreator {
 		
 		//We treat our genesis money in a special way
 		final long genesisAmount = Settings.INSTANCE.initialMoney / 2;
+		final boolean genesisGrouping = Settings.INSTANCE.genesisGrouping;
 		Transaction genesisMoney = null;
 		
 		if (Settings.INSTANCE.grouping) {
 			//Group all unspent transactions that have the same chain requirements.
 			Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
 			for (Transaction transaction : unspent) {
-				if (genesisMoney == null && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
+				if (genesisGrouping && genesisMoney == null && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
 					genesisMoney = transaction;
 					continue;
 				}
@@ -174,7 +175,7 @@ public class TransactionCreator {
 			//No grouping, just convert them into tuples
 			Set<TransactionTuple> candidates = new HashSet<>(unspent.size());
 			
-			boolean genesisFound = false;
+			boolean genesisFound = !genesisGrouping;
 			for (Transaction transaction : unspent) {
 				if (!genesisFound && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
 					genesisFound = true;
@@ -192,6 +193,7 @@ public class TransactionCreator {
 	 * @param unspentTransactions - a collection with all unspent transactions
 	 */
 	private void firstRound(Collection<TransactionTuple> unspentTransactions) {
+		final boolean genesisGrouping = Settings.INSTANCE.genesisGrouping;
 		Iterator<TransactionTuple> it = unspentTransactions.iterator();
 		while (it.hasNext()) {
 			TransactionTuple tuple = it.next();
@@ -201,7 +203,7 @@ public class TransactionCreator {
 				it.remove();
 			} else if (chainsRequired == currentBest) {
 				//Equally good to current. We prefer other tuples over the genesis money.
-				if (currentBestTuple instanceof GenesisTransactionTuple && tuple.getAmount() >= amount) {
+				if (genesisGrouping && currentBestTuple instanceof GenesisTransactionTuple && tuple.getAmount() >= amount) {
 					//Single tuple able to cover the whole transaction
 					currentBest = chainsRequired;
 					currentBestTuple = tuple;

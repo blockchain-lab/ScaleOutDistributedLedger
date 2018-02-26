@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
-import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -34,13 +33,10 @@ public class TransactionRegistration {
 		this.transaction = transaction;
 		this.numberOfChains = numberOfChains;
 		this.numberOfBlocks = numberOfBlocks;
-		
-		int limit = Settings.INSTANCE.getTransactionPattern().getNodeSelector().getLimit();
-		int ownId = localStore.getOwnNode().getId();
-		int total = localStore.getNodes().size();
-		
 		this.setC = new ArrayList<>();
 		this.knowledge = new HashMap<>();
+		
+		OwnNode ownNode = localStore.getOwnNode();
 		for (Node node : localStore.getNodes().values()) {
 			if (node instanceof OwnNode) continue;
 			
@@ -48,13 +44,7 @@ public class TransactionRegistration {
 			if (lastBlock < 1) continue;
 			
 			knowledge.put(node.getId(), lastBlock);
-			
-			int j = node.getId() + limit;
-			if (ownId > node.getId() && ownId <= j) {
-				//Good
-			} else if (ownId <= (j % total)) {
-				//Good
-			} else {
+			if (ownNode.isDisallowedChain(node.getId())) {
 				setC.add(node.getId());
 			}
 		}

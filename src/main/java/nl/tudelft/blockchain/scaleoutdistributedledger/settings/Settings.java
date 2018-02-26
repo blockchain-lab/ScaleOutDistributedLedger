@@ -51,6 +51,9 @@ public class Settings {
 	//If transactions should be grouped
 	public boolean grouping;
 	
+	//If genesis money should be grouped
+	public boolean genesisGrouping = true;
+	
 	//------------------------------------ Transaction sender ------------------------------------
 	public String _____TRANSACTION_SENDER_____ = "";
 	//The number of blocks (with the same or higher block number) that need to be committed before we send a certain block.

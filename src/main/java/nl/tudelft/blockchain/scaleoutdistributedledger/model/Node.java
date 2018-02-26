@@ -14,7 +14,7 @@ import java.util.Map.Entry;
 public class Node {
 
 	@Getter
-	private final int id;
+	protected final int id;
 
 	@Getter
 	private final Chain chain;
