@@ -25,12 +25,14 @@ import org.json.JSONTokener;
 public class ResultsConverter {
 	public static final StandardOpenOption OVERRIDE = StandardOpenOption.CREATE_NEW;
 	
-	public static final int N = 20;
-	public static final int G = 3;
-	public static final int RUN = 1;
+	public static final int  N = 20;
+	public static final int  G = 1;
+	public static final Mode MODE = Mode.GROUPING;
+	public static final int  RUN = 1;
 	
-	public static final String BASE = "n" + N + "_g" + G + "_group_" + RUN;
-	public static final String BASEFOLDER = "nresults/" + BASE.substring(0, BASE.length() - 2) + "/";
+	public static final String BASE = "n" + N + "_g" + G + "_m" + MODE.ordinal() + "_r" + RUN;
+	public static final String BASEFOLDER = "nresults/" + BASE.substring(0, BASE.length() - 3) + "/";
+	public static final File FOLDER = new File(BASEFOLDER);
 	public static final String INPUT = BASEFOLDER + BASE + ".json";
 	public static final String DATA = BASEFOLDER + BASE + "_data.csv";
 	public static final String FIXDATA = BASEFOLDER + BASE + "_data_fixed.csv";
@@ -90,12 +92,36 @@ public class ResultsConverter {
 		}
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
+		renameInputs();
+		removeDuplicates();
 		fixData();
 		getIndividualSetCSizes();
 		initialConvert();
 		sort();
 		sortedToDelta();
+	}
+	
+	/**
+	 * Renames the input files to their correct names.
+	 */
+	public static void renameInputs() {
+		new File(FOLDER, "transactionlist.json").renameTo(new File(FOLDER, BASE + ".json"));
+		new File(FOLDER, "data.csv").renameTo(new File(FOLDER, BASE + ".csv"));
+	}
+	
+	/**
+	 * Removes duplicates from the data csv.
+	 * @throws Exception .
+	 */
+	public static void removeDuplicates() throws Exception {
+		ProcessBuilder pb = new ProcessBuilder(
+				"C:\\Program Files\\Git\\git-bash.exe",
+				"-c",
+				"cat -n " + BASE + ".csv | sort -k2 -k1n  | uniq -f1 | sort -nk1,1 | cut -f2- > " + BASE + "_data.csv");
+		pb.directory(new File(BASEFOLDER));
+		Process process = pb.start();
+		process.waitFor();
 	}
 	
 	/**
@@ -406,5 +432,20 @@ public class ResultsConverter {
 	
 	private static void writeMap(Map<Integer, Integer> map, CSVPrinter printer) throws IOException {
 		printer.print(map.entrySet().stream().map(e -> e.getKey() + ";" + e.getValue()).collect(Collectors.joining(",")));
+	}
+	
+	private static enum Mode {
+		/**
+		 * Mode 0: no grouping.
+		 */
+		NO_GROUPING,
+		/**
+		 * Mode 1: (old) grouping.
+		 */
+		GROUPING,
+		/**
+		 * Mode 2: (new) grouping, prefering other groups over genesis money.
+		 */
+		GROUPING_BUT_NOT_GENESIS;
 	}
 }
