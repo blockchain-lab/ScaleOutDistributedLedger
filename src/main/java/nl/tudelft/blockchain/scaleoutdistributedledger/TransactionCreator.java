@@ -147,7 +147,7 @@ public class TransactionCreator {
 			//Group all unspent transactions that have the same chain requirements.
 			Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
 			for (Transaction transaction : unspent) {
-				if (genesisGrouping && genesisMoney == null && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
+				if (!genesisGrouping && genesisMoney == null && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
 					genesisMoney = transaction;
 					continue;
 				}
@@ -175,7 +175,7 @@ public class TransactionCreator {
 			//No grouping, just convert them into tuples
 			Set<TransactionTuple> candidates = new HashSet<>(unspent.size());
 			
-			boolean genesisFound = !genesisGrouping;
+			boolean genesisFound = genesisGrouping;
 			for (Transaction transaction : unspent) {
 				if (!genesisFound && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
 					genesisFound = true;
@@ -203,7 +203,7 @@ public class TransactionCreator {
 				it.remove();
 			} else if (chainsRequired == currentBest) {
 				//Equally good to current. We prefer other tuples over the genesis money.
-				if (genesisGrouping && currentBestTuple instanceof GenesisTransactionTuple && tuple.getAmount() >= amount) {
+				if (!genesisGrouping && currentBestTuple instanceof GenesisTransactionTuple && tuple.getAmount() >= amount) {
 					//Single tuple able to cover the whole transaction
 					currentBest = chainsRequired;
 					currentBestTuple = tuple;
