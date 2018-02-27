@@ -16,6 +16,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
 /**
  * Test class for TransactionCreator.
@@ -32,6 +33,8 @@ public class TransactionCreatorTest {
 	 */
 	@Before
 	public void setUp() {
+		Settings.INSTANCE.cheatyMetaKnowledge = false;
+		
 		ownNode = new OwnNode(0);
 		//TestHelper.generateGenesis(ownNode, 5, 100);
 		localStore = new LocalStore(ownNode, null, null, false);

@@ -1,8 +1,11 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
 import lombok.Getter;
 
@@ -18,11 +21,14 @@ public class MetaKnowledge extends HashMap<Integer, Integer> {
 	@Getter
 	protected final Node owner;
 	
+	protected final int[] blocksKnown;
+	
 	/**
 	 * @param owner - the owner of this meta knowledge
 	 */
 	public MetaKnowledge(Node owner) {
 		this.owner = owner;
+		this.blocksKnown = new int[Settings.INSTANCE.totalNodesNumber];
 	}
 	
 	/**
@@ -108,6 +114,13 @@ public class MetaKnowledge extends HashMap<Integer, Integer> {
 	 * @param blockNumber - the block number
 	 */
 	public synchronized void updateLastKnownBlockNumber(int nodeId, int blockNumber) {
-		merge(nodeId, blockNumber, (oldNr, newNr) -> Math.max(oldNr, newNr));
+		blocksKnown[nodeId] = merge(nodeId, blockNumber, (oldNr, newNr) -> Math.max(oldNr, newNr));
+	}
+	
+	/**
+	 * @return - a new array with the blocks known
+	 */
+	public int[] getBlocksKnown() {
+		return Arrays.copyOf(blocksKnown, blocksKnown.length);
 	}
 }

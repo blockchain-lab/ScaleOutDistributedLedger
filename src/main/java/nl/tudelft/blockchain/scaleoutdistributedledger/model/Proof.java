@@ -339,6 +339,32 @@ public class Proof {
 			appendChains2(nrOfNodes, source, receiver, chains);
 		}
 	}
+	
+	/**
+	 * Recursively calls itself with all the sources of the given transaction. Transactions which
+	 * are in the chain of {@code receiver} are ignored.
+	 * @param transaction    - the transaction to check the sources of
+	 * @param receiver       - the node receiving the transaction
+	 * @param blocksRequired - the array of blocks to append to
+	 */
+	public static void appendChains3(Transaction transaction, Node receiver, int[] blocksRequired) {
+		final Node owner = transaction.getSender();
+		if (owner == null || owner == receiver) return;
+		
+		//Skip transactions that are already known
+		final int ownerId = owner.getId();
+		final int lastKnown = receiver.getMetaKnowledge().getLastKnownBlockNumber(ownerId);
+		final int blockNumber = transaction.getBlockNumber();
+		if (lastKnown >= blockNumber) return;
+		
+		//Store the highest block number.
+		blocksRequired[ownerId] = Math.max(blockNumber - lastKnown, blocksRequired[ownerId]);
+		
+		//Check all the sources
+		for (Transaction source : transaction.getSource()) {
+			appendChains3(source, receiver, blocksRequired);
+		}
+	}
 
 	/**
 	 * Gets the number of blocks used in the proof.

@@ -15,6 +15,7 @@ import org.junit.Test;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.ProofConstructor;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.TestHelper;
 
 /**
@@ -31,6 +32,8 @@ public class ProofTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
+		Settings.INSTANCE.cheatyMetaKnowledge = false;
+		
 		//Create own node and generate keys
 		ownNode = new OwnNode(0);
 		KeyPair pair = Ed25519Key.generateKeys();

@@ -1,5 +1,6 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger.simulation.transactionpattern;
 
+import nl.tudelft.blockchain.scaleoutdistributedledger.BlockTransactionCreator;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.TransactionCreator;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
@@ -70,7 +71,7 @@ public interface ITransactionPattern extends Serializable {
 		Log.log(Level.FINE, "Going to make transaction: $ " + amount + " from " + ownNodeId + " -> " + receiver.getId());
 
 		//Create the transaction
-		TransactionCreator creator = new TransactionCreator(localStore, receiver, amount);
+		BlockTransactionCreator creator = new BlockTransactionCreator(localStore, receiver, amount);
 		Transaction transaction = creator.createTransaction();
 
 		//Add block to local chain
