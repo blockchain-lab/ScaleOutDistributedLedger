@@ -38,8 +38,10 @@ class TransactionList {
         const edges = [];
         //Draw edge if knowledge, weight of highest
         for (let i = 0; i < this.transactions.length; i++) {
-            for (let knowKey in this.transactions[i].knowledge) {
-                edges.push({from: i, to: knowKey, value: this.transactions[i][knowKey]});
+            if(this.transactions[i] !== undefined) {
+                for (let knowKey in this.transactions[i].knowledge) {
+                    edges.push({from: i, to: knowKey, value: this.transactions[i][knowKey]});
+                }
             }
         }
         return edges;
