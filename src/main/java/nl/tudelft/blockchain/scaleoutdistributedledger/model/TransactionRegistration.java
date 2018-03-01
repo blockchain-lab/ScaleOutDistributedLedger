@@ -38,12 +38,12 @@ public class TransactionRegistration {
 		
 		OwnNode ownNode = localStore.getOwnNode();
 		for (Node node : localStore.getNodes().values()) {
-			if (node instanceof OwnNode) continue;
-			
 			int lastBlock = node.getChain().getLastBlockNumber();
 			if (lastBlock < 1) continue;
 			
 			knowledge.put(node.getId(), lastBlock);
+			if (node instanceof OwnNode) continue;
+			
 			if (ownNode.isDisallowedChain(node.getId())) {
 				setC.add(node.getId());
 			}

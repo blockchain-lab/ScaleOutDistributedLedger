@@ -147,7 +147,8 @@ public class TransactionCreator {
 			//Group all unspent transactions that have the same chain requirements.
 			Map<BitSet, TransactionTuple> candidateMap = new HashMap<>();
 			for (Transaction transaction : unspent) {
-				if (!genesisGrouping && genesisMoney == null && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
+				if (!genesisGrouping && genesisMoney == null && transaction.getRemainder() > genesisAmount &&
+						(transaction.getSender() == sender || transaction.getSender() == null)) {
 					genesisMoney = transaction;
 					continue;
 				}
@@ -177,7 +178,8 @@ public class TransactionCreator {
 			
 			boolean genesisFound = genesisGrouping;
 			for (Transaction transaction : unspent) {
-				if (!genesisFound && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
+				if (!genesisFound && transaction.getRemainder() > genesisAmount &&
+						(transaction.getSender() == sender || transaction.getSender() == null)) {
 					genesisFound = true;
 					candidates.add(new GenesisTransactionTuple(this, transaction));
 					continue;

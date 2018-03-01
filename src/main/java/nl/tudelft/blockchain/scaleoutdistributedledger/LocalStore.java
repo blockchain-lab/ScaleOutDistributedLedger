@@ -3,6 +3,7 @@ package nl.tudelft.blockchain.scaleoutdistributedledger;
 import lombok.Getter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.mocks.TendermintChainMock;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.GenesisNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -102,7 +103,7 @@ public class LocalStore {
 	 * @return              - the transaction
 	 */
 	public Transaction getTransactionFromNode(int nodeId, int transactionId) {
-		if (nodeId == Transaction.GENESIS_SENDER) {
+		if (nodeId == GenesisNode.GENESIS_NODE_ID) {
 			// It's a genesis transaction
 			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
 			if (transactionId < genesisBlock.getTransactions().size()) {
@@ -128,7 +129,7 @@ public class LocalStore {
 	 * @return              - the transaction
 	 */
 	public Transaction getTransactionFromNode(int nodeId, int blockId, int transactionId) {
-		if (nodeId == Transaction.GENESIS_SENDER) {
+		if (nodeId == GenesisNode.GENESIS_NODE_ID) {
 			// It's a genesis transaction
 			Block genesisBlock = this.ownNode.getChain().getGenesisBlock();
 			if (transactionId < genesisBlock.getTransactions().size()) {

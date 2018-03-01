@@ -106,18 +106,25 @@ public class Node {
 		return lastBlock.getNumber();
 	}
 	
+	/**
+	 * @return - if this node represents the genesis node
+	 */
+	public boolean isGenesis() {
+		return this.id == GenesisNode.GENESIS_NODE_ID;
+	}
+	
 	@Override
-	public int hashCode() {
+	public final int hashCode() {
 		return this.id;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public final boolean equals(Object obj) {
 		if (obj == this) return true;
 		if (!(obj instanceof Node)) return false;
 		
 		Node other = (Node) obj;
-		return this.getId() == other.getId();
+		return this.id == other.id;
 	}
 	
 	@Override

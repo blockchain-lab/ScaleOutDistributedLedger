@@ -62,6 +62,8 @@ public class Proof {
 
 		// Fix backlinks
 		this.fixPreviousBlockPointers();
+		
+		this.checkOverlapSize(localStore);
 
 		// Fix the sources
 		this.fixTransactionSources(localStore);
@@ -70,6 +72,26 @@ public class Proof {
 		ChainView senderChainView = getChainView(senderNode);
 		this.transaction = senderChainView.getBlock(proofMessage.getTransactionMessage().getBlockNumber())
 				.getTransaction(proofMessage.getTransactionMessage().getNumber());
+	}
+	
+	private void checkOverlapSize(LocalStore localStore) {
+		int extra = 0;
+		for (Entry<Node, List<Block>> e : chainUpdates.entrySet()) {
+			int lastBlock = e.getKey().getChain().getLastBlockNumber();
+			int firstSent = e.getValue().get(0).getNumber();
+			
+			//first sent = 12
+			//last = 10
+			//delta = 10 - 12 + 1 = -1
+			int delta = lastBlock - firstSent + 1;
+			if (delta > 0) {
+				extra += delta;
+			}
+		}
+		
+		if (extra != 0) {
+			System.out.println("Node " + localStore.getOwnNode().getId() + " received too many blocks: " + extra);
+		}
 	}
 	
 	private void fixPreviousBlockPointers() {

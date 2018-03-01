@@ -3,6 +3,8 @@ package nl.tudelft.blockchain.scaleoutdistributedledger.model;
 import lombok.Getter;
 import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.Temp;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.SDLByteArrayOutputStream;
 
@@ -38,7 +40,12 @@ public class Block {
 	
 	private transient boolean onMainChain;
 	private transient boolean hasNoAbstract;
+	private transient volatile boolean committed;
 	private transient volatile boolean finalized;
+	@Getter @Setter
+	private transient int[] cachedRequirements;
+	@Getter @Setter
+	private transient boolean evaluating;
 
 	/**
 	 * Constructor for a (genesis) block.
@@ -101,6 +108,20 @@ public class Block {
 	}
 	
 	/**
+	 * Finalizes this block.
+	 * This means that no transactions can be added to it, and that requirements are calculated.
+	 */
+	public synchronized void finalizeBlock() {
+		if (this.finalized) return;
+		
+		//Calculate the requirements from predecessor blocks
+		//TODO IMPORTANT
+//		Temp.getBlockRequirementsBackward(Settings.INSTANCE.totalNodesNumber, this);
+		
+		this.finalized = true;
+	}
+	
+	/**
 	 * Get hash of the block.
 	 * @return Hash SHA256
 	 */
@@ -150,7 +171,7 @@ public class Block {
 	 * @param localStore - the local store
 	 */
 	public synchronized void commit(LocalStore localStore) {
-		if (this.finalized) {
+		if (this.committed) {
 			throw new IllegalStateException("This block has already been committed!");
 		}
 
@@ -165,10 +186,14 @@ public class Block {
 		Block prev = getPreviousBlock();
 		while (prev != null && prev.nextCommittedBlock == null) {
 			prev.nextCommittedBlock = this;
+			prev.finalized = true;
 			prev = prev.getPreviousBlock();
 		}
 		
 		this.finalized = true;
+		this.committed = true;
+		
+		Temp.fillInBlockRequirementsForCommit(this);
 	}
 
 	@Override

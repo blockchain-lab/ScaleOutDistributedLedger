@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.GenesisNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.OwnNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.TestHelper;
@@ -36,7 +37,7 @@ public class LocalStoreTest {
 	 */
 	@Test
 	public void testGetTransactionFromNode_Valid_GenesisSender() {
-		Transaction transaction = this.localStore.getTransactionFromNode(Transaction.GENESIS_SENDER, 0, 0);
+		Transaction transaction = this.localStore.getTransactionFromNode(GenesisNode.GENESIS_NODE_ID, 0, 0);
 		assertEquals(this.ownNode, transaction.getReceiver());
 	}
 	
@@ -45,7 +46,7 @@ public class LocalStoreTest {
 	 */
 	@Test(expected = IllegalStateException.class)
 	public void testGetTransactionFromNode_Invalid_GenesisSender() {
-		this.localStore.getTransactionFromNode(Transaction.GENESIS_SENDER, 0, 99);
+		this.localStore.getTransactionFromNode(GenesisNode.GENESIS_NODE_ID, 0, 99);
 	}
 	
 	/**

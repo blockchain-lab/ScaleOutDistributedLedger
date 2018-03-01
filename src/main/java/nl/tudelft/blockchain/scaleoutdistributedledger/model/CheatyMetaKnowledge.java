@@ -26,7 +26,7 @@ public class CheatyMetaKnowledge extends MetaKnowledge {
 	
 	@Override
 	public int getLastKnownBlockNumber(int nodeId) {
-		return getOwnLocalStore().getNode(nodeId).getChain().getLastBlockNumber();
+		return Math.max(super.getLastKnownBlockNumber(nodeId), getOwnLocalStore().getNode(nodeId).getChain().getLastBlockNumber());
 	}
 	
 	@Override

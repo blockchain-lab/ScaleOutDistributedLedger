@@ -46,7 +46,7 @@ public class ResultsConverter {
 	public static final String[] FIXDATA_HEADERS;
 	
 	static {
-		A_HEADERS = new String[N + 10];
+		A_HEADERS = new String[N + 11];
 		A_HEADERS[0] = "id";
 		A_HEADERS[1] = "from";
 		A_HEADERS[2] = "to";
@@ -60,9 +60,10 @@ public class ResultsConverter {
 		for (int i = 0; i < N; i++) {
 			A_HEADERS[i + 10] = "knowledge " + i;
 		}
+		A_HEADERS[N + 10] = "knowShare";
 		
 		//id, node (to), setCSize, setC, setCBlocks, setCDelta, from, amount, remainder, numberOfChains, numberOfBlocks,
-		B_HEADERS = new String[N + 12];
+		B_HEADERS = new String[N + 13];
 		B_HEADERS[0] = "id";
 		B_HEADERS[1] = "node";
 		B_HEADERS[2] = "setCSize";
@@ -78,6 +79,7 @@ public class ResultsConverter {
 		for (int i = 0; i < N; i++) {
 			B_HEADERS[i + 12] = "knowledge " + i;
 		}
+		B_HEADERS[N + 12] = "knowShare";
 		
 		FIXDATA_HEADERS = new String[N * 2 + 4];
 		FIXDATA_HEADERS[0] = "nrOfTransactions";
@@ -215,7 +217,7 @@ public class ResultsConverter {
 		int nodeTo = transaction.getInt("to");
 		JSONObject knowledge = transaction.getJSONObject("knowledge");
 		List<String> setCN = new ArrayList<>(knowledge.keySet());
-		for (int k = nodeTo - G; k < nodeTo; k++) {
+		for (int k = nodeTo - G; k <= nodeTo; k++) {
 			if (k < 0) {
 				setCN.remove("" + (k + N));
 			} else {
@@ -285,20 +287,25 @@ public class ResultsConverter {
 				printer.print(transaction.getInt("numberOfChains"));
 				printer.print(transaction.getInt("numberOfBlocks"));
 				JSONObject knowledge = transaction.getJSONObject("knowledge");
-//				printer.print(setC.join(","));
-//				printer.print(setC.toList().stream().map(o -> o.toString() + ";" + knowledge.optInt(String.valueOf(o))).collect(Collectors.joining(",")));
-//				printer.print(setC.length());
 				
-				List<String> setCN = calculateSetC(transaction);
+				JSONArray setC = transaction.getJSONArray("setC");
+				printer.print(setC.join(","));
+				printer.print(setC.toList().stream().map(o -> o.toString() + ";" + knowledge.optInt(String.valueOf(o))).collect(Collectors.joining(",")));
+				printer.print(setC.length());
 				
-				printer.print(setCN.stream().collect(Collectors.joining(",")));
-				printer.print(setCN.stream().map(s -> s + ";" + knowledge.getInt(s)).collect(Collectors.joining(",")));
-				printer.print(setCN.size());
+//				List<String> setCN = calculateSetC(transaction);
+//				
+//				printer.print(setCN.stream().collect(Collectors.joining(",")));
+//				printer.print(setCN.stream().map(s -> s + ";" + knowledge.getInt(s)).collect(Collectors.joining(",")));
+//				printer.print(setCN.size());
 				
+				int sum = 0;
 				for (int j = 0; j < N; j++) {
 					int nodeNBlock = knowledge.optInt(String.valueOf(j));
+					sum += nodeNBlock;
 					printer.print(nodeNBlock);
 				}
+				printer.print((double) sum / i);
 				printer.println();
 			}
 			
@@ -401,6 +408,7 @@ public class ResultsConverter {
 			for (int i = 0; i < N; i++) {
 				writer.print(record.get("knowledge " + i));
 			}
+			writer.print(record.get("knowShare"));
 			
 			writer.println();
 		}
@@ -446,6 +454,16 @@ public class ResultsConverter {
 		/**
 		 * Mode 2: (new) grouping, prefering other groups over genesis money.
 		 */
-		GROUPING_BUT_NOT_GENESIS;
+		GROUPING_BUT_NOT_GENESIS,
+		
+		/**
+		 * Mode 3: select using blocks, using normal meta knowledge.
+		 */
+		BLOCK_SELECTION_CHEATY_DISPREFER_GENESIS,
+		
+		/**
+		 * Mode 4: select using blocks, using cheaty meta knowledge.
+		 */
+		BLOCK_SELECTION_CHEATY;
 	}
 }

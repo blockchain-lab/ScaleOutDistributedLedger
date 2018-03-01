@@ -1,14 +1,16 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.exceptions.NotEnoughMoneyException;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
-import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
 import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
@@ -68,6 +70,7 @@ public class BlockTransactionCreator {
 		
 		int number = localStore.getNewTransactionId();
 		Transaction transaction = new Transaction(number, sender, receiver, amount, remainder, sourceSet);
+		
 		//If there is a remainder, or if we send money to ourselves, then add that the transaction is unspent.
 		if (remainder > 0 || receiver == sender) {
 			localStore.addUnspentTransaction(transaction);
@@ -139,7 +142,8 @@ public class BlockTransactionCreator {
 		
 		boolean genesisFound = genesisGrouping;
 		for (Transaction transaction : unspent) {
-			if (!genesisFound && transaction.getSender() == sender && transaction.getRemainder() > genesisAmount) {
+			if (!genesisFound && transaction.getRemainder() > genesisAmount &&
+					(transaction.getSender() == sender || transaction.getSender() == null)) {
 				genesisFound = true;
 				candidates.add(new GenesisBlockTransactionTuple(this, transaction));
 				continue;
@@ -238,18 +242,27 @@ public class BlockTransactionCreator {
 
 	/**
 	 * @param transaction - the transaction
-	 * @return the chains that are required for the given transaction
+	 * @return - the blocks that are required for the given transaction
 	 */
 	public int[] blocksRequired(Transaction transaction) {
-		//TODO Verify that this collection of blocks is correct.
-		int[] blocksRequired = new int[nodesCount + 1];
-		Proof.appendChains3(transaction, receiver, blocksRequired);
+		int[] requiredOriginal = Temp.getBlockRequirementsBackward(nodesCount, transaction.getBlock());
+		int[] blocksRequired = Arrays.copyOf(requiredOriginal, nodesCount + 1);
+		
+		//Set our own block count to 0, we will always have to send our full local chain, so we don't consider this.
+		
+		final int receiverId = receiver.getId();
+		final int senderId = sender.getId();
+		blocksRequired[receiverId] = 0;
+		blocksRequired[senderId] = sender.getChain().getLastBlockNumber();
+		
+		final MetaKnowledge meta = receiver.getMetaKnowledge();
 		int sum = 0;
 		for (int i = 0; i < nodesCount; i++) {
-			sum += blocksRequired[i];
+			sum += (blocksRequired[i] = Math.max(blocksRequired[i] - meta.getLastKnownBlockNumber(i), 0));
 		}
+		
+		//Set the sum
 		blocksRequired[nodesCount] = sum;
-
 		return blocksRequired;
 	}
 

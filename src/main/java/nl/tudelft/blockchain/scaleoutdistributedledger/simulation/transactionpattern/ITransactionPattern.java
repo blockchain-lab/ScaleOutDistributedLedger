@@ -77,6 +77,7 @@ public interface ITransactionPattern extends Serializable {
 		//Add block to local chain
 		Block newBlock = ownNode.getChain().appendNewBlock();
 		newBlock.addTransaction(transaction);
+		newBlock.finalizeBlock();
 		Log.log(Level.FINE, "Node " + ownNodeId + " added transaction " + transaction.getNumber() + " in block " + newBlock.getNumber());
 		
 		//Check if we want to commit the new block, and commit it if we do.

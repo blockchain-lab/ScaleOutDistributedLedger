@@ -145,7 +145,7 @@ public class SerializationTest {
 		BlockMessage genesisBlockMessage = new BlockMessage(this.genesisBlock);
 		// Check
 		assertEquals(this.genesisBlock.getNumber(), genesisBlockMessage.getNumber());
-		assertEquals(Transaction.GENESIS_SENDER, genesisBlockMessage.getOwnerId());
+		assertEquals(GenesisNode.GENESIS_NODE_ID, genesisBlockMessage.getOwnerId());
 		assertEquals(this.genesisBlock.getTransactions().size(), genesisBlockMessage.getTransactions().length);
 	}
 	

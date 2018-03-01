@@ -6,7 +6,9 @@ import java.util.List;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Block;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.GenesisNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Utils;
 
 import io.netty.buffer.ByteBufInputStream;
@@ -28,6 +30,9 @@ public class BlockMessage extends Message {
 	@Getter
 	private final TransactionMessage[] transactions;
 	
+	@Getter
+	private final int[] requirements;
+	
 	/**
 	 * Constructor.
 	 * @param block - original block
@@ -36,7 +41,7 @@ public class BlockMessage extends Message {
 		this.number = block.getNumber();
 		// It's a genesis block
 		if (block.getOwner() == null) {
-			this.ownerId = Transaction.GENESIS_SENDER;
+			this.ownerId = GenesisNode.GENESIS_NODE_ID;
 		} else {
 			this.ownerId = block.getOwner().getId();
 		}
@@ -45,12 +50,15 @@ public class BlockMessage extends Message {
 		for (Transaction transaction : block.getTransactions()) {
 			this.transactions[i++] = new TransactionMessage(transaction);
 		}
+		
+		this.requirements = block.getCachedRequirements();
 	}
 	
-	private BlockMessage(int number, int ownerId, TransactionMessage[] transactions) {
+	private BlockMessage(int number, int ownerId, TransactionMessage[] transactions, int[] requirements) {
 		this.number = number;
 		this.ownerId = ownerId;
 		this.transactions = transactions;
+		this.requirements = requirements;
 	}
 
 	@Override
@@ -72,6 +80,9 @@ public class BlockMessage extends Message {
 		for (TransactionMessage tm : transactions) {
 			tm.writeToStream(stream);
 		}
+		for (int i = 0; i < requirements.length; i++) {
+			stream.writeInt(requirements[i]);
+		}
 	}
 	
 	/**
@@ -87,8 +98,13 @@ public class BlockMessage extends Message {
 		for (int i = 0; i < transactionCount; i++) {
 			transactions[i] = TransactionMessage.readFromStream(stream);
 		}
+		final int nodeCount = Settings.INSTANCE.totalNodesNumber;
+		int[] requirements = new int[nodeCount];
+		for (int i = 0; i < nodeCount; i++) {
+			requirements[i] = stream.readInt();
+		}
 		
-		return new BlockMessage(number, ownerId, transactions);
+		return new BlockMessage(number, ownerId, transactions, requirements);
 	}
 
 	/**
@@ -98,9 +114,11 @@ public class BlockMessage extends Message {
 	public Block toBlockWithoutSources(LocalStore localStore) {
 		List<Transaction> transactions = new ArrayList<>();
 		for (TransactionMessage tm : this.transactions) {
-			transactions.add(tm.toTransactionWithoutSources(localStore));
+			transactions.add(tm.toTransactionWithoutSources(localStore, this.requirements));
 		}
-		return new Block(this.number, localStore.getNode(this.ownerId), transactions);
+		Block block = new Block(this.number, localStore.getNode(this.ownerId), transactions);
+		block.setCachedRequirements(this.requirements);
+		return block;
 	}
 	
 	@Override

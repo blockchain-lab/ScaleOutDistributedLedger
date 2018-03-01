@@ -10,6 +10,7 @@ import nl.tudelft.blockchain.scaleoutdistributedledger.model.MetaKnowledge;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Proof;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
+import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 
 /**
  * Class for constructing proofs.

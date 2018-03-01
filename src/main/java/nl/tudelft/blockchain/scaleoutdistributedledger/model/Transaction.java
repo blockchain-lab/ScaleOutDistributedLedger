@@ -16,10 +16,6 @@ import lombok.Setter;
  * Transaction class.
  */
 public class Transaction implements Comparable<Transaction> {
-
-	// Represent the sender of a genesis transaction
-	public static final int GENESIS_SENDER = -1;
-	
 	@Getter
 	private final int number;
 
@@ -46,6 +42,9 @@ public class Transaction implements Comparable<Transaction> {
 
 	@Getter @Setter
 	private boolean locallyVerified;
+	
+	@Getter @Setter
+	private int[] cachedRequirements;
 
 	/**
 	 * Constructor.
@@ -156,6 +155,16 @@ public class Transaction implements Comparable<Transaction> {
 	public Transaction genesisCopy() {
 		if (!source.isEmpty()) throw new UnsupportedOperationException("Only genesis transactions can be copied");
 		return new Transaction(number, sender, receiver, amount, remainder, new TreeSet<>());
+	}
+	
+	/**
+	 * @return - the block in which this transaction resides
+	 */
+	public Block getBlock() {
+		if (sender == null) {
+			return receiver.getChain().getGenesisBlock();
+		}
+		return sender.getChain().getBlocks().get(getBlockNumber());
 	}
 
 	@Override

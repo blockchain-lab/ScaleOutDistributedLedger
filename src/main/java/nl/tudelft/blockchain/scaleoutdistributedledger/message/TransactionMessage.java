@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.TreeSet;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.model.GenesisNode;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Node;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Sha256Hash;
 import nl.tudelft.blockchain.scaleoutdistributedledger.model.Transaction;
@@ -50,7 +51,7 @@ public class TransactionMessage extends Message {
 		this.blockNumber = transaction.getBlockNumber();
 		// It's a genesis transaction
 		if (transaction.getSender() == null) {
-			this.senderId = Transaction.GENESIS_SENDER;
+			this.senderId = GenesisNode.GENESIS_NODE_ID;
 		} else {
 			this.senderId = transaction.getSender().getId();
 		}
@@ -107,12 +108,14 @@ public class TransactionMessage extends Message {
 	/**
 	 * Converts this message into a transaction without any sources.
 	 * @param localStore - the local store
+	 * @param requirements - the cached requirements of the block
 	 * @return - the transaction represented by this message, without sources
 	 */
-	public Transaction toTransactionWithoutSources(LocalStore localStore) {
+	public Transaction toTransactionWithoutSources(LocalStore localStore, int[] requirements) {
 		Transaction tx = new Transaction(this.number, localStore.getNode(this.senderId),
 				localStore.getNode(this.receiverId), this.amount, this.remainder, new TreeSet<>());
 		tx.setMessage(this);
+		tx.setCachedRequirements(requirements);
 		return tx;
 	}
 

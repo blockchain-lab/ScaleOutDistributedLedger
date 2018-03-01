@@ -32,8 +32,8 @@ public class MetaKnowledge extends HashMap<Integer, Integer> {
 	}
 	
 	/**
-	 * Determines the blocks that we have to send to owner in order to update them to the given
-	 * end block number.
+	 * Determines the blocks that we have to send about owner to node in order to update them to
+	 * the given end block number.
 	 * 
 	 * This method returns {@link Collections#emptyList()} if the given node is the owner or if
 	 * owner already knows about all the blocks up till the given block number.
