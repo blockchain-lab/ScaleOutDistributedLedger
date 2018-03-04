@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
 import nl.tudelft.blockchain.scaleoutdistributedledger.Temp;
+import nl.tudelft.blockchain.scaleoutdistributedledger.Temp2;
 import nl.tudelft.blockchain.scaleoutdistributedledger.settings.Settings;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.Log;
 import nl.tudelft.blockchain.scaleoutdistributedledger.utils.SDLByteArrayOutputStream;
@@ -114,10 +115,6 @@ public class Block {
 	public synchronized void finalizeBlock() {
 		if (this.finalized) return;
 		
-		//Calculate the requirements from predecessor blocks
-		//TODO IMPORTANT
-//		Temp.getBlockRequirementsBackward(Settings.INSTANCE.totalNodesNumber, this);
-		
 		this.finalized = true;
 	}
 	
@@ -179,7 +176,6 @@ public class Block {
 		
 		//Commit to the main chain, and set the last committed block
 		localStore.getMainChain().commitAbstract(calculateBlockAbstract());
-		getOwner().getChain().setLastCommittedBlock(this);
 		
 		//Set next committed block
 		nextCommittedBlock = this;
@@ -193,7 +189,10 @@ public class Block {
 		this.finalized = true;
 		this.committed = true;
 		
-		Temp.fillInBlockRequirementsForCommit(this);
+		Temp2.updateRequirementsForCommit(this);
+		
+		getOwner().getChain().setLastCommittedBlock(this);
+		//Temp.fillInBlockRequirementsForCommit(this);
 	}
 
 	@Override

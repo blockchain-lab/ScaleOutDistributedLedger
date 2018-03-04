@@ -147,7 +147,7 @@ public class TransactionSender implements Runnable {
 		Node to = transaction.getReceiver();
 		long requiredHeight = localStore.getMainChain().getCurrentHeight();
 
-		ProofConstructor proofConstructor = new ProofConstructor(transaction);
+		ProofConstructor proofConstructor = new ProofConstructor(transaction, localStore);
 		Proof proof = proofConstructor.constructProof();
 		ProofMessage msg = new ProofMessage(proof);
 		msg.setRequiredHeight(requiredHeight);

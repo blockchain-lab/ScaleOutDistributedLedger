@@ -73,12 +73,13 @@ public interface ITransactionPattern extends Serializable {
 		//Create the transaction
 		BlockTransactionCreator creator = new BlockTransactionCreator(localStore, receiver, amount);
 		Transaction transaction = creator.createTransaction();
+		
+		//Create the block and add the transaction
+		Block block = ownNode.getChain().appendNewBlock();
+		block.addTransaction(transaction);
+		block.finalizeBlock();
 
-		//Add block to local chain
-		Block newBlock = ownNode.getChain().appendNewBlock();
-		newBlock.addTransaction(transaction);
-		newBlock.finalizeBlock();
-		Log.log(Level.FINE, "Node " + ownNodeId + " added transaction " + transaction.getNumber() + " in block " + newBlock.getNumber());
+		Log.log(Level.FINE, "Node " + ownNodeId + " added transaction " + transaction.getNumber() + " in block " + transaction.getBlockNumber());
 		
 		//Check if we want to commit the new block, and commit it if we do.
 		commitBlocks(localStore, false);

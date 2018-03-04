@@ -1,6 +1,7 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -22,16 +23,19 @@ public class ProofConstructor {
 	private final Node sender;
 	private final Map<Node, List<Block>> toSend;
 	private final Proof proof;
+	private final LocalStore localStore;
 	
 	/**
 	 * @param mainTransaction - the transaction to construct the proof for
+	 * @param localStore      - the local store
 	 */
-	public ProofConstructor(Transaction mainTransaction) {
+	public ProofConstructor(Transaction mainTransaction, LocalStore localStore) {
 		this.mainTransaction = mainTransaction;
 		this.receiver = mainTransaction.getReceiver();
 		this.sender = mainTransaction.getSender();
 		this.proof = new Proof(mainTransaction);
 		this.toSend = proof.getChainUpdates();
+		this.localStore = localStore;
 	}
 	
 	/**
@@ -42,18 +46,147 @@ public class ProofConstructor {
 		if (!toSend.isEmpty()) return proof;
 		
 		MetaKnowledge metaKnowledge = receiver.getMetaKnowledge();
-		int mainBlockNr = mainTransaction.getBlockNumber();
-		Block nextCommitted = sender.getChain().getBlocks().get(mainBlockNr).getNextCommittedBlock();
-		List<Block> ownBlocks = metaKnowledge.getBlocksToSend(sender, nextCommitted.getNumber());
-		
-		//Base case: no blocks to send
-		if (ownBlocks.isEmpty()) {
-			return proof;
+		Block nextCommitted = mainTransaction.getBlock().getNextCommittedBlock();
+		int[] requirements = nextCommitted.getCachedRequirements();
+		for (int i = 0; i < requirements.length; i++) {
+			if (requirements[i] == 0) continue;
+			
+			//Check if we have anything to send for this node
+			int firstUnknown = metaKnowledge.getFirstUnknownBlockNumber(i);
+			if (requirements[i] < firstUnknown) continue;
+			
+			//Add the blocks
+			Node node = localStore.getNode(i);
+			toSend.put(node, node.getChain().getBlocks().subList(firstUnknown, requirements[i] + 1));
 		}
 		
-		//Recursively process all the blocks
-		processBlocks(sender, ownBlocks);
+		int sum = 0;
+		int[] actualBlocksRequired = new int[requirements.length];
+		for (int i = 0; i < actualBlocksRequired.length; i++) {
+			final int nodeId = i;
+			Node node = toSend.keySet().stream().filter(n -> n.getId() == nodeId).findFirst().orElse(null);
+			if (node == null) continue;
+			
+			sum += (actualBlocksRequired[i] = toSend.get(node).size());
+		}
+		
+		if (sum > 400) {
+			System.out.println("OVER 400 blocks are going to be sent! For " + sender.getId() + " -> " + receiver.getId()
+			+ " Block " + mainTransaction.getBlockNumber() + " transaction sources: " + mainTransaction.getSource());
+			
+			StringBuilder sb = new StringBuilder(4096);
+			printTree(mainTransaction, sb, 0);
+			
+			synchronized (System.out) {
+				System.out.println(sender.getId() + " -> " + receiver.getId() + ": "
+						+ Arrays.toString(requirements) + " / " + Arrays.toString(actualBlocksRequired));
+				System.out.println(sb.toString());
+			}
+		}
+		
 		return proof;
+	}
+	
+//	/**
+//	 * @return - the constructed proof
+//	 */
+//	public synchronized Proof constructProof() {
+//		//If the proof was already constructed, return it.
+//		if (!toSend.isEmpty()) return proof;
+//		
+//		MetaKnowledge metaKnowledge = receiver.getMetaKnowledge();
+//		int mainBlockNr = mainTransaction.getBlockNumber();
+//		Block nextCommitted = sender.getChain().getBlocks().get(mainBlockNr).getNextCommittedBlock();
+//		if (nextCommitted.getNumber() - mainBlockNr > Settings.INSTANCE.commitEvery) {
+//			System.out.println("Block " + mainBlockNr + " of " + sender.getId() + " claims that his commit is more than commitEvery blocks away!");
+//		}
+//		List<Block> ownBlocks = metaKnowledge.getBlocksToSend(sender, nextCommitted.getNumber());
+//		
+//		
+//		
+//		//Base case: no blocks to send
+//		if (ownBlocks.isEmpty()) {
+////			boolean found = false;
+////			for (int i = 0; i < nodesCount; i++) {
+////				if (blocksRequired[i] != 0) {
+////					found = true;
+////					break;
+////				}
+////			}
+////			
+////			if (found) System.out.println(sender.getId() + "-> " + receiver.getId() + ": " + Arrays.toString(blocksRequired) + "\n        Nothing");
+//			return proof;
+//		}
+//		
+//		//Recursively process all the blocks
+//		processBlocks(sender, ownBlocks);
+//		
+//		final int nodesCount = Settings.INSTANCE.totalNodesNumber;
+//		int[] blocksRequired = nextCommitted.getCachedRequirements();
+//		if (blocksRequired == null) {
+//			throw new IllegalStateException("Block requirements are not cached!");
+//		}
+//		int[] realBlocksRequired = Arrays.copyOf(blocksRequired, nodesCount);
+//		for (int i = 0; i < nodesCount; i++) {
+//			blocksRequired[i] = Math.max(blocksRequired[i] - metaKnowledge.getLastKnownBlockNumber(i), 0);
+//		}
+//		if (ownBlocks.isEmpty()) {
+//			blocksRequired[sender.getId()] = 0;
+//		} else {
+//			blocksRequired[sender.getId()] = Math.max(ownBlocks.get(ownBlocks.size() - 1).getNumber() - metaKnowledge.getLastKnownBlockNumber(sender.getId()), 0);
+//		}
+//		
+//		int sum = 0;
+//		int[] actualBlocksRequired = new int[nodesCount];
+//		for (int i = 0; i < nodesCount; i++) {
+//			final int nodeId = i;
+//			Node node = toSend.keySet().stream().filter(n -> n.getId() == nodeId).findFirst().orElse(null);
+//			if (node == null) continue;
+//			
+//			sum += (actualBlocksRequired[i] = toSend.get(node).size());
+//		}
+//		
+//		if (sum > 400) {
+//			System.out.println("OVER 400 blocks are going to be sent! For " + sender.getId() + " -> " + receiver.getId()
+//			+ " Block " + mainTransaction.getBlockNumber() + " transaction sources: " + mainTransaction.getSource());
+//			
+//			if (!Arrays.equals(blocksRequired, actualBlocksRequired)) {
+//				StringBuilder sb = new StringBuilder(4096);
+//				printTree(mainTransaction, sb, 0);
+//				
+//				synchronized (System.out) {
+//					System.out.println(sender.getId() + " -> " + receiver.getId() + ": "
+//							+ Arrays.toString(blocksRequired) + " / " + Arrays.toString(realBlocksRequired)
+//							+ "\r\n        " + Arrays.toString(actualBlocksRequired));
+//					System.out.println(sb.toString());
+//				}
+//			}
+//		}
+//		
+//		return proof;
+//	}
+	
+	private void printTree(Transaction t, StringBuilder sb, int i) {
+		for (Transaction s : t.getSource()) {
+			if (s.getBlockNumber() == 0) {
+				sb.append("Source: genesis of ").append(s.getReceiver().getId()).append("\r\n");
+				continue;
+			}
+			
+			sb.append("Source: T")
+				.append(s.getNumber())
+				.append(" in B")
+				.append(s.getBlockNumber())
+				.append(" ")
+				.append(s.getSender().getId())
+				.append(" -> ")
+				.append(s.getReceiver().getId())
+				.append(" ")
+				.append(Arrays.toString(s.getBlock().getCachedRequirements()))
+				.append("\r\n");
+			
+			printTree(s, sb, i + 1);
+		}
 	}
 	
 	/**

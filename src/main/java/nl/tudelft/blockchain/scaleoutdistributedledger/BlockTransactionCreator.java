@@ -1,6 +1,5 @@
 package nl.tudelft.blockchain.scaleoutdistributedledger;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -32,7 +31,6 @@ public class BlockTransactionCreator {
 
 	private int currentBest = Integer.MAX_VALUE;
 	private BlockTransactionTuple currentBestTuple;
-	//private int[] metaBlocks;
 
 	/**
 	 * @param localStore  - the local store
@@ -45,7 +43,6 @@ public class BlockTransactionCreator {
 		this.sender = localStore.getOwnNode();
 		this.receiver = receiver;
 		this.amount = amount;
-		//this.metaBlocks = receiver.getMetaKnowledge().getBlocksKnown();
 	}
 
 	/**
@@ -91,8 +88,13 @@ public class BlockTransactionCreator {
 		cleanup(candidates, Integer.MAX_VALUE);
 
 		//If the single transaction (group) we found is the best, then we return it.
-		if (candidates.size() <= 1) return currentBestTuple;
-
+		if (candidates.size() <= 1) {
+//			if (currentBest > 100) {
+//				System.out.println(sender.getId() + " best >100, " + collectCandidates().stream().map(BlockTransactionTuple::toString).collect(Collectors.joining("\n")));
+//			}
+			return currentBestTuple;
+		}
+		
 		//Step 3: keep trying to improve for multiple rounds to get the best set of transactions
 		int roundCount = candidates.size() - 1;
 		int previousBest = currentBest;
@@ -245,20 +247,18 @@ public class BlockTransactionCreator {
 	 * @return - the blocks that are required for the given transaction
 	 */
 	public int[] blocksRequired(Transaction transaction) {
-		int[] requiredOriginal = Temp.getBlockRequirementsBackward(nodesCount, transaction.getBlock());
-		int[] blocksRequired = Arrays.copyOf(requiredOriginal, nodesCount + 1);
+		final int[] blocksRequired = Temp2.getRequirementsCopyWithSumRoom(transaction.getBlock());
+//		int[] requiredOriginal = Temp.getBlockRequirementsBackward(nodesCount, transaction.getBlock());
+//		int[] blocksRequired = Arrays.copyOf(requiredOriginal, nodesCount + 1);
 		
-		//Set our own block count to 0, we will always have to send our full local chain, so we don't consider this.
-		
-		final int receiverId = receiver.getId();
-		final int senderId = sender.getId();
-		blocksRequired[receiverId] = 0;
-		blocksRequired[senderId] = sender.getChain().getLastBlockNumber();
+		//Set our own block count to MAX, we will always have to send our full local chain, so we don't consider this.
+		blocksRequired[sender.getId()] = sender.getChain().getLastBlockNumber();
+		blocksRequired[receiver.getId()] = 0;
 		
 		final MetaKnowledge meta = receiver.getMetaKnowledge();
 		int sum = 0;
 		for (int i = 0; i < nodesCount; i++) {
-			sum += (blocksRequired[i] = Math.max(blocksRequired[i] - meta.getLastKnownBlockNumber(i), 0));
+			sum += (blocksRequired[i] = Math.max(blocksRequired[i] - meta.getLastKnownBlockNumber2(i), 0));
 		}
 		
 		//Set the sum

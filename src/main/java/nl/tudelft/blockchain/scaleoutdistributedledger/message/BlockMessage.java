@@ -114,7 +114,7 @@ public class BlockMessage extends Message {
 	public Block toBlockWithoutSources(LocalStore localStore) {
 		List<Transaction> transactions = new ArrayList<>();
 		for (TransactionMessage tm : this.transactions) {
-			transactions.add(tm.toTransactionWithoutSources(localStore, this.requirements));
+			transactions.add(tm.toTransactionWithoutSources(localStore));
 		}
 		Block block = new Block(this.number, localStore.getNode(this.ownerId), transactions);
 		block.setCachedRequirements(this.requirements);

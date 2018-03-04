@@ -186,16 +186,15 @@ public class Temp {
 		//Base case: Genesis Block, empty requirements.
 		final Block prev = block.getPreviousBlock();
 		if (prev == null) {
-			if (block.getNumber() != Block.GENESIS_BLOCK_NUMBER) {
-				throw new IllegalStateException("");
-			}
+			if (block.getNumber() != Block.GENESIS_BLOCK_NUMBER) throw new IllegalStateException("Non genesis block with no previous!");
+			
 			block.setCachedRequirements(required);
 			return;
 		}
 
 		//Normal case: Non genesis
 		
-		//Set own block height as initial requirement
+		//Set own block id as initial requirement
 		required[block.getOwner().getId()] = block.getNumber();
 		
 		//Add the requirements of the transactions in this block

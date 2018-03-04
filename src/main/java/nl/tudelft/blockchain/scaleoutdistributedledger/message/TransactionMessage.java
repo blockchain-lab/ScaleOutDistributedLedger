@@ -108,14 +108,12 @@ public class TransactionMessage extends Message {
 	/**
 	 * Converts this message into a transaction without any sources.
 	 * @param localStore - the local store
-	 * @param requirements - the cached requirements of the block
 	 * @return - the transaction represented by this message, without sources
 	 */
-	public Transaction toTransactionWithoutSources(LocalStore localStore, int[] requirements) {
+	public Transaction toTransactionWithoutSources(LocalStore localStore) {
 		Transaction tx = new Transaction(this.number, localStore.getNode(this.senderId),
 				localStore.getNode(this.receiverId), this.amount, this.remainder, new TreeSet<>());
 		tx.setMessage(this);
-		tx.setCachedRequirements(requirements);
 		return tx;
 	}
 

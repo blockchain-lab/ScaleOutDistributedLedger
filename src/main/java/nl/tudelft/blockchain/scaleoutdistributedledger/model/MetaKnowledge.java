@@ -71,12 +71,24 @@ public class MetaKnowledge extends HashMap<Integer, Integer> {
 	 * The number returned by this method is the number of the last block that {@link #getOwner()}
 	 * knows from the node with id {@code nodeId}.
 	 * 
-	 * This method returns -1 if the owner of this meta knowledge does not know about this block.
+	 * This method returns -1 if the owner of this meta knowledge does not know about this node.
 	 * @param nodeId - the id of the node
 	 * @return - the number of the last block from the given node that is known by owner
 	 */
 	public int getLastKnownBlockNumber(int nodeId) {
 		return getOrDefault(nodeId, -1);
+	}
+	
+	/**
+	 * The number returned by this method is the number of the last block that {@link #getOwner()}
+	 * knows from the node with id {@code nodeId}.
+	 * 
+	 * This method returns 0 if the owner of this meta knowledge does not know about this node.
+	 * @param nodeId - the id of the node
+	 * @return - the number of the last block from the given node that is known by owner
+	 */
+	public int getLastKnownBlockNumber2(int nodeId) {
+		return getOrDefault(nodeId, 0);
 	}
 	
 	/**

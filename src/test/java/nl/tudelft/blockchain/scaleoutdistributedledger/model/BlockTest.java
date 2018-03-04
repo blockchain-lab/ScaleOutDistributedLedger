@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import nl.tudelft.blockchain.scaleoutdistributedledger.Application;
 import nl.tudelft.blockchain.scaleoutdistributedledger.LocalStore;
+import nl.tudelft.blockchain.scaleoutdistributedledger.test.utils.TestHelper;
 
 /**
  * Test class for {@link Block}.
@@ -34,9 +35,11 @@ public class BlockTest {
 		this.owner = new OwnNode(24);
 		this.owner.setPrivateKey(keyPair.getPrivateKey());
 		this.owner.setPublicKey(keyPair.getPublicKey());
-		this.block = new Block(1234, this.owner, new ArrayList<>());
+		
+		Block genesis = TestHelper.generateGenesis(owner, 25, 1000);
+		this.block = new Block(genesis, this.owner);
 		this.application = mock(Application.class);
-		this.localStore = new LocalStore(this.owner, this.application, null, false);
+		this.localStore = new LocalStore(this.owner, this.application, genesis, false);
 	}
 	
 	/**
@@ -44,7 +47,7 @@ public class BlockTest {
 	 */
 	@Test
 	public void testGetHash_Valid() {
-		String hash = "ef958fe3c00f72cccaaa1347b044885c0eb9ab757ecdb2e9d709f07af0cd9253";
+		String hash = "d5f3506606af2c9e57915d25f88dc7d28dae425812b8ed996a649c1a7a4865b5";
 		
 		assertEquals(hash, this.block.getHash().toString());
 	}
@@ -121,11 +124,19 @@ public class BlockTest {
 	}
 	
 	/**
-	 * Test for {@link Block#isOnMainChain(LocalStore) ()}.
+	 * Test for {@link Block#isOnMainChain(LocalStore)}.
 	 */
 	@Test
-	public void testIsOnMainChain() {
-		// Is true because TendermintMock returns always true
+	public void testIsOnMainChain_Committed() {
+		this.block.commit(this.localStore);
 		assertTrue(this.block.isOnMainChain(this.localStore));
+	}
+	
+	/**
+	 * Test for {@link Block#isOnMainChain(LocalStore)}.
+	 */
+	@Test
+	public void testIsOnMainChain_NotCommitted() {
+		assertFalse(this.block.isOnMainChain(this.localStore));
 	}
 }

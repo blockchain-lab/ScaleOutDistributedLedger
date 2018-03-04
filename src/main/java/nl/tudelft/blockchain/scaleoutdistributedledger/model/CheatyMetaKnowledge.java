@@ -30,6 +30,11 @@ public class CheatyMetaKnowledge extends MetaKnowledge {
 	}
 	
 	@Override
+	public int getLastKnownBlockNumber2(int nodeId) {
+		return Math.max(super.getLastKnownBlockNumber2(nodeId), getOwnLocalStore().getNode(nodeId).getChain().getLastBlockNumber());
+	}
+	
+	@Override
 	public int[] getBlocksKnown() {
 		final int length = Settings.INSTANCE.totalNodesNumber;
 		int[] blocksKnown = new int[length];
